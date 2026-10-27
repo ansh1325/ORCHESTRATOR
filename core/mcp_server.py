@@ -104,6 +104,7 @@ class MCPServer:
                 exec_cmd,
                 cwd=str(self.workspace_path),
                 shell=True,
+                stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
                 timeout=timeout_sec
@@ -247,3 +248,4 @@ class MCPServer:
             except Exception as e:
                 return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32603, "message": str(e)}}
         return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Method '{method}' not implemented."}}
+

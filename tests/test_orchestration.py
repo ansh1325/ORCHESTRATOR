@@ -78,7 +78,7 @@ def test_mcp_sandboxing_and_path_containment(temp_workspace):
 
     # 5. Command execution
     cmd_res = mcp.tool_run_command("python -c \"print('MCP Subprocess OK')\"")
-    assert cmd_res["success"] is True
+    assert cmd_res["success"] is True, f"Command failed: {cmd_res}"
     assert "MCP Subprocess OK" in cmd_res["stdout"]
 
 def test_intent_analysis_stage_1():
@@ -177,7 +177,7 @@ async def test_worker_execution_and_evaluator_stage_4_5(temp_workspace):
         agent_id="a2", name="TestAgent", role="QA", system_prompt="", allowed_tools=["run_command", "file_write"]
     )
     test_success = await worker_engine.execute_task(task_test, spec_test, track_type="technical_software")
-    assert test_success is True
+    assert test_success is True, f"Worker test failed: {task_test.execution_logs}"
     assert (temp_workspace / "test_telemetry.py").exists()
 
     # Stage 5: Evaluator Gatekeeper
@@ -218,4 +218,5 @@ def test_fastapi_rest_endpoints():
     d_res = client.get(f"/api/workspace/{sess_id}/download")
     assert d_res.status_code == 200
     assert d_res.headers["content-type"] == "application/zip"
+
 

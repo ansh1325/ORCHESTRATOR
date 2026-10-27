@@ -1,7 +1,7 @@
 ﻿# 🦙 LlamaOrchestrator
 ### Autonomous Hierarchical Multi-Agent Engine & Lifelong AI Partner with Dynamic Worker Synthesis & MCP Tool Routing
 **Official Submission for the Meta Global AI Developer Hackathon (2026)**  
-*Target Tracks: 1st Place Indie Developer Track ($150,000) • Best Agentic Use-Case ($5,000)*  
+  
 *Creator & Lead Systems Architect: Ansh Tiwari*
 
 ---

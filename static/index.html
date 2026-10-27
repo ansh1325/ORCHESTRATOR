@@ -1,0 +1,369 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LlamaOrchestrator — Autonomous Multi-Agent Engine & AI Partner</title>
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#10b981',
+              600: '#059669',
+              dark: '#030712',
+              card: '#0b1120',
+              border: '#1e293b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #030712;
+      color: #f3f4f6;
+    }
+    .glass-panel {
+      background: rgba(11, 17, 32, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(30, 41, 59, 0.7);
+    }
+    .glass-panel-glow {
+      box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.15);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0b1120;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .pulsing-border {
+      animation: pulse-subtle 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-40 px-6 py-3.5">
+    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <i data-lucide="cpu" class="w-6 h-6 text-slate-950 stroke-[2.5]"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-bold tracking-tight text-white">LlamaOrchestrator</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono">v2.0 • Meta Llama 3.1</span>
+          </div>
+          <p class="text-xs text-slate-400">Autonomous Multi-Agent Engine & Lifelong AI Partner</p>
+        </div>
+      </div>
+
+      <!-- Creator Recognition & Hackathon Target -->
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-slate-400">Engineering Partner:</span>
+          <span class="text-slate-200 font-semibold">Ansh Tiwari</span>
+        </div>
+
+        <div class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/40 border border-purple-800/40 text-purple-300 text-xs font-mono">
+          <i data-lucide="trophy" class="w-3.5 h-3.5 text-yellow-400"></i>
+          <span>Meta Hackathon: $155,000 Target</span>
+        </div>
+
+        <!-- Voice Toggle Button -->
+        <button id="voiceToggleBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 transition">
+          <i data-lucide="volume-2" id="voiceIcon" class="w-4 h-4 text-emerald-400"></i>
+          <span id="voiceText">Audible Voice: ON</span>
+        </button>
+
+        <!-- Introduce to Judges Button -->
+        <button id="introBtn" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-semibold text-xs transition shadow-md shadow-emerald-500/20">
+          <i data-lucide="sparkles" class="w-4 h-4 stroke-[2.5]"></i>
+          <span>Introduce to Judges</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 6-STAGE LIFECYCLE PROGRESS TRACKER -->
+  <div class="bg-slate-900/50 border-b border-slate-800/80 px-6 py-2.5">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between text-xs overflow-x-auto gap-4 custom-scrollbar">
+      <div class="flex items-center gap-2 stage-pill" data-stage="0">
+        <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-[10px] border border-emerald-500/40">0</span>
+        <span class="text-slate-300 font-medium whitespace-nowrap">Jarvis Central Brain</span>
+      </div>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
+
+      <div class="flex items-center gap-2 stage-pill" data-stage="1">
+        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">1</span>
+        <span class="text-slate-400 font-medium whitespace-nowrap">Intent & Clarification</span>
+      </div>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
+
+      <div class="flex items-center gap-2 stage-pill" data-stage="2">
+        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">2</span>
+        <span class="text-slate-400 font-medium whitespace-nowrap">MCP Knowledge Gathering</span>
+      </div>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
+
+      <div class="flex items-center gap-2 stage-pill" data-stage="3">
+        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">3</span>
+        <span class="text-slate-400 font-medium whitespace-nowrap">DAG & Dynamic Workers</span>
+      </div>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
+
+      <div class="flex items-center gap-2 stage-pill" data-stage="4">
+        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">4</span>
+        <span class="text-slate-400 font-medium whitespace-nowrap">Autonomous Execution</span>
+      </div>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
+
+      <div class="flex items-center gap-2 stage-pill" data-stage="5">
+        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">5</span>
+        <span class="text-slate-400 font-medium whitespace-nowrap">Evaluator Gatekeeper</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: CONTROLS, VISION, JARVIS CHAT & KNOWLEDGE BASE (5 COLS) -->
+    <div class="lg:col-span-5 flex flex-col gap-6">
+      
+      <!-- VISION INGESTION CARD -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 1: Vision Ingestion</h2>
+          </div>
+          <span class="text-xs text-slate-400 font-mono" id="currentSessionTag">Ready</span>
+        </div>
+
+        <!-- Vision Presets -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <button id="presetBizBtn" class="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-emerald-500/50 text-left transition group">
+            <div class="flex items-center gap-1.5 text-emerald-400 font-medium text-xs mb-1">
+              <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
+              <span>Client-Acquisition Agency</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">"I know full-stack dev, build me a business and find me clients"</p>
+          </button>
+
+          <button id="presetTechBtn" class="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-cyan-500/50 text-left transition group">
+            <div class="flex items-center gap-1.5 text-cyan-400 font-medium text-xs mb-1">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span>Telemetry Microservice</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">"Build an authenticated telemetry microservice with JWT & tests"</p>
+          </button>
+        </div>
+
+        <!-- Custom Vision Textarea -->
+        <div class="relative">
+          <textarea id="visionInput" rows="3" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/70 font-sans resize-none" placeholder="Enter high-level vision or directive for LlamaOrchestrator..."></textarea>
+        </div>
+
+        <button id="analyzeBtn" class="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/20">
+          <i data-lucide="wand-2" class="w-4 h-4"></i>
+          <span>Analyze Vision & Generate Clarifications</span>
+        </button>
+      </div>
+
+      <!-- CENTRAL BRAIN / JARVIS VOICE CHAT CARD -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col flex-1 min-h-[320px]">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Jarvis Central Brain</h2>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">Meta Llama 3.1 70B</span>
+        </div>
+
+        <!-- Chat History -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2 mb-3 max-h-[260px] text-xs">
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+              <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 leading-relaxed">
+              At your service, Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive.
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input -->
+        <form id="chatForm" class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+          <input type="text" id="chatInput" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" placeholder="Converse with LlamaOrchestrator...">
+          <button type="submit" class="p-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- KNOWLEDGE BASE DRAWER CARD -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="database" class="w-4 h-4 text-purple-400"></i>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Knowledge Base (<span class="font-mono text-purple-400">knowledge_base.json</span>)</h2>
+          </div>
+          <span id="kbStatusBadge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Pending Stage 2</span>
+        </div>
+
+        <div id="kbContentContainer" class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 max-h-[160px] overflow-y-auto custom-scrollbar font-mono leading-relaxed">
+          Knowledge Base will be synthesized dynamically in Stage 2 via MCP web search and domain benchmarking tools.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: DAG VISUALIZER, TELEMETRY TERMINAL & EVALUATOR (7 COLS) -->
+    <div class="lg:col-span-7 flex flex-col gap-6">
+
+      <!-- DAG TASK DECOMPOSITION & DYNAMIC WORKERS CARD -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="git-merge" class="w-4 h-4 text-cyan-400"></i>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 3: DAG Task Decomposition & Dynamic Worker Synthesis</h2>
+          </div>
+          <span id="dagNodeCount" class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono">0 Nodes</span>
+        </div>
+
+        <!-- DAG Container -->
+        <div id="dagContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[140px] items-center justify-center p-2 rounded-xl bg-slate-950/50 border border-slate-900">
+          <div class="col-span-full text-center py-8 text-xs text-slate-500">
+            Awaiting Stage 1 Intent approval to compile DAG dependency graph and synthesize dynamic Llama sub-agents...
+          </div>
+        </div>
+      </div>
+
+      <!-- STREAMING TELEMETRY TERMINAL CONSOLE -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex-1 flex flex-col min-h-[300px]">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
+          <div class="flex items-center gap-2">
+            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 4: Autonomous Telemetry & Self-Correction Terminal</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-xs font-mono text-emerald-400" id="sseStateText">SSE: Listening</span>
+            <button id="clearLogsBtn" class="text-[11px] text-slate-400 hover:text-slate-200 ml-2">Clear</button>
+          </div>
+        </div>
+
+        <!-- Terminal Logs -->
+        <div id="terminalLogs" class="flex-1 bg-slate-950 rounded-xl p-3 font-mono text-[11px] text-slate-300 overflow-y-auto custom-scrollbar space-y-1.5 max-h-[340px] border border-slate-900">
+          <div class="text-slate-500">// LlamaOrchestrator telemetry stream initialized. Waiting for mission launch...</div>
+        </div>
+      </div>
+
+      <!-- STAGE 5 EVALUATOR GATEKEEPER CARD -->
+      <div id="evaluatorCard" class="glass-panel rounded-2xl p-5 border border-slate-800 transition">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 5: Evaluator Gatekeeper & Hand-Off</h2>
+          </div>
+          <div id="evaluatorBadge" class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-800 text-slate-400 border border-slate-700">
+            Awaiting Execution
+          </div>
+        </div>
+
+        <div id="evaluatorDetails" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 text-xs">
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 mb-1">Sandboxed Pytest</div>
+            <div id="testStatusLabel" class="font-semibold text-slate-300">Pending</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 mb-1">Lead Verification</div>
+            <div id="leadStatusLabel" class="font-semibold text-slate-300">RFC-5322 Syntax</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 mb-1">Calendar Hand-off</div>
+            <div id="webhookStatusLabel" class="font-semibold text-slate-300">Simulated Webhook</div>
+          </div>
+        </div>
+
+        <!-- 1-Click ZIP Export Button -->
+        <button id="downloadZipBtn" disabled class="w-full py-2.5 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-not-allowed">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span id="downloadBtnText">Download Workspace Deliverables (.ZIP)</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- CLARIFICATION GATE MODAL (STAGE 1) -->
+  <div id="clarificationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+            <i data-lucide="help-circle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Stage 1: Human Clarification Gate</h3>
+            <p class="text-xs text-slate-400">Missing constraints identified. Confirm choices or auto-approve.</p>
+          </div>
+        </div>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Clarification Questions List -->
+      <div id="clarificationQuestionsList" class="space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar pr-2 mb-6 text-xs">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-800">
+        <button id="autoApproveBtn" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/25">
+          <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+          <span>⚡ Auto-Approve Recommended Defaults</span>
+        </button>
+        <button id="submitCustomClarificationsBtn" class="w-full sm:w-auto py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition">
+          Confirm Selected Options
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

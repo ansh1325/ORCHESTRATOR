@@ -1,0 +1,34 @@
+{
+  "session_id": "session_c2f15a43",
+  "track_type": "business_acquisition",
+  "passed": true,
+  "score_percentage": 100.0,
+  "checks": [
+    {
+      "check": "Workspace Deliverables Presence",
+      "passed": true,
+      "details": "Found 5 generated deliverables in workspace sandbox."
+    },
+    {
+      "check": "Lead Verification & RFC-5322 Email Syntax",
+      "passed": true,
+      "details": "Verified 5 decision-maker leads ready for outbound sequences."
+    },
+    {
+      "check": "Autonomous Calendar Booking Hand-off",
+      "passed": true,
+      "details": "Dispatched simulated webhook call to Ansh Tiwari's calendar for Sarah Chen (Founder, Synthetica Labs)."
+    }
+  ],
+  "simulated_calendar_webhook": {
+    "success": true,
+    "event": "client_call_scheduled",
+    "lead": {
+      "name": "Sarah Chen",
+      "email": "sarah@synthetica.ai",
+      "company": "Synthetica Labs",
+      "scheduled_slot": "Thursday, 2:00 PM EST (15-min Technical Discovery)"
+    },
+    "webhook_status": "200 OK - Dispatched to Builder Calendar & Slack"
+  }
+}

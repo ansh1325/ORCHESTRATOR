@@ -34,7 +34,47 @@ Built with persistent creator awareness recognizing **Ansh Tiwari**, LlamaOrches
 
 ---
 
-## 🏛️ System Architecture & DAG Engine
+## 🔬 The Core Innovation: Dynamic Worker Synthesis vs. Rigid Static Agents
+
+Most existing multi-agent frameworks (such as AutoGen or CrewAI) rely on **static, hardcoded roles**—rigid instances of "Coder", "Reviewer", or "Researcher" that execute predetermined steps regardless of the task's unique domain constraints.
+
+**LlamaOrchestrator takes an entirely different architectural approach:**  
+It uses a **Meta-Orchestrator powered by Meta Llama 3.1 70B** that acts as a **runtime compiler for sub-agents**. Instead of invoking pre-existing agents, it dynamically synthesizes bespoke worker sub-agents on the fly, scoped precisely to the problem at hand.
+
+### 📐 Real-World Engineering Scenario
+> **Engineering Specification:**  
+> *"Build and deploy an authenticated telemetry microservice with PostgreSQL schema migrations, rate-limited REST endpoints, automated unit/integration test suites, and a Next.js live metric dashboard."*
+
+Here is how LlamaOrchestrator autonomously processes this specification across its **Four Architectural Pillars**:
+
+#### 1. 🧩 DAG Decomposition & Dynamic Agent Synthesis
+The Meta-Orchestrator analyzes the specification, generates a **Directed Acyclic Graph (DAG)** of task dependencies, and dynamically synthesizes task-specific worker agents at runtime. Each worker is injected with a scoped system prompt, ephemeral context window, and dedicated tool access:
+- **Schema & DB Agent:** Generates relational models, generates and runs Prisma/SQL migrations against an ephemeral test database.
+- **Backend API Agent:** Implements server routes, JWT bearer middleware, and rate-limiting using strict typed Pydantic v2 schemas.
+- **Test & Verification Agent:** Generates integration test suites, executes them in a sandboxed subprocess, and feeds `stderr` failures back into the Backend Agent for iterative refactoring.
+- **Frontend Agent:** Scaffolds responsive UI components and wires state management directly to the verified backend APIs.
+
+#### 2. 🔌 Dynamic Tooling via Model Context Protocol (MCP)
+Rather than hardcoding ad-hoc API integrations, all agents interface with the operating system and external services through the **Model Context Protocol (MCP)** using standardized JSON-RPC 2.0 over STDIO/SSE.  
+- Standardizes tool interfaces across filesystem operations, command-line subprocess execution, web search lookups, and webhook dispatching.
+- Enforces **strict path-containment sandboxing** (`os.path.commonpath`), guaranteeing that sub-agents cannot perform directory traversal attacks (`../`) or breach workspace isolation.
+
+#### 3. 🌐 Autonomous Knowledge Acquisition
+When a sub-agent hits an unknown library API, breaking dependency, or runtime deprecation, it does not hallucinate or halt:
+- It suspends its task and triggers an exploratory retrieval loop via MCP web search tools.
+- Fetches official documentation, extracts verified method signatures, and writes refreshed context into the session `knowledge_base.json`.
+- Resumes execution with up-to-date domain intelligence.
+
+#### 4. 🔄 Closed-Loop Telemetry & Reflection
+Execution does not terminate until an **Evaluator Gatekeeper** validates:
+- Compilation and schema generation succeed with **0 syntax/lint errors**.
+- Sandboxed unit and integration test suites achieve **100% pass rate**.
+- All outbound lead syntax conforms to **RFC-5322 standards**.
+- Dispatches automated webhook triggers for human builder hand-off.
+
+---
+
+## 🏛️ System Architecture Diagram
 
 ```mermaid
 graph TD

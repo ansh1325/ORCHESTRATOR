@@ -1,35 +1,47 @@
 ﻿# 🦙 LlamaOrchestrator
-### Autonomous Hierarchical Multi-Agent Engine with Dynamic Worker Synthesis & MCP Tool Routing
-**Official Submission for the Meta Global AI Developer Hackathon**  
+### Autonomous Hierarchical Multi-Agent Engine & Lifelong AI Partner with Dynamic Worker Synthesis & MCP Tool Routing
+**Official Submission for the Meta Global AI Developer Hackathon (2026)**  
 *Target Tracks: 1st Place Indie Developer Track ($150,000) • Best Agentic Use-Case ($5,000)*  
 *Creator & Lead Systems Architect: Ansh Tiwari*
 
 ---
 
-## 🌟 Executive Summary & Winning Vision
+## 💡 What is LlamaOrchestrator? (Read This First)
 
-Most AI systems today are disposable, single-turn chatbots that forget who you are, hallucinate commands, and fail silently when code breaks. 
+If you have ever asked ChatGPT, Claude, or Copilot to build a system or start a business, you have likely hit these four walls:
+1. **They are disposable:** They don't know who you are, what your skills are, or what you built yesterday.
+2. **They produce fragile prototypes:** They output Markdown snippets that break the moment you paste them into a terminal.
+3. **They halt on errors:** If a script errors or a test fails, they crash silently and throw the error back to you to fix.
+4. **They cannot act in the physical or digital economy:** They cannot autonomously scrape decision-makers, verify cold emails, scaffold databases, or schedule meetings.
 
-**LlamaOrchestrator** is an entirely different paradigm: an autonomous multi-agent compiler and a lifelong intelligent partner (akin to **Jarvis or Alfred**). Built with persistent creator awareness for **Ansh Tiwari**, it can ingest an ambitious vision—such as *"I know full-stack dev, build me a business and find me clients"* or *"Build an authenticated telemetry microservice"*—and autonomously transform that vision into verified, production-ready deliverables.
+### 🌟 Enter LlamaOrchestrator: Your Autonomous Systems Compiler
 
-Powered by **Meta Llama 3.1 70B** as the Central Brain and **Meta Llama 3.2 8B** as dynamically synthesized workers, LlamaOrchestrator executes a rigorous **6-Stage System Lifecycle**:
-1. **Audible Voice Central Brain:** Recognizes its creator and speaks aloud to hackathon judges via Web Speech synthesis.
-2. **Clarification Gate:** Analyzes intent and identifies missing constraints with a 1-click **"⚡ Auto-Approve Recommended Defaults"** button.
-3. **Autonomous Knowledge Gathering:** Leverages Model Context Protocol (MCP) tools to synthesize a structured `knowledge_base.json`.
-4. **DAG Task Decomposition & Worker Synthesis:** Generates a topological execution graph and dynamically compiles scoped worker agents with system prompts and sandboxed tools.
-5. **Closed-Loop Self-Correction:** Executes tools over MCP JSON-RPC, catching runtime `stderr` or nonzero returncodes and automatically diagnosing, patching, and re-testing without halting.
-6. **Evaluator Gatekeeper:** Enforces a 100% test pass rate, validates email syntax, and dispatches simulated calendar booking webhooks for human hand-off.
+**LlamaOrchestrator** is not a disposable single-turn chatbot. It is an **autonomous hierarchical multi-agent compiler and a lifelong intelligent partner (akin to Jarvis or Alfred)**.
+
+Built with persistent creator awareness recognizing **Ansh Tiwari**, LlamaOrchestrator ingests high-level, raw vision—such as:
+- 💼 *"I know full-stack dev, build me a business and find me clients"*
+- ⚡ *"Build an authenticated telemetry microservice with JWT & tests"*
+
+...and autonomously compiles that vision into **100% verified, running deliverables** without you writing boilerplate or debugging setup errors.
+
+### ⚡ What Happens When You Give It a Directive?
+1. 🎙️ **It talks back to you audibly:** Using built-in Web Speech synthesis, LlamaOrchestrator speaks out loud through your speakers, answers architectural questions, and introduces itself to hackathon judges during live demo evaluations.
+2. 🎯 **It asks smart questions (Stage 1 Clarification Gate):** Instead of guessing what you want, it analyzes your vision, identifies missing parameters, and presents 3 high-impact clarifying questions with pre-selected smart recommendations. It includes an instant **"⚡ Auto-Approve Recommended Defaults"** 1-click button so execution never blocks.
+3. 📚 **It conducts deep domain research (Stage 2 Knowledge Gathering):** An autonomous Knowledge Gathering Agent uses the Model Context Protocol (MCP) to scrape domain benchmarks and assemble a structured `knowledge_base.json` (target niche, pricing models, ICP, technical schemas).
+4. 🧩 **It compiles a DAG & synthesizes custom workers (Stage 3):** The Central Brain (Meta Llama 3.1 70B) generates a topological dependency DAG and dynamically writes specialized system prompts for scoped worker sub-agents (Meta Llama 3.2 8B) with sandboxed tool access.
+5. 🔄 **It self-corrects runtime errors autonomously (Stage 4 Closed-Loop ReAct):** Workers execute tools inside an MCP path-containment sandbox. If a command or unit test fails (`returncode != 0`), LlamaOrchestrator captures the `stderr` traceback, diagnoses the bug, patches the code, and re-tests without human intervention.
+6. 🛡️ **It gates quality & hands off to you (Stage 5 Evaluator Gatekeeper):** Enforces a 100% Pytest pass rate, validates email syntax, dispatches simulated calendar booking webhooks for human client calls, and packages all deliverables into a **1-Click .ZIP Export**.
 
 ---
 
-## 🏗️ System Architecture & DAG Engine
+## 🏛️ System Architecture & DAG Engine
 
 ```mermaid
 graph TD
-    User([Ansh Tiwari / Hackathon Judges]) -->|Voice / Vision Prompt| Stage0[Stage 0: Jarvis Central Brain<br/>Meta Llama 3.1 70B + Creator Memory]
+    User([Ansh Tiwari / Hackathon Judges]) -->|Voice / Vision Directive| Stage0[Stage 0: Jarvis Central Brain<br/>Meta Llama 3.1 70B + Creator Memory]
     Stage0 -->|Intent Analysis| Stage1[Stage 1: Intent Clarification Gate<br/>Auto-Approve / Parameter Validation]
     Stage1 -->|Approved Directive| Stage2[Stage 2: Knowledge Gathering Agent<br/>MCP Web Search & Market Benchmarking]
-    Stage2 -->|knowledge_base.json| Stage3[Stage 3: Meta-Orchestrator DAG Engine<br/>Dependency Graph & Worker Compiler]
+    Stage2 -->|knowledge_base.json| Stage3[Stage 3: Meta-Orchestrator DAG Engine<br/>Dependency Graph & Dynamic Worker Compiler]
     
     subgraph Stage4_Workers [Stage 4: Dynamic ReAct Workers via MCP Sandbox]
         W1[Schema & DB Agent] --> W2[Backend API Agent]
@@ -52,9 +64,9 @@ graph TD
 ## ⚡ The 6-Stage System Lifecycle
 
 ### 🎙️ Stage 0: The Jarvis Central Brain & Voice Interaction
-- **Persistent Creator Memory:** Pre-loaded with persistent memory recognizing Ansh Tiwari as Creator and Systems Architect.
+- **Persistent Creator Awareness:** Pre-loaded with memory recognizing Ansh Tiwari as Creator and Systems Architect.
 - **Audible Voice Output:** Integrated Web Audio & Speech synthesis allowing the Central Brain to audibly talk back to Ansh and introduce itself to hackathon judges during live demo evaluation.
-- **Conversational Interface:** Debates architecture, answers questions about sub-agents, or initiates missions.
+- **Conversational Interface:** Debates architecture, answers questions about sub-agents, or initiates missions directly via chat.
 
 ### 🎯 Stage 1: Intent Analysis & Human Clarification Gate
 - Ingests raw vision (presets available for immediate 1-click testing).
@@ -65,7 +77,7 @@ graph TD
 - The **Knowledge Gathering Agent** conducts deep domain research via MCP tools.
 - Assembles and persists `knowledge_base.json` into the sandboxed session workspace:
   - Ideal Customer Profile (ICP) & target niche.
-  - Competitive pricing & offer structure (Milestone 1: First 5 clients $\rightarrow$ Milestone 2: Scaling strategies).
+  - Competitive pricing & offer structure (Milestone 1: First 5 clients -> Milestone 2: Scaling strategies).
   - Required technical schemas, libraries, and security rules.
 
 ### 🧩 Stage 3: DAG Task Decomposition & Dynamic Worker Synthesis
@@ -103,12 +115,12 @@ LlamaOrchestrator implements strict path-containment sandboxing:
 
 ### 2. Installation
 ```bash
-git clone https://github.com/anshtiwari/LlamaOrchestrator.git
-cd LlamaOrchestrator
+git clone https://github.com/ansh1325/ORCHESTRATOR.git
+cd ORCHESTRATOR
 python -m pip install -r requirements.txt
 ```
 
-### 3. Environment Configuration (Optional for Live Llama Inference)
+### 3. Environment Configuration (Zero-Config Mock Fallback Supported)
 LlamaOrchestrator features a **Zero-Configuration Fallback / Mock Mode**. If no API key is provided, the entire multi-agent lifecycle, voice synthesis, DAG animations, self-correction, and ZIP downloads run seamlessly in high-fidelity deterministic simulation mode.
 
 To connect live Meta Llama models:
@@ -149,6 +161,6 @@ Running the test suite validates:
 
 ## 👥 Creator & Acknowledgments
 
-- **Creator & Systems Architect:** [Ansh Tiwari](https://github.com/anshtiwari)
+- **Creator & Systems Architect:** [Ansh Tiwari](https://github.com/ansh1325)
 - **Built for:** Meta Global AI Developer Hackathon (2026)
 - **Technologies:** Meta Llama 3.1/3.2, FastAPI, Model Context Protocol (MCP), SSE, Web Speech API, Tailwind CSS.

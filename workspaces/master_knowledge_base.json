@@ -49,22 +49,29 @@
         "closing_strategy": "Hybrid: Close low-friction pilots over direct message; schedule 15-min discovery call with Master Ansh for retainers",
         "payment_details": "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit",
         "scheduling_link": "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)",
+        "campaigns_folder": "campaigns/",
         "deliverables": [
-          "leads.csv (decision maker list with validated emails)",
-          "cold_outreach_templates.md (high-converting 3-sentence frameworks with Calendly & UPI close)",
+          "campaigns/ready_for_permission.json (pre-staged action queue awaiting 1-click founder authorization)",
+          "campaigns/linkedin/connection_notes.md (personalized LinkedIn notes)",
+          "campaigns/linkedin/linkedin_browser_script.py (browser automation script)",
+          "campaigns/twitter_x/dm_pitches.md (founder DMs & authority threads)",
+          "campaigns/communities/target_groups.json (top SaaS/tech groups & subreddits)",
+          "campaigns/communities/high_value_posts.md (technical teardowns establishing authority)",
+          "campaigns/cold_email/sequences.md (high-converting 3-sentence sequences)",
+          "campaigns/cold_email/leads.csv (decision maker list with validated emails)",
           "agency_launch_blueprint.md (operations & fulfillment blueprint for Ansh Tiwari)",
           "payment_and_booking_collateral.md (UPI payment details, 50% upfront agreement)",
           "portfolio_one_pager.html (interactive social proof showcase)",
           "capability_gap_report.md (itemized autonomous output vs external credentials needed)"
         ]
       },
-      "summary": "Synthesized high-converting client acquisition blueprint tailored for full-stack engineering partners."
+      "summary": "Synthesized omnichannel client acquisition blueprint for full-stack engineering partners with non-blocking ready-for-permission queue."
     }
   },
   "accumulated_sources": [
     "B2B High-Ticket Development Pricing Standards 2026",
     "High-Converting Cold Outreach Benchmarks"
   ],
-  "total_missions_learned": 8,
-  "last_updated": "2026-10-28T22:19:30.399077+00:00"
+  "total_missions_learned": 14,
+  "last_updated": "2026-10-28T23:18:12.525548+00:00"
 }

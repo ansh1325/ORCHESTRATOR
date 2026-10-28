@@ -72,10 +72,12 @@ class KnowledgeAgent:
         if emit_event:
             if track_type == "robotics_humanoid":
                 query_desc = "Humanoid robotics inverse kinematics and 1kHz actuator control loop"
+            elif track_type == "quantitative_trading":
+                query_desc = "Algorithmic momentum & risk-managed quantitative trading architecture"
             elif is_marketing:
                 query_desc = "Meta Ads agency acquisition benchmarks"
             elif track_type == "business_acquisition":
-                query_desc = "B2B client acquisition agency benchmarks"
+                query_desc = "Omnichannel B2B client acquisition and browser automation"
             else:
                 query_desc = "FastAPI telemetry architecture"
 
@@ -92,10 +94,12 @@ class KnowledgeAgent:
         # Step 2: Query MCP Web Search Tool
         if track_type == "robotics_humanoid":
             search_query = "Tesla Optimus humanoid robot kinematics control loop ROS2 architecture"
+        elif track_type == "quantitative_trading":
+            search_query = "Quantitative trading algorithmic Sharpe ratio risk engine CCXT InteractiveBrokers"
         elif is_marketing:
             search_query = "Meta ads B2B agency pricing and client acquisition"
         elif track_type == "business_acquisition":
-            search_query = "B2B client acquisition agency pricing benchmarks"
+            search_query = "Omnichannel B2B client acquisition LinkedIn browser outreach Reddit groups"
         else:
             search_query = "FastAPI telemetry authenticated microservice architecture"
             
@@ -173,10 +177,127 @@ class KnowledgeAgent:
                 scraped_sources=[{"title": "Jarvis Loyalty Protocol & Tone Guidelines", "snippet": "Unwavering loyalty, technical precision, and personal devotion to creator Ansh Tiwari.", "source": "local://core/creator_memory"}],
                 synthesis_summary="Synthesized personal executive communication blueprint for Ansh Tiwari."
             )
+        elif track_type == "quantitative_trading":
+            target_niche = clarification_answers.get("target_niche", "Autonomous Multi-Asset Algorithmic Trading & High-Frequency Signals")
+            kb = KnowledgeBase(
+                session_id=session_id,
+                target_niche=target_niche,
+                icp={
+                    "strategy_archetypes": ["Cross-Exchange Statistical Arbitrage", "Momentum & Volatility Breakout", "Mean-Reversion Order Flow"],
+                    "asset_classes": ["Crypto (BTC/USDT, ETH/USDT)", "Equities (Tech Megacap ETFs)"],
+                    "risk_parameters": {
+                        "max_drawdown_limit_pct": 5.0,
+                        "position_sizing_kelly_fraction": 0.25,
+                        "stop_loss_pct": 1.5,
+                        "take_profit_pct": 4.5,
+                        "target_sharpe_ratio": "> 2.2"
+                    }
+                },
+                pricing_tiers=[
+                    {"tier": "Backtested Alpha Strategy", "price": "$2,500 (one-time)", "scope": "Mathematical signal generator with historical backtests and Sharpe audit."},
+                    {"tier": "Automated Execution Pod", "price": "$4,500 / month + 15% high-water mark", "scope": "Sub-millisecond order routing, dynamic risk management, multi-exchange connectivity."},
+                    {"tier": "Proprietary Desk Engine", "price": "$8,500 / month", "scope": "Machine learning volatility forecasting and custom dark-pool order execution."}
+                ],
+                milestone_1="Verify mathematical alpha signals with Sharpe > 2.0 and max drawdown < 5% across 1-year historical ticks.",
+                milestone_2="Deploy low-latency paper-trading execution loop with strict risk bounds and instant telemetry.",
+                technical_blueprint={
+                    "quant_stack": ["Python 3.14 Math Core", "CCXT / InteractiveBrokers / Binance API", "Pytest Statistical Testbed"],
+                    "deliverables": [
+                        "trading_strategy.py (momentum, volatility breakout & mean-reversion alpha generators)",
+                        "risk_manager.py (drawdown stop, Kelly sizing, slippage guard, VaR limiters)",
+                        "backtest_engine.py (Sharpe ratio, CAGR, max drawdown calculation)",
+                        "paper_execution_loop.py (order lifecycle state machine & mock fills)",
+                        "test_trading_system.py (100% verified simulation assertions)",
+                        "trading_blueprint.md (strategy math and risk management SOP)"
+                    ]
+                },
+                scraped_sources=search_results.get("results", []),
+                synthesis_summary="Synthesized institutional-grade quantitative trading engine with mathematical alpha signals and strict risk limits.",
+                omnichannel_channels=[
+                    {"channel": "exchange_api", "name": "Direct Exchange WebSocket / FIX API", "status": "staged_for_keys"},
+                    {"channel": "telegram_alerts", "name": "Institutional Signal Telemetry Stream", "status": "staged_for_webhook"}
+                ],
+                ready_for_permission_actions=[
+                    {
+                        "action_id": "act_exchange_live_01",
+                        "channel": "crypto_equities_exchange",
+                        "target": "Binance / Alpaca / InteractiveBrokers",
+                        "permission_required": "Exchange API Key (Trade execution without withdrawal permissions)",
+                        "status": "ready_for_permission",
+                        "execution_mode": "1-Click Launch Live Trading"
+                    }
+                ]
+            )
         elif track_type == "business_acquisition":
             closing_strategy = clarification_answers.get("closing_strategy", "Hybrid: Close low-friction pilots over direct message; schedule 15-min discovery call with Master Ansh for retainers")
             payment_details = clarification_answers.get("payment_details", "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit")
             scheduling_link = clarification_answers.get("scheduling_link", "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)")
+
+            omni_channels = [
+                {
+                    "channel": "linkedin_browser",
+                    "name": "LinkedIn Direct Browser Reachout",
+                    "description": "Browser-assisted connection notes and direct messages targeting founders and CTOs without API limits.",
+                    "status": "staged"
+                },
+                {
+                    "channel": "twitter_x",
+                    "name": "Twitter / X Founder DMs & Authority Threads",
+                    "description": "High-value technical teardown threads and direct founder conversation starters.",
+                    "status": "staged"
+                },
+                {
+                    "channel": "communities",
+                    "name": "Community Value Infiltration (Reddit, Discord, Slack)",
+                    "description": "High-value technical teardowns in target groups (r/SaaS, r/Entrepreneur, IndieHackers, YC Founder Slack) building supreme authority.",
+                    "status": "staged"
+                },
+                {
+                    "channel": "cold_email",
+                    "name": "RFC-5322 Verified Cold Email Sequences",
+                    "description": "Personalized 3-sentence email hooks with direct Calendly and UPI pilot sprint closing.",
+                    "status": "staged"
+                }
+            ]
+
+            staged_actions = [
+                {
+                    "action_id": "act_linkedin_outreach_01",
+                    "channel": "linkedin_browser",
+                    "target": "Sarah Chen (Synthetica Labs) & Marcus Vance (Vortex Data)",
+                    "content_file": "campaigns/linkedin/connection_notes.md",
+                    "permission_required": "User LinkedIn Browser Session / Login Approval",
+                    "status": "ready_for_permission",
+                    "execution_mode": "1-Click Launch Browser Script (linkedin_browser_script.py)"
+                },
+                {
+                    "action_id": "act_community_post_01",
+                    "channel": "communities",
+                    "target": "r/SaaS, IndieHackers & Founder Discord",
+                    "content_file": "campaigns/communities/high_value_posts.md",
+                    "permission_required": "Founder Forum Posting Authorization",
+                    "status": "ready_for_permission",
+                    "execution_mode": "1-Click Post Dispatch"
+                },
+                {
+                    "action_id": "act_twitter_x_01",
+                    "channel": "twitter_x",
+                    "target": "Tech & AI Founder DMs",
+                    "content_file": "campaigns/twitter_x/dm_pitches.md",
+                    "permission_required": "Twitter/X Session Access",
+                    "status": "ready_for_permission",
+                    "execution_mode": "1-Click Send Staged DMs"
+                },
+                {
+                    "action_id": "act_cold_email_01",
+                    "channel": "cold_email",
+                    "target": "leads.csv (5 RFC-5322 verified decision-makers)",
+                    "content_file": "campaigns/cold_email/sequences.md",
+                    "permission_required": "Gmail App Password / Outbound Mail Relay",
+                    "status": "ready_for_permission",
+                    "execution_mode": "1-Click Relay Dispatch"
+                }
+            ]
 
             if is_marketing:
                 target_niche = clarification_answers.get("target_niche", "High-Growth DTC & E-Commerce Brands ($50k-$500k/mo Ad Spend)")
@@ -205,9 +326,16 @@ class KnowledgeAgent:
                         "closing_strategy": closing_strategy,
                         "payment_details": payment_details,
                         "scheduling_link": scheduling_link,
+                        "campaigns_folder": "campaigns/",
                         "deliverables": [
-                            "leads.csv (qualified ecom/SaaS founders with validated emails)",
-                            "cold_outreach_templates.md (3-sentence ad teardown hooks with Calendly / UPI close)",
+                            "campaigns/ready_for_permission.json (pre-staged action queue awaiting 1-click founder authorization)",
+                            "campaigns/linkedin/connection_notes.md (personalized LinkedIn notes)",
+                            "campaigns/linkedin/linkedin_browser_script.py (browser automation script)",
+                            "campaigns/twitter_x/dm_pitches.md (founder DMs & authority threads)",
+                            "campaigns/communities/target_groups.json (top SaaS/Ecom groups & subreddits)",
+                            "campaigns/communities/high_value_posts.md (technical teardowns establishing authority)",
+                            "campaigns/cold_email/sequences.md (high-converting 3-sentence sequences)",
+                            "campaigns/cold_email/leads.csv (qualified ecom/SaaS founders with validated emails)",
                             "agency_launch_blueprint.md (Top/Middle/Bottom of Funnel Meta Ads structure)",
                             "payment_and_booking_collateral.md (UPI payment details, 50% upfront agreement)",
                             "portfolio_one_pager.html (interactive social proof & booking form)",
@@ -215,7 +343,9 @@ class KnowledgeAgent:
                         ]
                     },
                     scraped_sources=search_results.get("results", []),
-                    synthesis_summary="Synthesized high-converting Meta Ads client acquisition agency blueprint tailored for Ansh Tiwari."
+                    synthesis_summary="Synthesized omnichannel Meta Ads client acquisition agency blueprint tailored for Ansh Tiwari with non-blocking ready-for-permission queue.",
+                    omnichannel_channels=omni_channels,
+                    ready_for_permission_actions=staged_actions
                 )
             else:
                 target_niche = clarification_answers.get("target_niche", "Seed & Series A AI & SaaS Startups")
@@ -244,9 +374,16 @@ class KnowledgeAgent:
                         "closing_strategy": closing_strategy,
                         "payment_details": payment_details,
                         "scheduling_link": scheduling_link,
+                        "campaigns_folder": "campaigns/",
                         "deliverables": [
-                            "leads.csv (decision maker list with validated emails)",
-                            "cold_outreach_templates.md (high-converting 3-sentence frameworks with Calendly & UPI close)",
+                            "campaigns/ready_for_permission.json (pre-staged action queue awaiting 1-click founder authorization)",
+                            "campaigns/linkedin/connection_notes.md (personalized LinkedIn notes)",
+                            "campaigns/linkedin/linkedin_browser_script.py (browser automation script)",
+                            "campaigns/twitter_x/dm_pitches.md (founder DMs & authority threads)",
+                            "campaigns/communities/target_groups.json (top SaaS/tech groups & subreddits)",
+                            "campaigns/communities/high_value_posts.md (technical teardowns establishing authority)",
+                            "campaigns/cold_email/sequences.md (high-converting 3-sentence sequences)",
+                            "campaigns/cold_email/leads.csv (decision maker list with validated emails)",
                             "agency_launch_blueprint.md (operations & fulfillment blueprint for Ansh Tiwari)",
                             "payment_and_booking_collateral.md (UPI payment details, 50% upfront agreement)",
                             "portfolio_one_pager.html (interactive social proof showcase)",
@@ -254,7 +391,9 @@ class KnowledgeAgent:
                         ]
                     },
                     scraped_sources=search_results.get("results", []),
-                    synthesis_summary="Synthesized high-converting client acquisition blueprint tailored for full-stack engineering partners."
+                    synthesis_summary="Synthesized omnichannel client acquisition blueprint for full-stack engineering partners with non-blocking ready-for-permission queue.",
+                    omnichannel_channels=omni_channels,
+                    ready_for_permission_actions=staged_actions
                 )
         else:
             # Technical Software Track
@@ -383,7 +522,14 @@ class KnowledgeAgent:
             '    "human_authorization_required": "Where human approval is required (AWS keys, bank wire, sales call)",\n'
             '    "autonomous_execution_scope": "What agents execute without human intervention"\n'
             '  },\n'
-            '  "synthesis_summary": "Comprehensive 3-sentence summary of research and strategic plan."\n'
+            '  "synthesis_summary": "Comprehensive 3-sentence summary of research and strategic plan.",\n'
+            '  "omnichannel_channels": [\n'
+            '    {"channel": "linkedin_browser", "name": "LinkedIn Direct Outreach", "status": "staged"},\n'
+            '    {"channel": "communities", "name": "Technical Groups (Reddit/Discord)", "status": "staged"}\n'
+            '  ],\n'
+            '  "ready_for_permission_actions": [\n'
+            '    {"action_id": "act_01", "channel": "linkedin_browser", "target": "Target Persona", "content_file": "campaigns/...", "permission_required": "Browser Login Session", "status": "ready_for_permission", "execution_mode": "1-Click Launch"}\n'
+            '  ]\n'
             "}"
         )
 
@@ -420,5 +566,7 @@ class KnowledgeAgent:
             milestone_2=data.get("milestone_2", "Production scaling & deployment"),
             technical_blueprint=data.get("technical_blueprint", {"architecture": "Modular Micro-Services"}),
             scraped_sources=[{"title": s.get("title", "Source"), "url": s.get("url", "https://example.com")} for s in sources],
-            synthesis_summary=data.get("synthesis_summary", "Knowledge base synthesized for autonomous execution.")
+            synthesis_summary=data.get("synthesis_summary", "Knowledge base synthesized for autonomous execution."),
+            omnichannel_channels=data.get("omnichannel_channels", []),
+            ready_for_permission_actions=data.get("ready_for_permission_actions", [])
         )

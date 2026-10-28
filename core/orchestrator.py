@@ -215,8 +215,8 @@ class MetaOrchestrator:
                 "(e.g. AWS credential authorization, attending closing sales calls, OTPs, financial transactions).\n"
                 "Return JSON only:\n"
                 "{\n"
-                '  "track_type": "string (e.g. software_deployment, b2b_agency, fullstack_web, marketing_automation, general)",\n'
-                '  "combat_tier": "tactical_squad",\n'
+                '  "track_type": "quantitative_trading | business_acquisition | technical_software | robotics_humanoid | communication_assistant | general",\n'
+                '  "combat_tier": "solo | tactical_squad | swarm_army",\n'
                 '  "swarm_size_descriptor": "Tactical Squad (3-5 Specialized Autonomous Agents)",\n'
                 '  "extracted_goals": ["goal 1", "goal 2", "goal 3"],\n'
                 '  "identified_constraints": ["constraint 1", "constraint 2", "constraint 3"],\n'
@@ -247,6 +247,32 @@ class MetaOrchestrator:
             raw = resp.choices[0].message.content
             data = json.loads(raw)
 
+            v_low = vision.lower()
+            t_type = data.get("track_type", "general").lower()
+            if any(w in v_low for w in ["trading", "trade", "quant", "arbitrage", "alpaca", "binance", "sharpe", "backtest"]):
+                t_type = "quantitative_trading"
+            elif any(w in v_low for w in ["robot", "robotics", "humanoid", "kinematics", "actuator"]):
+                t_type = "robotics_humanoid"
+            elif any(w in v_low for w in ["business", "agency", "marketing", "client", "acquisition", "lead", "omnichannel"]):
+                t_type = "business_acquisition"
+            elif any(w in v_low for w in ["mail", "email", "gmail", "letter"]) and "client" not in v_low and "business" not in v_low:
+                t_type = "communication_assistant"
+            elif t_type in ["software_deployment", "fullstack_web", "backend"]:
+                t_type = "technical_software"
+
+            is_query_only = (
+                v_low.startswith(("what is", "how do i", "how does", "explain", "who are you", "what can you", "can you tell me"))
+                and not any(act in v_low for act in ["build", "create", "launch", "execute", "start", "trade", "run", "make", "deploy", "scale", "swarm", "army"])
+            )
+            response_mode = "direct_response" if is_query_only else "swarm_army"
+            is_swarm = any(w in v_low for w in ["huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem", "scale", "humanoid", "tesla", "trading", "quant", "crypto"])
+            if is_query_only:
+                c_tier = "solo"
+            elif is_swarm:
+                c_tier = "swarm_army"
+            else:
+                c_tier = data.get("combat_tier", "tactical_squad")
+
             clarifications = []
             for c in data.get("clarifications", []):
                 opts = c.get("options", ["Recommended Default"])
@@ -261,9 +287,10 @@ class MetaOrchestrator:
 
             analysis = IntentAnalysis(
                 session_id=session.session_id,
-                track_type=data.get("track_type", "general"),
-                combat_tier=data.get("combat_tier", "tactical_squad"),
+                track_type=t_type,
+                combat_tier=c_tier,
                 swarm_size_descriptor=data.get("swarm_size_descriptor", f"Tactical Squad ({len(clarifications) + 2} Specialized Agents)"),
+                response_mode=response_mode,
                 raw_vision=vision,
                 extracted_goals=data.get("extracted_goals", [vision]),
                 identified_constraints=data.get("identified_constraints", ["Autonomous sandboxed execution with human handoff gates"]),
@@ -293,19 +320,30 @@ class MetaOrchestrator:
             "robot", "robotics", "humanoid", "bot", "tesla", "optimus",
             "kinematics", "actuator", "motor", "embedded", "firmware", "drone", "cybernetic"
         ])
+        is_trading = any(w in v_lower for w in [
+            "trading", "trade", "quant", "crypto", "equities", "stock", "arbitrage",
+            "alpaca", "binance", "sharpe", "backtest", "order flow", "hft", "algorithmic trading"
+        ]) and not is_robotics
         is_business_or_agency = any(w in v_lower for w in [
             "business", "agency", "marketing", "client", "acquisition", "freelance",
             "sales", "money", "earn", "earning", "profit", "affiliate", "firm",
-            "aaa", "automation agency", "lead"
-        ]) and not is_robotics
+            "aaa", "automation agency", "lead", "omnichannel", "reachout", "linkedin"
+        ]) and not is_robotics and not is_trading
         is_personal_comm = any(w in v_lower for w in [
             "mail", "email", "gmail", "letter", "message", "write to", "send to"
-        ]) and not is_business_or_agency and not is_robotics
+        ]) and not is_business_or_agency and not is_robotics and not is_trading
+
+        # Autonomous Escalation: Determines if simple query or requires army of agents
+        is_query_only = (
+            v_lower.startswith(("what is", "how do i", "how does", "explain", "who are you", "what can you", "can you tell me"))
+            and not any(act in v_lower for act in ["build", "create", "launch", "execute", "start", "trade", "run", "make", "deploy", "scale", "swarm", "army"])
+        )
+        response_mode = "direct_response" if is_query_only else "swarm_army"
 
         # Dynamic Combat Scaling Tier
-        is_swarm = any(w in v_lower for w in ["huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem", "scale", "humanoid", "tesla", "production suite", "end to end"]) or is_robotics
+        is_swarm = any(w in v_lower for w in ["huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem", "scale", "humanoid", "tesla", "production suite", "end to end"]) or is_robotics or is_trading
         is_solo = any(w in v_lower for w in ["quick", "single", "script", "just write a", "one agent", "solo", "simple script"]) and not is_swarm
-        combat_tier = "swarm_army" if is_swarm else ("solo" if is_solo else "tactical_squad")
+        combat_tier = "solo" if (is_query_only or is_solo) else ("swarm_army" if is_swarm else "tactical_squad")
 
         if is_robotics:
             track_type = "robotics_humanoid"
@@ -358,6 +396,50 @@ class MetaOrchestrator:
                 "kinematics_model": "6-DOF Bipedal Legs + 6-DOF Torso/Arms (Tesla Optimus Architecture)",
                 "control_frequency": "1000Hz (1kHz) Real-Time Control Loop",
                 "safety_protocol": "Multi-Layered Hard Real-Time E-Stop & Joint Limit Clamping"
+            }
+        elif is_trading:
+            track_type = "quantitative_trading"
+            swarm_size_descriptor = "Swarm Army (5 Specialized Quantitative Trading & Risk Agents)"
+            extracted_goals = [
+                "Develop mathematical momentum, volatility breakout & statistical arbitrage alpha models",
+                "Engineer strict real-time risk management engine (max 5% drawdown, Kelly sizing, slippage guards)",
+                "Build historical backtest engine with Sharpe ratio, CAGR, and max drawdown analytics",
+                "Scaffold low-latency paper execution loop and exchange connector interfaces",
+                "Verify mathematical convergence with sandboxed pytest simulation suite"
+            ]
+            identified_constraints = [
+                "Max portfolio drawdown limit: 5%",
+                "Sub-millisecond signal calculation overhead",
+                "Zero live capital risk until human authorization of API keys in campaigns/ready_for_permission.json"
+            ]
+            missing_parameters = ["Strategy focus", "Target asset class", "Exchange connector", "Max drawdown threshold"]
+            clarifications = [
+                ClarificationQuestion(
+                    id="strategy_focus",
+                    question="Which quantitative trading strategy should the alpha engine focus on?",
+                    why_needed="Determines mathematical formulation, lookback periods, and indicators.",
+                    options=["Momentum & Volatility Breakout", "Mean-Reversion Statistical Arbitrage", "Trend Following Multi-Asset Filter"],
+                    default_selection="Momentum & Volatility Breakout"
+                ),
+                ClarificationQuestion(
+                    id="target_asset_class",
+                    question="Which asset class should the strategy target?",
+                    why_needed="Calibrates tick granularity, exchange protocols, and fee models.",
+                    options=["Crypto Pairs (BTC/USDT, ETH/USDT via CCXT/Binance)", "US Equities & Index ETFs (SPY, QQQ via Alpaca/InteractiveBrokers)", "Multi-Asset Crypto + Equities Basket"],
+                    default_selection="Crypto Pairs (BTC/USDT, ETH/USDT via CCXT/Binance)"
+                ),
+                ClarificationQuestion(
+                    id="drawdown_threshold",
+                    question="What maximum portfolio drawdown limit should trigger an immediate circuit-breaker e-stop?",
+                    why_needed="Hard-codes automated risk controls to preserve master capital.",
+                    options=["Max 5% Drawdown (Strict Institutional Risk)", "Max 10% Drawdown (Aggressive Growth)", "Max 2.5% Drawdown (Capital Preservation)"],
+                    default_selection="Max 5% Drawdown (Strict Institutional Risk)"
+                )
+            ]
+            recommended_defaults = {
+                "strategy_focus": "Momentum & Volatility Breakout",
+                "target_asset_class": "Crypto Pairs (BTC/USDT, ETH/USDT via CCXT/Binance)",
+                "drawdown_threshold": "Max 5% Drawdown (Strict Institutional Risk)"
             }
         elif is_business_or_agency:
             track_type = "business_acquisition"
@@ -529,6 +611,7 @@ class MetaOrchestrator:
             track_type=track_type,
             combat_tier=combat_tier,
             swarm_size_descriptor=swarm_size_descriptor,
+            response_mode=response_mode,
             raw_vision=vision,
             extracted_goals=extracted_goals,
             identified_constraints=identified_constraints,
@@ -718,45 +801,95 @@ class MetaOrchestrator:
                 nodes=nodes,
                 estimated_duration_sec=20
             )
+        elif track == "quantitative_trading":
+            nodes = [
+                TaskNode(
+                    id="task_quant_strategy",
+                    title="Alpha Signal Generator & Strategy Formulation",
+                    agent_type="QuantStrategyAgent",
+                    description="Compile trading_strategy.py with momentum, volatility breakout, and mean-reversion alpha signal generation.",
+                    dependencies=[],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_quant_risk",
+                    title="Dynamic Risk Management & Circuit Breaker Engine",
+                    agent_type="RiskManagerAgent",
+                    description="Compile risk_manager.py with Kelly position sizing, max drawdown stops, and volatility slippage limits.",
+                    dependencies=["task_quant_strategy"],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_quant_backtest",
+                    title="Backtesting Engine & Statistical Performance Metrics",
+                    agent_type="BacktestEngineAgent",
+                    description="Compile backtest_engine.py with Sharpe ratio calculation, CAGR, max drawdown, and equity curves.",
+                    dependencies=["task_quant_risk"],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_quant_execution",
+                    title="Low-Latency Paper Execution Loop & Staged Action Queue",
+                    agent_type="PaperExecutionAgent",
+                    description="Compile paper_execution_loop.py, trading_blueprint.md, and campaigns/ready_for_permission.json for exchange API key authorization.",
+                    dependencies=["task_quant_backtest"],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_quant_test",
+                    title="Sandboxed Pytest Quantitative Verification Suite",
+                    agent_type="QuantTestAgent",
+                    description="Execute sandboxed pytest validating strategy signals, risk circuit breakers, and backtest math.",
+                    dependencies=["task_quant_execution"],
+                    assigned_tools=["run_command", "file_write", "file_read"]
+                )
+            ]
+            plan = DAGPlan(
+                session_id=session.session_id,
+                title="Institutional Quantitative Trading & Alpha Risk Engine",
+                objective="Compile production-grade algorithmic trading architecture: mathematical alpha signals, risk circuit breakers, backtest engine, paper execution loop, and 100% test verification.",
+                nodes=nodes,
+                estimated_duration_sec=35
+            )
         elif track == "business_acquisition":
             nodes = [
                 TaskNode(
                     id="task_biz_market_research",
-                    title="Market Niche & Pricing Intelligence",
+                    title="Market Niche & Omnichannel Intelligence",
                     agent_type="MarketResearchAgent",
-                    description="Analyze B2B target persona, contract values, and conversion levers.",
+                    description="Analyze B2B target persona, contract values, and identify high-converting reachout channels.",
                     dependencies=[],
                     assigned_tools=["web_search", "file_write"]
                 ),
                 TaskNode(
                     id="task_biz_lead_scraping",
-                    title="Lead Discovery & Syntax Verification",
+                    title="Lead Discovery & RFC-5322 Syntax Verification",
                     agent_type="LeadScrapingAgent",
                     description="Scrape and validate decision-maker leads (CEO/CTO) with verified RFC-5322 emails.",
                     dependencies=["task_biz_market_research"],
                     assigned_tools=["verify_email_syntax", "file_write", "file_read"]
                 ),
                 TaskNode(
-                    id="task_biz_cold_outreach",
-                    title="High-Converting 3-Sentence Outreach Synthesis",
-                    agent_type="OutreachAgent",
-                    description="Synthesize ultra-short, high-converting cold email sequences tailored to engineering founders.",
+                    id="task_biz_omnichannel_campaigns",
+                    title="Omnichannel Campaign Directory & Ready-to-Authorize Action Queue",
+                    agent_type="OmnichannelCampaignAgent",
+                    description="Compile campaigns/ folder structure: LinkedIn browser scripts, Twitter/X DMs, community value posts, and campaigns/ready_for_permission.json for 1-click execution.",
                     dependencies=["task_biz_lead_scraping"],
                     assigned_tools=["file_write", "file_read"]
                 ),
                 TaskNode(
                     id="task_biz_collateral",
-                    title="Agency Portfolio & Sprint Proposal Scaffolding",
+                    title="Agency Portfolio, Sprint Collateral & Capability Gap Report",
                     agent_type="CollateralAgent",
-                    description="Scaffold responsive portfolio landing page and pilot sprint contract.",
-                    dependencies=["task_biz_cold_outreach"],
+                    description="Scaffold responsive portfolio landing page, UPI/Calendly booking collateral, and capability gap report.",
+                    dependencies=["task_biz_omnichannel_campaigns"],
                     assigned_tools=["file_write", "send_mock_booking"]
                 )
             ]
             plan = DAGPlan(
                 session_id=session.session_id,
-                title="Autonomous B2B Agency & Client Acquisition Pipeline",
-                objective="Compile a turnkey client acquisition business for Ansh Tiwari with verified leads and high-converting outreach.",
+                title="Omnichannel B2B Agency & Client Acquisition Engine",
+                objective="Compile a turnkey omnichannel client acquisition business for Ansh Tiwari with dedicated campaign folders and a non-blocking ready-for-permission queue.",
                 nodes=nodes,
                 estimated_duration_sec=30
             )
@@ -907,6 +1040,48 @@ class MetaOrchestrator:
                 name="Robotics Simulation & QA Agent",
                 role="Pytest Robotics Physics Testbed Specialist",
                 system_prompt="You execute sandboxed physics and numerical assertion suites validating kinematics convergence and failsafe cutoffs.",
+                allowed_tools=["run_command", "file_write", "file_read"]
+            ),
+            "OmnichannelCampaignAgent": SubAgentSpec(
+                agent_id="agent_omnichannel",
+                name="Omnichannel Growth & Campaign Agent",
+                role="Omnichannel Infiltration & Browser Automation Specialist",
+                system_prompt="You construct omnichannel campaigns across LinkedIn browser automation, Twitter/X DMs, high-value community teardowns, and non-blocking ready-for-permission action queues.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "QuantStrategyAgent": SubAgentSpec(
+                agent_id="agent_quant_strat",
+                name="Quantitative Alpha Strategy Agent",
+                role="Mathematical Alpha Modeling Specialist",
+                system_prompt="You compile mathematical alpha generators spanning momentum, volatility breakouts, and statistical arbitrage.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "RiskManagerAgent": SubAgentSpec(
+                agent_id="agent_quant_risk",
+                name="Quantitative Risk Management Agent",
+                role="Institutional Risk & Circuit-Breaker Specialist",
+                system_prompt="You compile Kelly position sizing, max 5% drawdown circuit breakers, and slippage guards.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "BacktestEngineAgent": SubAgentSpec(
+                agent_id="agent_quant_backtest",
+                name="Backtest Engine & Analytics Agent",
+                role="Statistical Performance Specialist",
+                system_prompt="You compile historical backtest simulation engines computing Sharpe ratios, CAGR, and equity curves.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "PaperExecutionAgent": SubAgentSpec(
+                agent_id="agent_quant_exec",
+                name="Paper Execution & Exchange Bridge Agent",
+                role="Low-Latency Order Execution Specialist",
+                system_prompt="You compile paper order lifecycle engines and staged ready-for-permission action queues for exchange API authorization.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "QuantTestAgent": SubAgentSpec(
+                agent_id="agent_quant_test",
+                name="Quantitative Test & Verification Agent",
+                role="Pytest Quantitative Verification Specialist",
+                system_prompt="You execute sandboxed pytest suites validating alpha signals, risk circuit-breakers, and mathematical convergence.",
                 allowed_tools=["run_command", "file_write", "file_read"]
             )
         }

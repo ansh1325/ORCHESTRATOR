@@ -20,9 +20,10 @@ class ClarificationQuestion(BaseModel):
 
 class IntentAnalysis(BaseModel):
     session_id: str
-    track_type: str = Field(description="business_acquisition | technical_software | communication_assistant | robotics_humanoid | general")
+    track_type: str = Field(description="business_acquisition | technical_software | communication_assistant | robotics_humanoid | quantitative_trading | general")
     combat_tier: str = Field(default="tactical_squad", description="solo | tactical_squad | swarm_army")
     swarm_size_descriptor: str = Field(default="Tactical Squad (3-4 Specialized Agents)")
+    response_mode: str = Field(default="swarm_army", description="direct_response | swarm_army")
     raw_vision: str
     extracted_goals: List[str]
     identified_constraints: List[str]
@@ -46,6 +47,8 @@ class KnowledgeBase(BaseModel):
     technical_blueprint: Dict[str, Any]
     scraped_sources: List[Dict[str, str]]
     synthesis_summary: str
+    omnichannel_channels: List[Dict[str, Any]] = Field(default_factory=list, description="Targeted channels: LinkedIn browser automation, Twitter/X DMs, community groups, and cold email")
+    ready_for_permission_actions: List[Dict[str, Any]] = Field(default_factory=list, description="Pre-staged autonomous actions awaiting 1-click user authorization")
     updated_at: str = Field(default_factory=utc_now_iso)
 
 class TaskNode(BaseModel):

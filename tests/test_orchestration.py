@@ -244,5 +244,117 @@ def test_clean_code_content_and_url_normalization(temp_workspace):
     assert res["success"] is True
     assert res["url"] == "https://example.com"
 
+@pytest.mark.asyncio
+async def test_omnichannel_campaign_and_ready_for_permission_queue(temp_workspace):
+    """Test Omnichannel campaign synthesis, dedicated campaigns/ folder, and ready-to-authorize queue."""
+    mcp = MCPServer(temp_workspace)
+    worker_engine = DynamicWorkerEngine(mcp=mcp)
+
+    task_campaign = TaskNode(
+        id="task_biz_omnichannel_campaigns",
+        title="Omnichannel Campaign Directory & Ready-to-Authorize Action Queue",
+        agent_type="OmnichannelCampaignAgent",
+        description="Compile campaigns/ directory",
+        assigned_tools=["file_write", "file_read"]
+    )
+    spec_campaign = SubAgentSpec(
+        agent_id="a_omni",
+        name="OmnichannelCampaignAgent",
+        role="Omnichannel Specialist",
+        system_prompt="",
+        allowed_tools=["file_write", "file_read"]
+    )
+    success = await worker_engine.execute_task(task_campaign, spec_campaign, track_type="business_acquisition")
+    assert success is True
+
+    # 1. Verify dedicated campaign folder artifacts exist
+    assert (temp_workspace / "campaigns" / "linkedin" / "connection_notes.md").exists()
+    assert (temp_workspace / "campaigns" / "linkedin" / "linkedin_browser_script.py").exists()
+    assert (temp_workspace / "campaigns" / "communities" / "target_groups.json").exists()
+    assert (temp_workspace / "campaigns" / "communities" / "high_value_posts.md").exists()
+    assert (temp_workspace / "campaigns" / "twitter_x" / "dm_pitches.md").exists()
+    assert (temp_workspace / "campaigns" / "cold_email" / "sequences.md").exists()
+    assert (temp_workspace / "campaigns" / "ready_for_permission.json").exists()
+
+    # 2. Verify ready_for_permission.json content integrity
+    read_res = mcp.tool_file_read("campaigns/ready_for_permission.json")
+    assert read_res["success"] is True
+    import json
+    q_data = json.loads(read_res["content"])
+    assert q_data["status"] == "ready_for_permission"
+    assert q_data["staging_mode"] == "non_blocking"
+    assert len(q_data["actions"]) >= 4
+
+    # 3. Verify Python syntax of linkedin_browser_script.py
+    read_script = mcp.tool_file_read("campaigns/linkedin/linkedin_browser_script.py")
+    assert "class LinkedInBrowserAutomator" in read_script["content"]
+    syn = mcp.tool_run_command("python -m py_compile campaigns/linkedin/linkedin_browser_script.py")
+    assert syn.get("returncode") == 0
+
+@pytest.mark.asyncio
+async def test_quantitative_trading_lifecycle(temp_workspace):
+    """Test Universal Quantitative Trading Domain & sandboxed pytest verification."""
+    orch = MetaOrchestrator()
+    session = orch.get_or_create_session("test_quant_sess", "build algorithmic trading strategy for crypto and equities with risk limits")
+    
+    # 1. Intent Analysis
+    analysis = orch.analyze_intent("build algorithmic trading strategy for crypto and equities with risk limits", session_id="test_quant_sess")
+    assert analysis.track_type == "quantitative_trading"
+    assert analysis.combat_tier in ["swarm_army", "tactical_squad"]
+    assert len(analysis.clarifications) >= 1
+
+    # 2. DAG Compilation
+    dag = orch.compile_dag_and_synthesize_workers(session)
+    assert len(dag.nodes) >= 3
+    for node in dag.nodes:
+        assert node.title
+        assert node.agent_type
+        spec = orch.get_subagent_spec(node.agent_type, session)
+        assert spec is not None
+
+    # 3. Worker Execution across quantitative trading modules
+    mcp = MCPServer(temp_workspace)
+    worker = DynamicWorkerEngine(mcp=mcp)
+    quant_nodes = [
+        TaskNode(id="task_quant_strategy", title="Strategy Alpha", agent_type="QuantStrategyAgent", description="Alpha"),
+        TaskNode(id="task_quant_risk", title="Risk Manager", agent_type="RiskManagerAgent", description="Risk"),
+        TaskNode(id="task_quant_backtest", title="Backtest Engine", agent_type="BacktestEngineAgent", description="Backtest"),
+        TaskNode(id="task_quant_execution", title="Paper Execution", agent_type="PaperExecutionAgent", description="Execution"),
+        TaskNode(id="task_quant_test", title="Quant Test", agent_type="QuantTestAgent", description="Tests")
+    ]
+    for qn in quant_nodes:
+        spec = orch.get_subagent_spec(qn.agent_type, session)
+        task_ok = await worker.execute_task(qn, spec, track_type="quantitative_trading")
+        assert task_ok is True, f"Failed on {qn.id}: {qn.execution_logs}"
+
+    # Verify trading artifacts exist
+    assert (temp_workspace / "trading_strategy.py").exists()
+    assert (temp_workspace / "risk_manager.py").exists()
+    assert (temp_workspace / "backtest_engine.py").exists()
+    assert (temp_workspace / "paper_execution_loop.py").exists()
+    assert (temp_workspace / "test_trading_system.py").exists()
+    assert (temp_workspace / "campaigns" / "ready_for_permission.json").exists()
+
+    # 4. Evaluator Gatekeeper Certification
+    evaluator = EvaluatorGatekeeper(mcp=mcp)
+    report = await evaluator.evaluate_deliverables("test_quant_sess", track_type="quantitative_trading")
+    assert report["passed"] is True
+    assert report["score_percentage"] == 100.0
+
+def test_autonomous_response_escalation():
+    """Test Autonomous Escalation: solo direct response vs swarm army deployment."""
+    orch = MetaOrchestrator()
+
+    # Simple informational query
+    query_analysis = orch.analyze_intent("what is the architecture of LlamaOrchestrator")
+    assert query_analysis.response_mode == "direct_response"
+    assert query_analysis.combat_tier == "solo"
+
+    # Actionable building directive
+    action_analysis = orch.analyze_intent("launch an omnichannel marketing and client acquisition agency")
+    assert action_analysis.response_mode == "swarm_army"
+    assert action_analysis.combat_tier in ["tactical_squad", "swarm_army"]
+
+
 
 

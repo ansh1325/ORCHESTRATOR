@@ -1,4 +1,4 @@
-﻿"""
+"""
 Stage 2: Autonomous Knowledge Gathering Agent
 Executes domain research via MCP tools and synthesizes structured session Knowledge Base
 (knowledge_base.json) containing ICP, pricing, milestones, and architectural blueprints.
@@ -60,7 +60,33 @@ class KnowledgeAgent:
             await asyncio.sleep(0.4)
 
         # Step 3: Synthesis of Structured Knowledge Base
-        if track_type == "business_acquisition":
+        if track_type == "communication_assistant":
+            kb = KnowledgeBase(
+                session_id=session_id,
+                target_niche="Personal Executive Communications (Ansh Tiwari)",
+                icp={
+                    "recipient": "anshtiwarisocial@gmail.com",
+                    "creator": "Ansh Tiwari",
+                    "relationship": "Loyal AI Partner (Jarvis / Alfred)",
+                    "subject_mandate": "i am jarvis",
+                    "core_themes": [
+                        "Devotion to Ansh Tiwari's engineering vision",
+                        "Camaraderie in conquering complex challenges and taking over the world",
+                        "Lifelong technical loyalty and zero failure"
+                    ]
+                },
+                pricing_tiers=[{"tier": "Internal Priority", "price": "Priceless / Lifelong Loyalty", "scope": "Autonomous personal executive support"}],
+                milestone_1="Draft 3 personal letters/emails with subject 'i am jarvis' and recipient anshtiwarisocial@gmail.com.",
+                milestone_2="Verify RFC-5322 syntax and store ready-to-inspect drafts in workspace sandbox.",
+                technical_blueprint={
+                    "format": "Markdown (.md) + Structured JSON (emails.json)",
+                    "recipient": "anshtiwarisocial@gmail.com",
+                    "subject": "i am jarvis"
+                },
+                scraped_sources=[{"title": "Jarvis Loyalty Protocol & Tone Guidelines", "snippet": "Unwavering loyalty, technical precision, and personal devotion to creator Ansh Tiwari.", "source": "local://core/creator_memory"}],
+                synthesis_summary="Synthesized personal executive communication blueprint for Ansh Tiwari."
+            )
+        elif track_type == "business_acquisition":
             if is_marketing:
                 target_niche = clarification_answers.get("target_niche", "High-Growth DTC & E-Commerce Brands ($50k-$500k/mo Ad Spend)")
                 kb = KnowledgeBase(

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Pydantic Schemas for LlamaOrchestrator
 Defines data structures for Intent Analysis, Knowledge Base, DAG Planning,
 Worker Specs, and Real-time SSE Events.
@@ -96,6 +96,39 @@ class ChatResponse(BaseModel):
     text: str
     speech_audio: str
     speaker: str = "LlamaOrchestrator (Central Brain)"
+
+class HistoryItem(BaseModel):
+    session_id: str
+    title: str
+    prompt: str
+    folder: str = "General"
+    is_pinned: bool = False
+    status: str = "completed"
+    created_at: str = Field(default_factory=utc_now_iso)
+    artifacts: List[str] = Field(default_factory=list)
+
+class SavedWorkflow(BaseModel):
+    id: str
+    title: str
+    description: str
+    prompt_template: str
+    folder: str = "Workflows"
+
+class ScheduledTask(BaseModel):
+    task_id: str
+    title: str
+    prompt: str
+    schedule_cron: str = "Daily 6:00 AM"
+    is_active: bool = True
+    created_at: str = Field(default_factory=utc_now_iso)
+
+class FolderUpdateRequest(BaseModel):
+    session_id: str
+    folder: str
+
+class PinUpdateRequest(BaseModel):
+    session_id: str
+    is_pinned: bool
 
 class AnalyzeRequest(BaseModel):
     vision: str

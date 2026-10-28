@@ -3,30 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LlamaOrchestrator — Autonomous Multi-Agent Engine & AI Partner</title>
+  <title>LlamaOrchestrator — Autonomous AI Partner & Multi-Agent Compiler</title>
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
-            brand: {
-              50: '#f0fdf4',
-              500: '#10b981',
-              600: '#059669',
-              dark: '#030712',
-              card: '#0b1120',
-              border: '#1e293b'
+            cyber: {
+              950: '#06080F',
+              900: '#0B0F19',
+              850: '#0E1424',
+              800: '#141D33',
+              700: '#1F2C4C',
+              border: '#1E293B',
+              accent: '#10B981',
+              cyan: '#06B6D4'
             }
           }
         }
@@ -35,309 +37,334 @@
   </script>
   <style>
     body {
-      background-color: #030712;
-      color: #f3f4f6;
+      background-color: #06080F;
+      color: #E2E8F0;
     }
     .glass-panel {
-      background: rgba(11, 17, 32, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(30, 41, 59, 0.7);
+      background: rgba(14, 20, 36, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(31, 44, 76, 0.6);
     }
     .glass-panel-glow {
-      box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.15);
+      box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
     }
     .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #0b1120;
+      background: #0B0F19;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #1e293b;
+      background: #1F2C4C;
       border-radius: 4px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #334155;
     }
-    @keyframes pulse-subtle {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.85; transform: scale(1.02); }
+    /* Voice Wave Animation */
+    .wave-bar {
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      background: #10B981;
+      border-radius: 2px;
+      margin: 0 1.5px;
+      animation: wave 1.2s infinite ease-in-out;
     }
-    .pulsing-border {
-      animation: pulse-subtle 3s infinite ease-in-out;
+    .wave-bar:nth-child(2) { animation-delay: -1.0s; height: 18px; }
+    .wave-bar:nth-child(3) { animation-delay: -0.8s; height: 10px; }
+    .wave-bar:nth-child(4) { animation-delay: -0.6s; height: 16px; }
+    .wave-bar:nth-child(5) { animation-delay: -0.4s; height: 12px; }
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+      50% { transform: scaleY(1.3); opacity: 1; }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
+<body class="h-screen flex overflow-hidden font-sans selection:bg-emerald-500 selection:text-black">
 
-  <!-- TOP NAVIGATION BAR -->
-  <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-40 px-6 py-3.5">
-    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-          <i data-lucide="cpu" class="w-6 h-6 text-slate-950 stroke-[2.5]"></i>
+  <!-- LEFT SIDEBAR: WORK HISTORY, FOLDERS & SAVED WORKFLOWS -->
+  <aside id="sidebar" class="w-80 bg-cyber-900 border-r border-cyber-border flex flex-col shrink-0 transition-all duration-300 z-30">
+    
+    <!-- Sidebar Header -->
+    <div class="p-4 border-b border-cyber-border flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <i data-lucide="cpu" class="w-4 h-4 text-cyber-950 stroke-[2.5]"></i>
         </div>
         <div>
-          <div class="flex items-center gap-2">
-            <span class="text-xl font-bold tracking-tight text-white">LlamaOrchestrator</span>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono">v2.0 • Meta Llama 3.1</span>
-          </div>
-          <p class="text-xs text-slate-400">Autonomous Multi-Agent Engine & Lifelong AI Partner</p>
+          <h1 class="text-sm font-bold text-white tracking-tight leading-none">LlamaOrchestrator</h1>
+          <span class="text-[10px] text-emerald-400 font-mono">Autonomous AI Partner</span>
+        </div>
+      </div>
+      <button id="newDirectiveBtn" class="p-2 rounded-lg bg-cyber-850 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-cyber-700/60 transition" title="Start New Task">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="p-3 border-b border-cyber-border space-y-2">
+      <div class="relative">
+        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5"></i>
+        <input type="text" id="historySearch" placeholder="Search work history..." class="w-full bg-cyber-950 border border-cyber-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/70">
+      </div>
+      
+      <!-- Folder Filters -->
+      <div class="flex items-center gap-1 text-[11px] overflow-x-auto custom-scrollbar pb-1">
+        <button class="folder-filter px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium whitespace-nowrap active" data-folder="all">All</button>
+        <button class="folder-filter px-2 py-0.5 rounded-full bg-cyber-850 hover:bg-cyber-800 text-slate-400 hover:text-slate-200 border border-cyber-700/60 whitespace-nowrap" data-folder="pinned">📌 Pinned</button>
+        <button class="folder-filter px-2 py-0.5 rounded-full bg-cyber-850 hover:bg-cyber-800 text-slate-400 hover:text-slate-200 border border-cyber-700/60 whitespace-nowrap" data-folder="Personal">Personal</button>
+        <button class="folder-filter px-2 py-0.5 rounded-full bg-cyber-850 hover:bg-cyber-800 text-slate-400 hover:text-slate-200 border border-cyber-700/60 whitespace-nowrap" data-folder="Engineering">Engineering</button>
+        <button class="folder-filter px-2 py-0.5 rounded-full bg-cyber-850 hover:bg-cyber-800 text-slate-400 hover:text-slate-200 border border-cyber-700/60 whitespace-nowrap" data-folder="Business">Business</button>
+      </div>
+    </div>
+
+    <!-- Work History List -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-1">Task History</div>
+      <div id="historyList" class="space-y-1.5 text-xs">
+        <div class="text-center py-8 text-slate-600 text-xs">Loading task history...</div>
+      </div>
+    </div>
+
+    <!-- Saved Workflows & 24/7 Automation -->
+    <div class="p-3 border-t border-cyber-border bg-cyber-950/60 space-y-2">
+      <div class="flex items-center justify-between text-[11px] text-slate-400">
+        <span class="font-bold uppercase tracking-wider text-[10px]">Saved Workflows</span>
+        <button id="addWorkflowBtn" class="text-emerald-400 hover:text-emerald-300" title="Save Current as Workflow">
+          <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+      <div id="workflowsList" class="space-y-1 text-xs">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="pt-2 border-t border-cyber-border/60 flex items-center justify-between text-[11px] text-slate-400">
+        <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i><span>Continuous 24/7 Run</span></span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono">Active</span>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN INTERFACE -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-cyber-950">
+
+    <!-- TOP STATUS HEADER -->
+    <header class="h-14 border-b border-cyber-border bg-cyber-900/80 backdrop-blur px-6 flex items-center justify-between shrink-0">
+      
+      <!-- Creator Partnership -->
+      <div class="flex items-center gap-3">
+        <button id="toggleSidebarBtn" class="p-1.5 rounded-lg bg-cyber-850 hover:bg-cyber-800 text-slate-400 hover:text-slate-200 border border-cyber-700/60">
+          <i data-lucide="panel-left" class="w-4 h-4"></i>
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-xs text-slate-400 font-medium">Engineering Partner:</span>
+          <span class="text-xs font-semibold text-slate-200">Ansh Tiwari</span>
         </div>
       </div>
 
-      <!-- Creator Recognition & Hackathon Target -->
+      <!-- Live Voice Visualizer (When Jarvis is Speaking) -->
+      <div id="voiceVisualizer" class="hidden items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400 font-mono">
+        <span class="text-[11px]">Jarvis Speaking</span>
+        <div class="flex items-center h-4">
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+        </div>
+      </div>
+
+      <!-- Controls -->
       <div class="flex items-center gap-3">
-        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-slate-400">Engineering Partner:</span>
-          <span class="text-slate-200 font-semibold">Ansh Tiwari</span>
-        </div>
-
-        <div class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/40 border border-purple-800/40 text-purple-300 text-xs font-mono">
-          <i data-lucide="trophy" class="w-3.5 h-3.5 text-yellow-400"></i>
-          <span>Meta Hackathon: $155,000 Target</span>
-        </div>
-
-        <!-- Voice Toggle Button -->
-        <button id="voiceToggleBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 transition">
+        <button id="voiceToggleBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyber-850 hover:bg-cyber-800 border border-cyber-700/60 text-xs font-medium text-slate-300 transition">
           <i data-lucide="volume-2" id="voiceIcon" class="w-4 h-4 text-emerald-400"></i>
           <span id="voiceText">Audible Voice: ON</span>
         </button>
+      </div>
+    </header>
 
-        <!-- Introduce to Judges Button -->
-        <button id="introBtn" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-semibold text-xs transition shadow-md shadow-emerald-500/20">
-          <i data-lucide="sparkles" class="w-4 h-4 stroke-[2.5]"></i>
-          <span>Introduce to Judges</span>
-        </button>
+    <!-- 6-STAGE PROGRESS BAR -->
+    <div class="bg-cyber-900/40 border-b border-cyber-border/70 px-6 py-2 shrink-0">
+      <div class="max-w-6xl mx-auto flex items-center justify-between text-xs overflow-x-auto gap-3 custom-scrollbar">
+        <div class="flex items-center gap-2 stage-pill" data-stage="0">
+          <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-[10px] border border-emerald-500/40">0</span>
+          <span class="text-slate-300 font-medium text-[11px]">Central Brain</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-700 shrink-0"></i>
+
+        <div class="flex items-center gap-2 stage-pill" data-stage="1">
+          <span class="w-5 h-5 rounded-full bg-cyber-850 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-cyber-700">1</span>
+          <span class="text-slate-400 font-medium text-[11px]">Intent Clarification</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-700 shrink-0"></i>
+
+        <div class="flex items-center gap-2 stage-pill" data-stage="2">
+          <span class="w-5 h-5 rounded-full bg-cyber-850 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-cyber-700">2</span>
+          <span class="text-slate-400 font-medium text-[11px]">Knowledge Synthesis</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-700 shrink-0"></i>
+
+        <div class="flex items-center gap-2 stage-pill" data-stage="3">
+          <span class="w-5 h-5 rounded-full bg-cyber-850 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-cyber-700">3</span>
+          <span class="text-slate-400 font-medium text-[11px]">Worker Synthesis</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-700 shrink-0"></i>
+
+        <div class="flex items-center gap-2 stage-pill" data-stage="4">
+          <span class="w-5 h-5 rounded-full bg-cyber-850 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-cyber-700">4</span>
+          <span class="text-slate-400 font-medium text-[11px]">Execution & Self-Correction</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-700 shrink-0"></i>
+
+        <div class="flex items-center gap-2 stage-pill" data-stage="5">
+          <span class="w-5 h-5 rounded-full bg-cyber-850 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-cyber-700">5</span>
+          <span class="text-slate-400 font-medium text-[11px]">Quality Gatekeeper</span>
+        </div>
       </div>
     </div>
-  </header>
 
-  <!-- 6-STAGE LIFECYCLE PROGRESS TRACKER -->
-  <div class="bg-slate-900/50 border-b border-slate-800/80 px-6 py-2.5">
-    <div class="max-w-[1600px] mx-auto flex items-center justify-between text-xs overflow-x-auto gap-4 custom-scrollbar">
-      <div class="flex items-center gap-2 stage-pill" data-stage="0">
-        <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-[10px] border border-emerald-500/40">0</span>
-        <span class="text-slate-300 font-medium whitespace-nowrap">Jarvis Central Brain</span>
-      </div>
-      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
-
-      <div class="flex items-center gap-2 stage-pill" data-stage="1">
-        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">1</span>
-        <span class="text-slate-400 font-medium whitespace-nowrap">Intent & Clarification</span>
-      </div>
-      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
-
-      <div class="flex items-center gap-2 stage-pill" data-stage="2">
-        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">2</span>
-        <span class="text-slate-400 font-medium whitespace-nowrap">MCP Knowledge Gathering</span>
-      </div>
-      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
-
-      <div class="flex items-center gap-2 stage-pill" data-stage="3">
-        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">3</span>
-        <span class="text-slate-400 font-medium whitespace-nowrap">DAG & Dynamic Workers</span>
-      </div>
-      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
-
-      <div class="flex items-center gap-2 stage-pill" data-stage="4">
-        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">4</span>
-        <span class="text-slate-400 font-medium whitespace-nowrap">Autonomous Execution</span>
-      </div>
-      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
-
-      <div class="flex items-center gap-2 stage-pill" data-stage="5">
-        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-slate-700">5</span>
-        <span class="text-slate-400 font-medium whitespace-nowrap">Evaluator Gatekeeper</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN DASHBOARD CONTENT -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- LEFT COLUMN: CONTROLS, VISION, JARVIS CHAT & KNOWLEDGE BASE (5 COLS) -->
-    <div class="lg:col-span-5 flex flex-col gap-6">
+    <!-- MAIN BODY: WORKSPACE CANVAS & FILE PREVIEW -->
+    <div class="flex-1 flex overflow-hidden">
       
-      <!-- VISION INGESTION CARD -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800">
-        <div class="flex items-center justify-between mb-3">
+      <!-- CENTER: DIALOGUE, DAG WORKERS & TERMINAL -->
+      <main class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 flex flex-col max-w-5xl mx-auto w-full">
+        
+        <!-- WORK COMPLETED BANNER (Shown when task is finished) -->
+        <div id="workDoneBanner" class="hidden p-5 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-cyan-950/60 border border-emerald-500/50 shadow-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
+                <i data-lucide="check-circle-2" class="w-6 h-6 stroke-[2.5]"></i>
+              </div>
+              <div>
+                <h2 class="text-base font-bold text-white">Mission Accomplished, Ansh.</h2>
+                <p class="text-xs text-slate-300" id="workDoneSummary">All autonomous tasks executed, verified, and certified.</p>
+              </div>
+            </div>
+            <button id="downloadCompletedZipBtn" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-cyber-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition shadow-lg shadow-emerald-500/20">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Download Deliverables (.ZIP)</span>
+            </button>
+          </div>
+          <div class="pt-2 border-t border-emerald-500/20 flex flex-wrap gap-2 text-xs" id="completedDeliverablesList">
+            <!-- Clickable file badges -->
+          </div>
+        </div>
+
+        <!-- DYNAMIC WORKER AGENTS DEPLOYED -->
+        <div class="glass-panel rounded-2xl p-4 border border-cyber-border space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="git-merge" class="w-4 h-4 text-cyan-400"></i>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Dynamic Synthesized Worker Agents</h3>
+            </div>
+            <span id="dagCountBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono">0 Agents Synthesized</span>
+          </div>
+
+          <div id="dagContainer" class="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[90px] items-center justify-center p-2 rounded-xl bg-cyber-950/60 border border-cyber-border/40">
+            <div class="col-span-full text-center py-6 text-xs text-slate-500">
+              Awaiting your directive to compile DAG dependencies and synthesize specialized Llama workers...
+            </div>
+          </div>
+        </div>
+
+        <!-- JARVIS CONVERSATION & STREAMING LOGS -->
+        <div class="glass-panel rounded-2xl p-4 border border-cyber-border flex-1 flex flex-col min-h-[300px]">
+          <div class="flex items-center justify-between pb-2 border-b border-cyber-border/60 mb-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="message-square" class="w-4 h-4 text-emerald-400"></i>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Jarvis Central Brain Dialogue</h3>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <button id="toggleTerminalBtn" class="text-slate-400 hover:text-slate-200 text-[11px] flex items-center gap-1">
+                <i data-lucide="terminal" class="w-3 h-3"></i>
+                <span id="terminalToggleLabel">Show Telemetry Logs</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat History -->
+          <div id="chatHistory" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2 max-h-[300px] text-xs">
+            <div class="flex items-start gap-2.5">
+              <div class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+              </div>
+              <div class="p-3 rounded-xl bg-cyber-850 border border-cyber-700/60 text-slate-200 leading-relaxed max-w-[85%]">
+                At your service, Ansh. What shall we build or accomplish today? You can give me any directive—drafting your emails, launching a profitable agency, or compiling verified software.
+              </div>
+            </div>
+          </div>
+
+          <!-- Terminal Logs (Collapsible) -->
+          <div id="terminalDrawer" class="hidden mt-3 pt-3 border-t border-cyber-border/60">
+            <div id="terminalLogs" class="bg-cyber-950 rounded-xl p-3 font-mono text-[11px] text-slate-400 overflow-y-auto custom-scrollbar space-y-1 max-h-[160px] border border-cyber-border/60">
+              <div class="text-slate-600">// Telemetry stream listening...</div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- RIGHT SLIDE-OUT: DELIVERABLES & IN-BROWSER FILE VIEWER -->
+      <aside id="fileViewerPanel" class="w-96 bg-cyber-900 border-l border-cyber-border flex flex-col shrink-0">
+        <div class="p-4 border-b border-cyber-border flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 1: Vision Ingestion</h2>
+            <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Deliverables Preview</h3>
           </div>
-          <span class="text-xs text-slate-400 font-mono" id="currentSessionTag">Ready</span>
+          <span id="activeFileName" class="text-[11px] font-mono text-emerald-400 truncate max-w-[140px]">No file selected</span>
         </div>
 
-        <!-- Vision Presets -->
-        <div class="grid grid-cols-2 gap-2 mb-3">
-          <button id="presetBizBtn" class="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-emerald-500/50 text-left transition group">
-            <div class="flex items-center gap-1.5 text-emerald-400 font-medium text-xs mb-1">
-              <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
-              <span>Client-Acquisition Agency</span>
-            </div>
-            <p class="text-[11px] text-slate-400 leading-snug">"I know full-stack dev, build me a business and find me clients"</p>
-          </button>
+        <!-- File Content Display -->
+        <div class="flex-1 p-3 overflow-y-auto custom-scrollbar bg-cyber-950/80">
+          <pre id="fileContentPre" class="font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">Select any deliverable (e.g. mail_1.md, leads.csv, or telemetry_service.py) from the completed mission to inspect its contents directly here.</pre>
+        </div>
 
-          <button id="presetTechBtn" class="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-cyan-500/50 text-left transition group">
-            <div class="flex items-center gap-1.5 text-cyan-400 font-medium text-xs mb-1">
-              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-              <span>Telemetry Microservice</span>
-            </div>
-            <p class="text-[11px] text-slate-400 leading-snug">"Build an authenticated telemetry microservice with JWT & tests"</p>
+        <div class="p-3 border-t border-cyber-border bg-cyber-900 flex items-center gap-2">
+          <button id="copyFileBtn" class="flex-1 py-1.5 rounded-lg bg-cyber-850 hover:bg-cyber-800 text-slate-300 text-xs font-medium border border-cyber-700/60 flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Copy File Content</span>
           </button>
         </div>
+      </aside>
 
-        <!-- Custom Vision Textarea -->
-        <div class="relative">
-          <textarea id="visionInput" rows="3" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/70 font-sans resize-none" placeholder="Enter high-level vision or directive for LlamaOrchestrator..."></textarea>
-        </div>
+    </div>
 
-        <button id="analyzeBtn" class="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/20">
-          <i data-lucide="wand-2" class="w-4 h-4"></i>
-          <span>Analyze Vision & Generate Clarifications</span>
-        </button>
-      </div>
-
-      <!-- CENTRAL BRAIN / JARVIS VOICE CHAT CARD -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col flex-1 min-h-[320px]">
-        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
-          <div class="flex items-center gap-2">
-            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Jarvis Central Brain</h2>
+    <!-- BOTTOM FLOATING COMMAND & PROMPT BAR -->
+    <div class="p-4 border-t border-cyber-border bg-cyber-900/90 backdrop-blur shrink-0">
+      <div class="max-w-4xl mx-auto">
+        <form id="directiveForm" class="relative flex items-center bg-cyber-950 border border-cyber-700/80 focus-within:border-emerald-500 rounded-2xl shadow-xl transition">
+          <input type="text" id="directiveInput" class="w-full bg-transparent px-5 py-3.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none" placeholder="Talk to Jarvis or give any directive (e.g. 'HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com')...">
+          
+          <div class="flex items-center gap-1.5 pr-3">
+            <button type="button" id="micBtn" class="p-2 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-cyber-850 transition" title="Voice Input (Speak to Jarvis)">
+              <i data-lucide="mic" class="w-4 h-4"></i>
+            </button>
+            <button type="submit" id="submitBtn" class="p-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-cyber-950 font-bold transition shadow-md shadow-emerald-500/20">
+              <i data-lucide="send" class="w-4 h-4 stroke-[2.5]"></i>
+            </button>
           </div>
-          <span class="text-xs text-slate-400 font-mono">Meta Llama 3.1 70B</span>
-        </div>
-
-        <!-- Chat History -->
-        <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2 mb-3 max-h-[260px] text-xs">
-          <div class="flex items-start gap-2.5">
-            <div class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
-              <i data-lucide="bot" class="w-3.5 h-3.5"></i>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 leading-relaxed">
-              At your service, Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive.
-            </div>
-          </div>
-        </div>
-
-        <!-- Chat Input -->
-        <form id="chatForm" class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
-          <input type="text" id="chatInput" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" placeholder="Converse with LlamaOrchestrator...">
-          <button type="submit" class="p-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition">
-            <i data-lucide="send" class="w-4 h-4"></i>
-          </button>
         </form>
       </div>
-
-      <!-- KNOWLEDGE BASE DRAWER CARD -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <i data-lucide="database" class="w-4 h-4 text-purple-400"></i>
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Knowledge Base (<span class="font-mono text-purple-400">knowledge_base.json</span>)</h2>
-          </div>
-          <span id="kbStatusBadge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Pending Stage 2</span>
-        </div>
-
-        <div id="kbContentContainer" class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 max-h-[160px] overflow-y-auto custom-scrollbar font-mono leading-relaxed">
-          Knowledge Base will be synthesized dynamically in Stage 2 via MCP web search and domain benchmarking tools.
-        </div>
-      </div>
-
     </div>
 
-    <!-- RIGHT COLUMN: DAG VISUALIZER, TELEMETRY TERMINAL & EVALUATOR (7 COLS) -->
-    <div class="lg:col-span-7 flex flex-col gap-6">
-
-      <!-- DAG TASK DECOMPOSITION & DYNAMIC WORKERS CARD -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <i data-lucide="git-merge" class="w-4 h-4 text-cyan-400"></i>
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 3: DAG Task Decomposition & Dynamic Worker Synthesis</h2>
-          </div>
-          <span id="dagNodeCount" class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono">0 Nodes</span>
-        </div>
-
-        <!-- DAG Container -->
-        <div id="dagContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[140px] items-center justify-center p-2 rounded-xl bg-slate-950/50 border border-slate-900">
-          <div class="col-span-full text-center py-8 text-xs text-slate-500">
-            Awaiting Stage 1 Intent approval to compile DAG dependency graph and synthesize dynamic Llama sub-agents...
-          </div>
-        </div>
-      </div>
-
-      <!-- STREAMING TELEMETRY TERMINAL CONSOLE -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex-1 flex flex-col min-h-[300px]">
-        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
-          <div class="flex items-center gap-2">
-            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 4: Autonomous Telemetry & Self-Correction Terminal</h2>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-xs font-mono text-emerald-400" id="sseStateText">SSE: Listening</span>
-            <button id="clearLogsBtn" class="text-[11px] text-slate-400 hover:text-slate-200 ml-2">Clear</button>
-          </div>
-        </div>
-
-        <!-- Terminal Logs -->
-        <div id="terminalLogs" class="flex-1 bg-slate-950 rounded-xl p-3 font-mono text-[11px] text-slate-300 overflow-y-auto custom-scrollbar space-y-1.5 max-h-[340px] border border-slate-900">
-          <div class="text-slate-500">// LlamaOrchestrator telemetry stream initialized. Waiting for mission launch...</div>
-        </div>
-      </div>
-
-      <!-- STAGE 5 EVALUATOR GATEKEEPER CARD -->
-      <div id="evaluatorCard" class="glass-panel rounded-2xl p-5 border border-slate-800 transition">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Stage 5: Evaluator Gatekeeper & Hand-Off</h2>
-          </div>
-          <div id="evaluatorBadge" class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-800 text-slate-400 border border-slate-700">
-            Awaiting Execution
-          </div>
-        </div>
-
-        <div id="evaluatorDetails" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 text-xs">
-          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div class="text-slate-400 mb-1">Sandboxed Pytest</div>
-            <div id="testStatusLabel" class="font-semibold text-slate-300">Pending</div>
-          </div>
-          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div class="text-slate-400 mb-1">Lead Verification</div>
-            <div id="leadStatusLabel" class="font-semibold text-slate-300">RFC-5322 Syntax</div>
-          </div>
-          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div class="text-slate-400 mb-1">Calendar Hand-off</div>
-            <div id="webhookStatusLabel" class="font-semibold text-slate-300">Simulated Webhook</div>
-          </div>
-        </div>
-
-        <!-- 1-Click ZIP Export Button -->
-        <button id="downloadZipBtn" disabled class="w-full py-2.5 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-not-allowed">
-          <i data-lucide="download" class="w-4 h-4"></i>
-          <span id="downloadBtnText">Download Workspace Deliverables (.ZIP)</span>
-        </button>
-      </div>
-
-    </div>
-  </main>
+  </div>
 
   <!-- CLARIFICATION GATE MODAL (STAGE 1) -->
-  <div id="clarificationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="glass-panel border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative">
-      <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+  <div id="clarificationModal" class="fixed inset-0 bg-cyber-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel border border-cyber-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-4 border-b border-cyber-border mb-4">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
             <i data-lucide="help-circle" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white">Stage 1: Human Clarification Gate</h3>
-            <p class="text-xs text-slate-400">Missing constraints identified. Confirm choices or auto-approve.</p>
+            <h3 class="text-base font-bold text-white">Stage 1: Intent Clarification Gate</h3>
+            <p class="text-xs text-slate-400">Parameters verified. Select preferences or auto-approve.</p>
           </div>
         </div>
         <button id="closeModalBtn" class="text-slate-400 hover:text-white">
@@ -345,25 +372,22 @@
         </button>
       </div>
 
-      <!-- Clarification Questions List -->
-      <div id="clarificationQuestionsList" class="space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar pr-2 mb-6 text-xs">
-        <!-- Rendered dynamically -->
-      </div>
+      <!-- Questions List -->
+      <div id="clarificationQuestionsList" class="space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar pr-2 mb-6 text-xs"></div>
 
       <!-- Action Buttons -->
-      <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-800">
-        <button id="autoApproveBtn" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/25">
+      <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-cyber-border">
+        <button id="autoApproveBtn" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-cyber-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/25">
           <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
           <span>⚡ Auto-Approve Recommended Defaults</span>
         </button>
-        <button id="submitCustomClarificationsBtn" class="w-full sm:w-auto py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition">
+        <button id="submitCustomClarificationsBtn" class="w-full sm:w-auto py-3 px-5 rounded-xl bg-cyber-850 hover:bg-cyber-800 text-slate-200 font-semibold text-xs transition border border-cyber-700/60">
           Confirm Selected Options
         </button>
       </div>
     </div>
   </div>
 
-  <!-- SCRIPT -->
   <script src="/static/app.js"></script>
 </body>
 </html>

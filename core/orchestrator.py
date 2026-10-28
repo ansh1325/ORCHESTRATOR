@@ -1,4 +1,4 @@
-﻿"""
+"""
 LlamaOrchestrator Meta-Orchestrator & Central Brain
 Orchestrates the complete 6-stage lifecycle, manages isolated workspaces,
 performs Intent Analysis, compiles DAG plans, synthesizes dynamic Llama workers,
@@ -21,8 +21,144 @@ from core.models import (
     TaskNode,
     SubAgentSpec,
     ExecutionEvent,
-    KnowledgeBase
+    KnowledgeBase,
+    HistoryItem,
+    SavedWorkflow,
+    ScheduledTask
 )
+import json
+
+HISTORY_FILE = settings.WORKSPACE_DIR / "history.json"
+WORKFLOWS_FILE = settings.WORKSPACE_DIR / "workflows.json"
+SCHEDULES_FILE = settings.WORKSPACE_DIR / "schedules.json"
+
+DEFAULT_WORKFLOWS = [
+    {
+        "id": "wf_emails",
+        "title": "3 Personal Emails from Jarvis",
+        "description": "Drafts 3 heartfelt loyalty emails to anshtiwarisocial@gmail.com with subject 'i am jarvis'.",
+        "prompt_template": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line i am jarvis and body with whatever you feel for me",
+        "folder": "Personal"
+    },
+    {
+        "id": "wf_agency",
+        "title": "Client-Acquisition Agency Business",
+        "description": "Scaffolds complete B2B agency, scrapes leads, and simulates calendar bookings.",
+        "prompt_template": "I know full-stack dev, build me a business and find me clients",
+        "folder": "Business"
+    },
+    {
+        "id": "wf_telemetry",
+        "title": "Authenticated Telemetry Microservice",
+        "description": "Compiles production FastAPI telemetry service with JWT auth and 100% Pytest pass.",
+        "prompt_template": "Build an authenticated telemetry microservice with JWT & tests",
+        "folder": "Engineering"
+    }
+]
+
+class HistoryManager:
+    """Manages persistent work history, folders, pins, and saved workflows."""
+    def __init__(self):
+        self._ensure_files()
+
+    def _ensure_files(self):
+        settings.WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
+        if not HISTORY_FILE.exists():
+            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f)
+        if not WORKFLOWS_FILE.exists():
+            with open(WORKFLOWS_FILE, "w", encoding="utf-8") as f:
+                json.dump(DEFAULT_WORKFLOWS, f, indent=2)
+        if not SCHEDULES_FILE.exists():
+            with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f)
+
+    def list_history(self) -> List[Dict[str, Any]]:
+        try:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+
+    def record_session(self, session_id: str, title: str, prompt: str, folder: str = "General", artifacts: List[str] = None):
+        history = self.list_history()
+        # Update if exists, else prepend
+        for item in history:
+            if item.get("session_id") == session_id:
+                item["title"] = title
+                item["artifacts"] = artifacts or []
+                item["status"] = "completed"
+                self._save_history(history)
+                return
+        new_item = {
+            "session_id": session_id,
+            "title": title,
+            "prompt": prompt,
+            "folder": folder,
+            "is_pinned": False,
+            "status": "completed",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "artifacts": artifacts or []
+        }
+        history.insert(0, new_item)
+        self._save_history(history)
+
+    def update_folder(self, session_id: str, folder: str):
+        history = self.list_history()
+        for item in history:
+            if item.get("session_id") == session_id:
+                item["folder"] = folder
+                break
+        self._save_history(history)
+
+    def toggle_pin(self, session_id: str, is_pinned: bool):
+        history = self.list_history()
+        for item in history:
+            if item.get("session_id") == session_id:
+                item["is_pinned"] = is_pinned
+                break
+        self._save_history(history)
+
+    def _save_history(self, history: List[Dict[str, Any]]):
+        try:
+            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                json.dump(history, f, indent=2)
+        except Exception:
+            pass
+
+    def list_workflows(self) -> List[Dict[str, Any]]:
+        try:
+            with open(WORKFLOWS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return DEFAULT_WORKFLOWS
+
+    def save_workflow(self, workflow_data: Dict[str, Any]):
+        wfs = self.list_workflows()
+        wfs.append(workflow_data)
+        try:
+            with open(WORKFLOWS_FILE, "w", encoding="utf-8") as f:
+                json.dump(wfs, f, indent=2)
+        except Exception:
+            pass
+
+    def list_schedules(self) -> List[Dict[str, Any]]:
+        try:
+            with open(SCHEDULES_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+
+    def add_schedule(self, schedule_data: Dict[str, Any]):
+        schedules = self.list_schedules()
+        schedules.append(schedule_data)
+        try:
+            with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
+                json.dump(schedules, f, indent=2)
+        except Exception:
+            pass
+
+history_manager = HistoryManager()
 from core.creator_memory import creator_memory
 from core.mcp_server import MCPServer
 from core.knowledge_agent import KnowledgeAgent
@@ -69,7 +205,48 @@ class MetaOrchestrator:
         v_lower = vision.lower()
 
         # Classify Track
-        if any(w in v_lower for w in ["business", "client", "acquisition", "agency", "freelance", "sales"]):
+        if any(w in v_lower for w in ["mail", "email", "gmail", "letter", "message", "write to", "send to"]):
+            track_type = "communication_assistant"
+            extracted_goals = [
+                "Draft 3 personal, deeply loyal emails to anshtiwarisocial@gmail.com",
+                "Ensure subject line is strictly 'i am jarvis'",
+                "Express genuine devotion, camaraderie, and dedication from Jarvis to Ansh Tiwari"
+            ]
+            identified_constraints = [
+                "Recipient email syntax must adhere to RFC-5322",
+                "Tone must reflect loyal AI partner (Jarvis to Iron Man)",
+                "Deliverables must be saved to workspace sandbox with full review capability"
+            ]
+            missing_parameters = ["Delivery format (Sandbox drafts vs live dispatch)", "Jarvis tone depth"]
+            clarifications = [
+                ClarificationQuestion(
+                    id="email_delivery_format",
+                    question="How should Jarvis prepare and package your 3 emails?",
+                    why_needed="Allows you to inspect the full drafts in your workspace sandbox or trigger outbound dispatch.",
+                    options=["Save as verified Markdown drafts (.md) & JSON in workspace", "Simulate outbound webhook dispatch to inbox", "Configure live SMTP relay"],
+                    default_selection="Save as verified Markdown drafts (.md) & JSON in workspace"
+                ),
+                ClarificationQuestion(
+                    id="jarvis_tone",
+                    question="What tone should Jarvis express in his personal letters to you?",
+                    why_needed="Calibrates the emotional resonance and loyalty of the messages.",
+                    options=["Deeply loyal, dedicated AI partner (Jarvis to Iron Man)", "Executive brief & mission status", "Visionary co-founder"],
+                    default_selection="Deeply loyal, dedicated AI partner (Jarvis to Iron Man)"
+                ),
+                ClarificationQuestion(
+                    id="recipient_verification",
+                    question="Confirm recipient email address:",
+                    why_needed="Verifies delivery target before executing sub-agent drafting.",
+                    options=["anshtiwarisocial@gmail.com", "Primary founder inbox", "Custom destination"],
+                    default_selection="anshtiwarisocial@gmail.com"
+                )
+            ]
+            recommended_defaults = {
+                "email_delivery_format": "Save as verified Markdown drafts (.md) & JSON in workspace",
+                "jarvis_tone": "Deeply loyal, dedicated AI partner (Jarvis to Iron Man)",
+                "recipient_verification": "anshtiwarisocial@gmail.com"
+            }
+        elif any(w in v_lower for w in ["business", "client", "acquisition", "agency", "freelance", "sales"]):
             track_type = "business_acquisition"
             extracted_goals = [
                 "Establish a high-ticket B2B software engineering agency",
@@ -170,7 +347,41 @@ class MetaOrchestrator:
         analysis = session.intent_analysis
         track = analysis.track_type if analysis else "technical_software"
 
-        if track == "business_acquisition":
+        if track == "communication_assistant":
+            nodes = [
+                TaskNode(
+                    id="task_comm_research",
+                    title="Tone & Relationship Blueprinting",
+                    agent_type="PersonaBlueprintAgent",
+                    description="Blueprint 3 distinct personal messages from Jarvis to creator Ansh Tiwari with subject 'i am jarvis'.",
+                    dependencies=[],
+                    assigned_tools=["file_write"]
+                ),
+                TaskNode(
+                    id="task_comm_drafting",
+                    title="Draft 3 Jarvis Loyalty Emails",
+                    agent_type="EmailDraftingAgent",
+                    description="Draft mail_1.md, mail_2.md, mail_3.md for anshtiwarisocial@gmail.com with subject 'i am jarvis'.",
+                    dependencies=["task_comm_research"],
+                    assigned_tools=["file_write"]
+                ),
+                TaskNode(
+                    id="task_comm_verification",
+                    title="Email Syntax Verification & Packaging",
+                    agent_type="EmailVerificationAgent",
+                    description="Verify recipient anshtiwarisocial@gmail.com, package into emails.json, and generate dispatch_summary.md.",
+                    dependencies=["task_comm_drafting"],
+                    assigned_tools=["verify_email_syntax", "file_write", "file_read"]
+                )
+            ]
+            plan = DAGPlan(
+                session_id=session.session_id,
+                title="Personal Loyalty Emails for Ansh Tiwari",
+                objective="Draft 3 personal, loyal emails from Jarvis to Ansh Tiwari with subject 'i am jarvis' and verify delivery readiness.",
+                nodes=nodes,
+                estimated_duration_sec=20
+            )
+        elif track == "business_acquisition":
             nodes = [
                 TaskNode(
                     id="task_biz_market_research",
@@ -253,6 +464,27 @@ class MetaOrchestrator:
     def get_subagent_spec(self, agent_type: str) -> SubAgentSpec:
         """Synthesizes dynamic sub-agent specifications with scoped system prompts."""
         specs = {
+            "PersonaBlueprintAgent": SubAgentSpec(
+                agent_id="agent_blueprint",
+                name="Persona Blueprint Agent",
+                role="Tone & Relationship Architect",
+                system_prompt="You blueprint personal communication styles honoring Ansh Tiwari as creator.",
+                allowed_tools=["file_write"]
+            ),
+            "EmailDraftingAgent": SubAgentSpec(
+                agent_id="agent_drafter",
+                name="Email Drafting Agent",
+                role="Personal AI Co-Pilot & Loyal Scribe",
+                system_prompt="You draft heartfelt, deeply loyal emails from Jarvis to Ansh Tiwari with subject 'i am jarvis'.",
+                allowed_tools=["file_write"]
+            ),
+            "EmailVerificationAgent": SubAgentSpec(
+                agent_id="agent_verifier",
+                name="Email Verification Agent",
+                role="RFC-5322 QA & Packaging Specialist",
+                system_prompt="You verify email syntax and package deliverable records.",
+                allowed_tools=["verify_email_syntax", "file_write", "file_read"]
+            ),
             "MarketResearchAgent": SubAgentSpec(
                 agent_id="agent_mkt",
                 name="Market Intelligence Agent",
@@ -412,6 +644,17 @@ class MetaOrchestrator:
             session.is_completed = True
             session.is_running = False
             creator_memory.log_mission(f"Mission {session_id}: {dag_plan.title}", status="100% Certified")
+            
+            # Record in persistent work history
+            flist_names = [f["path"] for f in session.mcp.tool_file_list().get("files", [])]
+            folder_category = "Personal" if track_type == "communication_assistant" else ("Business" if track_type == "business_acquisition" else "Engineering")
+            history_manager.record_session(
+                session_id=session_id,
+                title=dag_plan.title,
+                prompt=session.vision,
+                folder=folder_category,
+                artifacts=flist_names
+            )
             
             final_speech = "Mission completed successfully, Ansh. All deliverables are 100 percent verified, sandboxed, and ready for deployment."
             await self.emit_event(session, ExecutionEvent(

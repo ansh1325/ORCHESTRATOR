@@ -1,4 +1,4 @@
-﻿"""
+"""
 Stage 5: Evaluator Gatekeeper & Human-in-the-Loop Hand-off Module
 Audits generated artifacts for 100% test pass rate, syntax validity, lead verification,
 and dispatches simulated calendar booking webhooks for human builder hand-off.
@@ -69,7 +69,29 @@ class EvaluatorGatekeeper:
             "details": f"Found {len(files)} generated deliverables in workspace sandbox."
         })
 
-        if track_type == "technical_software":
+        if track_type == "communication_assistant":
+            m1 = self.mcp.tool_file_read("mail_1.md")
+            m2 = self.mcp.tool_file_read("mail_2.md")
+            m3 = self.mcp.tool_file_read("mail_3.md")
+            all_exist = m1.get("success") and m2.get("success") and m3.get("success")
+            audit_results["checks"].append({
+                "check": "3 Personal Jarvis Emails Generation",
+                "passed": all_exist,
+                "details": "All 3 emails drafted with subject 'i am jarvis' and saved to workspace."
+            })
+            email_ver = self.mcp.tool_verify_email_syntax("anshtiwarisocial@gmail.com")
+            audit_results["checks"].append({
+                "check": "Recipient Syntax Verification (anshtiwarisocial@gmail.com)",
+                "passed": email_ver.get("valid", False),
+                "details": "Recipient email verified as valid RFC-5322 structure."
+            })
+            audit_results["human_founder_hand_off"] = {
+                "action_required": "Review & Dispatch 3 Jarvis Emails",
+                "founder_name": "Ansh Tiwari",
+                "recipient": "anshtiwarisocial@gmail.com",
+                "status": "Ready in Workspace Sandbox for 1-Click Review & Download"
+            }
+        elif track_type == "technical_software":
             py_res = self.mcp.tool_run_command("python -m pytest test_telemetry.py -q", timeout_sec=15)
             test_passed = (py_res["returncode"] == 0)
             audit_results["checks"].append({

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Creator Memory & Central Brain Persona Module
 Implements persistent memory recognizing Ansh Tiwari as Creator & Engineering Partner.
 Functions as Jarvis/Alfred: loyal, highly technical, audible, and proactive.
@@ -109,8 +109,9 @@ class CreatorMemory:
                 "speaker": "LlamaOrchestrator (Central Brain)"
             }
 
-        # Check for creator greeting
-        if any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
+        # Check for simple greeting only if short
+        words = cleaned.split()
+        if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
             speech = f"At your service, Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
             return {
                 "role": "assistant",

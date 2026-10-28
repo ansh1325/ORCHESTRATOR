@@ -1,4 +1,4 @@
-﻿"""
+"""
 LlamaOrchestrator FastAPI Application
 Exposes REST and Server-Sent Events (SSE) endpoints for multi-agent orchestration,
 voice-driven Jarvis interaction, live DAG monitoring, and workspace downloads.
@@ -19,10 +19,12 @@ from core.models import (
     ChatResponse,
     AnalyzeRequest,
     LaunchRequest,
-    ExecutionEvent
+    ExecutionEvent,
+    FolderUpdateRequest,
+    PinUpdateRequest
 )
 from core.creator_memory import creator_memory
-from core.orchestrator import orchestrator
+from core.orchestrator import orchestrator, history_manager
 
 app = FastAPI(
     title="LlamaOrchestrator API",
@@ -199,6 +201,54 @@ async def receive_booking_webhook(payload: dict):
         "client": payload.get("lead", {}).get("name", "Unknown Lead"),
         "confirmation": "Added to Ansh Tiwari's Primary Calendar"
     }
+
+@app.get("/api/workspace/{session_id}/file")
+async def get_workspace_file(session_id: str, path: str):
+    """Reads a file from the workspace sandbox for in-browser preview."""
+    session = orchestrator.get_or_create_session(session_id)
+    res = session.mcp.tool_file_read(path)
+    if not res.get("success"):
+        raise HTTPException(status_code=404, detail=res.get("error", "File not found"))
+    return res
+
+@app.get("/api/history")
+async def get_work_history():
+    """Returns persistent searchable work history."""
+    return history_manager.list_history()
+
+@app.post("/api/history/folder")
+async def update_history_folder(req: FolderUpdateRequest):
+    """Updates folder categorization for a session."""
+    history_manager.update_folder(req.session_id, req.folder)
+    return {"success": True}
+
+@app.post("/api/history/pin")
+async def update_history_pin(req: PinUpdateRequest):
+    """Toggles pin status for a session."""
+    history_manager.toggle_pin(req.session_id, req.is_pinned)
+    return {"success": True}
+
+@app.get("/api/workflows")
+async def get_saved_workflows():
+    """Returns saved workflow templates."""
+    return history_manager.list_workflows()
+
+@app.post("/api/workflows")
+async def save_workflow_template(workflow: dict):
+    """Saves a new workflow template."""
+    history_manager.save_workflow(workflow)
+    return {"success": True}
+
+@app.get("/api/schedules")
+async def get_schedules():
+    """Returns scheduled and recurring autonomous tasks."""
+    return history_manager.list_schedules()
+
+@app.post("/api/schedules")
+async def add_schedule(task: dict):
+    """Adds a new scheduled recurring task."""
+    history_manager.add_schedule(task)
+    return {"success": True}
 
 if __name__ == "__main__":
     import uvicorn

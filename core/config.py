@@ -1,4 +1,4 @@
-﻿"""
+"""
 LlamaOrchestrator Configuration Module
 Handles environment variables, model routing, and creator identity.
 """
@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 class Settings:
+    BASE_DIR: Path = BASE_DIR
     # Creator & Identity
     CREATOR_NAME: str = "Ansh Tiwari"
     CREATOR_ROLE: str = "Creator & Chief Systems Architect"
@@ -27,7 +28,7 @@ class Settings:
     
     # Meta Llama & High-Capacity Models
     META_MODEL_ORCHESTRATOR: str = os.getenv("META_MODEL_ORCHESTRATOR", "openai/gpt-oss-120b")
-    META_MODEL_WORKER: str = os.getenv("META_MODEL_WORKER", "openai/gpt-oss-20b")
+    META_MODEL_WORKER: str = os.getenv("META_MODEL_WORKER", "openai/gpt-oss-120b")
     
     # Workspaces
     WORKSPACE_DIR: Path = Path(os.getenv("WORKSPACE_DIR", str(BASE_DIR / "workspaces"))).resolve()

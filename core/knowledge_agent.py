@@ -11,6 +11,9 @@ from typing import Dict, Any, Callable, Optional
 from core.models import KnowledgeBase, ExecutionEvent
 from core.mcp_server import MCPServer
 from core.config import settings
+from datetime import datetime, timezone
+
+MASTER_KB_FILE = settings.WORKSPACE_DIR / "master_knowledge_base.json"
 
 class KnowledgeAgent:
     """Autonomous research agent compiling comprehensive domain knowledge before task execution."""
@@ -27,7 +30,41 @@ class KnowledgeAgent:
         mcp: MCPServer,
         emit_event: Optional[Callable[[ExecutionEvent], None]] = None
     ) -> KnowledgeBase:
-        
+        # Check if dynamic LLM synthesis is available
+        if self.llm_client and not settings.is_mock():
+            try:
+                if emit_event:
+                    await emit_event(ExecutionEvent(
+                        event_type="log",
+                        session_id=session_id,
+                        stage=2,
+                        stage_name="Knowledge Gathering",
+                        message=f"[KnowledgeAgent] Commencing dynamic LLM research & domain synthesis for: '{vision[:50]}...'...",
+                        speech_text="Executing dynamic research to construct specialized knowledge base."
+                    ))
+                kb = await self._llm_gather_and_synthesize(
+                    session_id=session_id,
+                    track_type=track_type,
+                    vision=vision,
+                    clarification_answers=clarification_answers,
+                    mcp=mcp,
+                    emit_event=emit_event
+                )
+                if kb:
+                    mcp.tool_file_write("knowledge_base.json", json.dumps(kb.model_dump(), indent=2))
+                    self._update_master_knowledge_base(kb)
+                    return kb
+            except Exception as e:
+                if emit_event:
+                    await emit_event(ExecutionEvent(
+                        event_type="log",
+                        session_id=session_id,
+                        stage=2,
+                        stage_name="Knowledge Gathering",
+                        message=f"[KnowledgeAgent] Dynamic synthesis notice: {e}. Falling back to baseline.",
+                        speech_text="Switching to baseline knowledge synthesis."
+                    ))
+
         v_lower = vision.lower()
         is_marketing = any(w in v_lower for w in ["marketing", "ad", "ads", "meta ad", "facebook ad", "roas"])
 
@@ -253,6 +290,7 @@ class KnowledgeAgent:
         # Step 4: Write knowledge_base.json to sandboxed workspace via MCP
         kb_json = kb.model_dump_json(indent=2)
         mcp.tool_file_write("knowledge_base.json", kb_json)
+        self._update_master_knowledge_base(kb)
 
         if emit_event:
             await emit_event(ExecutionEvent(
@@ -265,3 +303,120 @@ class KnowledgeAgent:
             ))
 
         return kb
+
+    def _load_master_knowledge_base(self) -> Dict[str, Any]:
+        if MASTER_KB_FILE.exists():
+            try:
+                with open(MASTER_KB_FILE, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {
+            "version": "1.0",
+            "owner": "Ansh Tiwari",
+            "domains": {},
+            "accumulated_sources": [],
+            "total_missions_learned": 0
+        }
+
+    def _update_master_knowledge_base(self, kb: KnowledgeBase):
+        try:
+            master = self._load_master_knowledge_base()
+            domain_key = kb.target_niche.lower().replace(" ", "_")[:40]
+            master.setdefault("domains", {})[domain_key] = {
+                "niche": kb.target_niche,
+                "icp": kb.icp,
+                "pricing_tiers": kb.pricing_tiers,
+                "milestones": [kb.milestone_1, kb.milestone_2],
+                "technical_blueprint": kb.technical_blueprint,
+                "summary": kb.synthesis_summary
+            }
+            if not isinstance(master.get("accumulated_sources"), list):
+                master["accumulated_sources"] = []
+            master["accumulated_sources"].extend([s.get("title", "") for s in kb.scraped_sources if isinstance(s, dict)])
+            master["accumulated_sources"] = list(dict.fromkeys(master["accumulated_sources"]))[:50]
+            master["total_missions_learned"] = master.get("total_missions_learned", 0) + 1
+            master["last_updated"] = datetime.now(timezone.utc).isoformat()
+            
+            MASTER_KB_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(MASTER_KB_FILE, "w", encoding="utf-8") as f:
+                json.dump(master, f, indent=2)
+        except Exception:
+            pass
+
+    async def _llm_gather_and_synthesize(
+        self,
+        session_id: str,
+        track_type: str,
+        vision: str,
+        clarification_answers: Dict[str, str],
+        mcp: MCPServer,
+        emit_event: Optional[Callable[[ExecutionEvent], None]] = None
+    ) -> Optional[KnowledgeBase]:
+        """Dynamically formulates research queries and synthesizes a structured Knowledge Base using the LLM."""
+        search_query = f"{vision[:60]} architecture best practices requirements"
+        search_results = mcp.tool_web_search(search_query)
+        sources = search_results.get("results", [])
+
+        system_msg = (
+            "You are the Autonomous Knowledge Gathering Agent in LlamaOrchestrator.\n"
+            "Analyze the mission vision, user clarifications, and domain intelligence.\n"
+            "Synthesize a comprehensive structured Knowledge Base in JSON format:\n"
+            "{\n"
+            '  "target_niche": "Target Domain / Industry Niche",\n'
+            '  "icp": {\n'
+            '    "ideal_persona": "Description of ideal user or customer",\n'
+            '    "pain_points": ["Pain point 1", "Pain point 2", "Pain point 3"],\n'
+            '    "primary_benefit": "Core value proposition"\n'
+            '  },\n'
+            '  "pricing_tiers": [\n'
+            '    {"tier": "Pilot / MVP", "price": "$2,500", "deliverables": "Initial production sprint"},\n'
+            '    {"tier": "Production Retainer", "price": "$4,500/mo", "deliverables": "Full deployment & maintenance"}\n'
+            '  ],\n'
+            '  "milestone_1": "Description of Milestone 1",\n'
+            '  "milestone_2": "Description of Milestone 2",\n'
+            '  "technical_blueprint": {\n'
+            '    "architecture": "High-level system design",\n'
+            '    "stack": ["Python", "FastAPI"],\n'
+            '    "human_authorization_required": "Where human approval is required (AWS keys, bank wire, sales call)",\n'
+            '    "autonomous_execution_scope": "What agents execute without human intervention"\n'
+            '  },\n'
+            '  "synthesis_summary": "Comprehensive 3-sentence summary of research and strategic plan."\n'
+            "}"
+        )
+
+        master = self._load_master_knowledge_base()
+        known_domains = list(master.get("domains", {}).keys())
+        user_msg = (
+            f"Mission Vision: {vision}\n"
+            f"Clarification Answers: {json.dumps(clarification_answers)}\n"
+            f"Known Master Intelligence Domains: {known_domains}\n"
+            f"Sources Sample: {json.dumps(sources[:3])}\n"
+            "Synthesize the structured knowledge base JSON now."
+        )
+
+        def _call_model():
+            return self.llm_client.chat.completions.create(
+                model=settings.META_MODEL_ORCHESTRATOR,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2
+            )
+
+        resp = await asyncio.to_thread(_call_model)
+        data = json.loads(resp.choices[0].message.content)
+
+        return KnowledgeBase(
+            session_id=session_id,
+            target_niche=data.get("target_niche", "Custom Autonomous Domain"),
+            icp=data.get("icp", {"ideal_persona": "Target Stakeholder", "pain_points": ["Complexity", "Latency"]}),
+            pricing_tiers=data.get("pricing_tiers", [{"tier": "Pilot", "price": "$2,500", "deliverables": "Core sprint"}]),
+            milestone_1=data.get("milestone_1", "Autonomous scaffolding & test verification"),
+            milestone_2=data.get("milestone_2", "Production scaling & deployment"),
+            technical_blueprint=data.get("technical_blueprint", {"architecture": "Modular Micro-Services"}),
+            scraped_sources=[{"title": s.get("title", "Source"), "url": s.get("url", "https://example.com")} for s in sources],
+            synthesis_summary=data.get("synthesis_summary", "Knowledge base synthesized for autonomous execution.")
+        )

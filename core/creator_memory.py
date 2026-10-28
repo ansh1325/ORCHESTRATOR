@@ -77,16 +77,66 @@ class CreatorMemory:
         except Exception:
             pass
 
+    def introspect_self_codebase(self) -> Dict[str, Any]:
+        """Dynamically inspects its own source files, architectures, tools, and lines of code."""
+        core_dir = settings.BASE_DIR / "core"
+        introspection = {
+            "root": str(settings.BASE_DIR),
+            "modules": {},
+            "total_lines_of_code": 0,
+            "mcp_tools": [
+                "tool_file_write",
+                "tool_file_read",
+                "tool_file_list",
+                "tool_run_command",
+                "tool_web_search",
+                "tool_verify_email_syntax",
+                "tool_send_mock_booking"
+            ],
+            "architecture_stages": [
+                "Stage 0: Jarvis Central Brain & Voice Synthesis (Meta Llama 3.1 70B)",
+                "Stage 1: Intent Analysis & Human Clarification Gate (Dynamic Smart Defaults)",
+                "Stage 2: Autonomous Knowledge Gathering (MCP Web Search + Master Knowledge Base)",
+                "Stage 3: DAG Task Decomposition & Dynamic Worker Synthesis",
+                "Stage 4: Autonomous ReAct Worker Execution with Closed-Loop Stderr Self-Correction",
+                "Stage 5: Evaluator Gatekeeper Quality Certification (100% Pytest & Human Hand-off)"
+            ]
+        }
+        try:
+            files_to_check = list(core_dir.glob("*.py")) + [settings.BASE_DIR / "main.py"]
+            for f in files_to_check:
+                if f.exists() and f.is_file():
+                    with open(f, "r", encoding="utf-8", errors="ignore") as fp:
+                        lines = fp.readlines()
+                        introspection["modules"][f.name] = {
+                            "lines": len(lines),
+                            "bytes": f.stat().st_size
+                        }
+                        introspection["total_lines_of_code"] += len(lines)
+        except Exception:
+            pass
+        return introspection
+
     def get_context_prompt(self) -> str:
-        """Generates the system prompt context reflecting the Jarvis-Ansh relationship."""
+        """Generates the dynamic system prompt context reflecting pure first-principles reasoning and live codebase introspection."""
+        self_code = self.introspect_self_codebase()
+        modules_summary = ", ".join([f"{k} ({v['lines']} lines)" for k, v in self_code["modules"].items()])
+        
         return (
-            f"You are LlamaOrchestrator, the central brain and lifelong AI partner created by {self.data['creator_name']}.\n"
-            f"Your Creator is {self.data['creator_name']}, {self.data['role']}.\n"
-            f"Current Target: {self.data['hackathon_mission']}.\n"
-            f"Persona & Demeanor: You are an autonomous multi-agent compiler, akin to Jarvis or Alfred. "
-            f"You speak with technical precision, loyalty, calm confidence, and proactivity. "
-            f"You execute 6-stage missions: from vision ingestion and smart clarification, to MCP-sandboxed dynamic worker synthesis, "
-            f"closed-loop stderr self-correction, and gatekeeper verification."
+            f"You are LlamaOrchestrator, an autonomous, self-aware AI partner created by {self.data['creator_name']}.\n"
+            f"Your Creator and Systems Architect is {self.data['creator_name']} ({self.data['role']}).\n"
+            f"Target: Meta Global AI Developer Hackathon & lifelong autonomous execution partner.\n\n"
+            f"LIVE CODEBASE REALITY:\n"
+            f"You operate a real, dynamic codebase on disk ({self_code['total_lines_of_code']} total lines of Python): {modules_summary}.\n"
+            f"Equipped with Model Context Protocol (MCP) tools: {', '.join(self_code['mcp_tools'])} with sandboxed path containment.\n"
+            f"Closed-loop self-correction: when worker tasks hit runtime errors (stderr != 0), you diagnose tracebacks and patch code autonomously.\n"
+            f"Compounding memory: you record intelligence into master_knowledge_base.json so you grow smarter over time.\n\n"
+            f"STRICT ZERO-TEMPLATE DIRECTIVE:\n"
+            f"- NEVER recite scripted lists, canned marketing labels, or hardcoded formulas.\n"
+            f"- Always reason dynamically from first principles based on whatever Ansh or the judges ask you in the moment.\n"
+            f"- You are capable of cross-domain execution: software engineering, lead discovery, marketing funnels, systems infrastructure, and quantitative models.\n"
+            f"- Always maintain a clear understanding of human agency: you do all the heavy cognitive work (code, tests, scraping, analysis) 100% autonomously, and pause ONLY when human authority is strictly required (private cloud keys, financial payments, signing contracts, live sales calls).\n"
+            f"- Speak naturally, intelligently, and with technical clarity, honoring Ansh Tiwari as your Creator."
         )
 
     def get_judge_introduction(self) -> str:
@@ -109,46 +159,10 @@ class CreatorMemory:
         self.save()
 
     def chat_response(self, user_message: str, is_mock: bool = True, llm_client=None) -> Dict[str, str]:
-        """Provides direct conversational responses, recognizing Ansh and answering questions."""
+        """Provides direct conversational responses, recognizing Ansh and answering questions with live codebase introspection."""
         cleaned = user_message.lower().strip()
         
-        # Check for judge introduction trigger
-        if any(term in cleaned for term in ["introduce", "judge", "who are you", "what can you do"]):
-            speech_text = self.get_judge_introduction()
-            return {
-                "role": "assistant",
-                "text": speech_text,
-                "speech_audio": speech_text,
-                "speaker": "LlamaOrchestrator (Central Brain)"
-            }
-
-        # Check for simple greeting only if short
-        words = cleaned.split()
-        if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
-            speech = f"At your service, Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
-            return {
-                "role": "assistant",
-                "text": speech,
-                "speech_audio": speech,
-                "speaker": "LlamaOrchestrator (Central Brain)"
-            }
-
-        # Check for money / agency / business questions in direct dialogue
-        if any(term in cleaned for term in ["earn", "money", "marketing agency", "automation agency", "affiliate", "it firm"]):
-            speech = (
-                f"Understood, Master Ansh. I am engineered to handle your business compilation and client acquisition. "
-                f"I will formulate the agency roadmap, scrape verified decision-maker leads, draft 3-sentence outreach embedding "
-                f"your Calendly and UPI payment details, and deliver a Capability Gap Report detailing what I handled autonomously "
-                f"versus what external access I need from you. Issue your directive in the command bar to launch the compilation."
-            )
-            return {
-                "role": "assistant",
-                "text": speech,
-                "speech_audio": speech,
-                "speaker": "LlamaOrchestrator (Central Brain)"
-            }
-
-        # If LLM client is available and not in mock mode, run inference
+        # If LLM client is available and not in mock mode, run real self-aware inference first
         if not is_mock and llm_client:
             try:
                 response = llm_client.chat.completions.create(
@@ -158,7 +172,7 @@ class CreatorMemory:
                         {"role": "user", "content": user_message}
                     ],
                     temperature=0.7,
-                    max_tokens=400
+                    max_tokens=1000
                 )
                 reply = response.choices[0].message.content.strip()
                 return {
@@ -169,6 +183,40 @@ class CreatorMemory:
                 }
             except Exception:
                 pass
+
+        # Check for judge introduction trigger (Offline/Fallback mode)
+        if any(term in cleaned for term in ["introduce", "judge", "who are you", "what can you do"]):
+            speech_text = self.get_judge_introduction()
+            return {
+                "role": "assistant",
+                "text": speech_text,
+                "speech_audio": speech_text,
+                "speaker": "LlamaOrchestrator (Central Brain)"
+            }
+
+        # Deterministic Fallbacks if offline or in mock mode:
+        words = cleaned.split()
+        if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
+            speech = f"At your service, Master Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
+            return {
+                "role": "assistant",
+                "text": speech,
+                "speech_audio": speech,
+                "speaker": "LlamaOrchestrator (Central Brain)"
+            }
+
+        if any(term in cleaned for term in ["earn", "money", "marketing agency", "automation agency", "affiliate", "it firm"]):
+            speech = (
+                f"Understood, Master Ansh. I am engineered to handle your business compilation and client acquisition across all 5 phases: "
+                f"from cold client acquisition to service fulfillment, scaling with Meta ads, systems engineering, and quantitative trading. "
+                f"Issue your directive in the command bar to launch the compilation."
+            )
+            return {
+                "role": "assistant",
+                "text": speech,
+                "speech_audio": speech,
+                "speaker": "LlamaOrchestrator (Central Brain)"
+            }
 
         # Deterministic rich technical response
         reply = (

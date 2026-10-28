@@ -173,8 +173,10 @@ class SessionState:
         self.mcp = MCPServer(self.workspace_path)
         self.event_queue: asyncio.Queue = asyncio.Queue()
         self.intent_analysis: Optional[IntentAnalysis] = None
+        self.clarification_answers: Dict[str, str] = {}
         self.knowledge_base: Optional[KnowledgeBase] = None
         self.dag_plan: Optional[DAGPlan] = None
+        self.synthesized_specs: Dict[str, SubAgentSpec] = {}
         self.evaluator_report: Optional[Dict[str, Any]] = None
         self.current_stage: int = 0
         self.is_running: bool = False
@@ -199,9 +201,89 @@ class MetaOrchestrator:
         """Pushes an execution event to the session SSE queue."""
         await session.event_queue.put(event)
 
+    def _llm_analyze_intent(self, vision: str, session: SessionState) -> Optional[IntentAnalysis]:
+        """Uses Meta Llama to dynamically analyze vision, extract goals, identify human intervention boundaries, and synthesize clarifying questions."""
+        if not self.llm_client or settings.is_mock():
+            return None
+        try:
+            system_msg = (
+                "You are LlamaOrchestrator Central Brain. Analyze the user's mission vision.\n"
+                "Explicitly distinguish what can be executed 100% autonomously by AI sub-agents "
+                "(code, scraping, tests, configs, landing pages, outreach copy) versus where human authorization is strictly required "
+                "(e.g. AWS credential authorization, attending closing sales calls, OTPs, financial transactions).\n"
+                "Return JSON only:\n"
+                "{\n"
+                '  "track_type": "string (e.g. software_deployment, b2b_agency, fullstack_web, marketing_automation, general)",\n'
+                '  "combat_tier": "tactical_squad",\n'
+                '  "swarm_size_descriptor": "Tactical Squad (3-5 Specialized Autonomous Agents)",\n'
+                '  "extracted_goals": ["goal 1", "goal 2", "goal 3"],\n'
+                '  "identified_constraints": ["constraint 1", "constraint 2", "constraint 3"],\n'
+                '  "missing_parameters": ["param 1", "param 2"],\n'
+                '  "clarifications": [\n'
+                '    {\n'
+                '      "id": "clarification_key_1",\n'
+                '      "question": "Clear high-impact question?",\n'
+                '      "why_needed": "Why this decision matters",\n'
+                '      "options": ["Option A", "Option B", "Option C"],\n'
+                '      "default_selection": "Option A"\n'
+                '    }\n'
+                '  ],\n'
+                '  "recommended_defaults": {\n'
+                '    "clarification_key_1": "Option A"\n'
+                '  }\n'
+                "}"
+            )
+            resp = self.llm_client.chat.completions.create(
+                model=settings.META_MODEL_ORCHESTRATOR,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": f"User Vision:\n{vision}"}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2
+            )
+            raw = resp.choices[0].message.content
+            data = json.loads(raw)
+
+            clarifications = []
+            for c in data.get("clarifications", []):
+                opts = c.get("options", ["Recommended Default"])
+                def_sel = c.get("default_selection") or (opts[0] if opts else "Standard Default")
+                clarifications.append(ClarificationQuestion(
+                    id=c.get("id", f"q_{len(clarifications)+1}"),
+                    question=c.get("question", "Requirement specification:"),
+                    why_needed=c.get("why_needed", "Ensures precise autonomous execution."),
+                    options=opts,
+                    default_selection=def_sel
+                ))
+
+            analysis = IntentAnalysis(
+                session_id=session.session_id,
+                track_type=data.get("track_type", "general"),
+                combat_tier=data.get("combat_tier", "tactical_squad"),
+                swarm_size_descriptor=data.get("swarm_size_descriptor", f"Tactical Squad ({len(clarifications) + 2} Specialized Agents)"),
+                raw_vision=vision,
+                extracted_goals=data.get("extracted_goals", [vision]),
+                identified_constraints=data.get("identified_constraints", ["Autonomous sandboxed execution with human handoff gates"]),
+                missing_parameters=data.get("missing_parameters", []),
+                clarifications=clarifications,
+                recommended_defaults=data.get("recommended_defaults", {c.id: c.default_selection for c in clarifications})
+            )
+            return analysis
+        except Exception:
+            return None
+
     def analyze_intent(self, vision: str, session_id: Optional[str] = None) -> IntentAnalysis:
         """Stage 1: Intent Analysis & Human Clarification Gate."""
         session = self.get_or_create_session(session_id, vision)
+
+        # Dynamic LLM Analysis first
+        if self.llm_client and not settings.is_mock():
+            dynamic_analysis = self._llm_analyze_intent(vision, session)
+            if dynamic_analysis:
+                session.intent_analysis = dynamic_analysis
+                return dynamic_analysis
+
         v_lower = vision.lower()
 
         # Dynamic Combat & Domain Classification
@@ -455,8 +537,98 @@ class MetaOrchestrator:
         session.intent_analysis = analysis
         return analysis
 
+    def _llm_compile_dag(self, session: SessionState) -> Optional[DAGPlan]:
+        """Uses Meta Llama to decompose the mission into dynamic DAG task nodes and synthesize specialized sub-agents."""
+        if not self.llm_client or settings.is_mock():
+            return None
+        try:
+            answers_str = json.dumps(session.clarification_answers, indent=2) if session.clarification_answers else "{}"
+            kb_str = json.dumps(session.knowledge_base.model_dump(), indent=2) if session.knowledge_base else "{}"
+
+            system_msg = (
+                "You are LlamaOrchestrator Central Brain. Decompose the user's vision into a Directed Acyclic Graph (DAG) "
+                "of 3 to 5 discrete, executable engineering, marketing, or business tasks.\n"
+                "For EACH task, synthesize a specialized sub-agent with its dedicated system directives and assigned tools.\n"
+                "Return JSON format:\n"
+                "{\n"
+                '  "title": "Clear Mission Title",\n'
+                '  "objective": "High-level objective",\n'
+                '  "nodes": [\n'
+                '    {\n'
+                '      "id": "task_1",\n'
+                '      "title": "Task Title",\n'
+                '      "agent_type": "SpecializedAgentName",\n'
+                '      "agent_name": "Display Name of Agent",\n'
+                '      "agent_role": "Role description",\n'
+                '      "system_prompt": "Detailed directives on what files/code/copy this agent must write",\n'
+                '      "description": "Explicit deliverables and files to produce (e.g. models.py, app.py, test_app.py)",\n'
+                '      "dependencies": [],\n'
+                '      "assigned_tools": ["file_write", "file_read", "run_command"]\n'
+                '    }\n'
+                '  ]\n'
+                "}"
+            )
+            user_msg = (
+                f"User Vision: {session.vision}\n"
+                f"Clarifications Approved: {answers_str}\n"
+                f"Knowledge Base Intelligence: {kb_str}\n"
+                "Decompose this into executable task nodes and synthesize the specialized sub-agents now."
+            )
+            resp = self.llm_client.chat.completions.create(
+                model=settings.META_MODEL_ORCHESTRATOR,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2
+            )
+            raw = resp.choices[0].message.content
+            data = json.loads(raw)
+
+            nodes = []
+            for n in data.get("nodes", []):
+                agent_type = n.get("agent_type", "SpecializedWorkerAgent")
+                session.synthesized_specs[agent_type] = SubAgentSpec(
+                    agent_id=f"agent_{n.get('id', 'task')}",
+                    name=n.get("agent_name", agent_type),
+                    role=n.get("agent_role", "Autonomous Worker"),
+                    system_prompt=n.get("system_prompt", "You execute the assigned task autonomously."),
+                    allowed_tools=n.get("assigned_tools", ["file_write", "file_read", "run_command"]),
+                    model=settings.META_MODEL_WORKER
+                )
+                nodes.append(TaskNode(
+                    id=n.get("id", f"task_{len(nodes)+1}"),
+                    title=n.get("title", "Execution Task"),
+                    agent_type=agent_type,
+                    description=n.get("description", "Perform assigned engineering tasks."),
+                    dependencies=n.get("dependencies", []),
+                    assigned_tools=n.get("assigned_tools", ["file_write", "file_read", "run_command"])
+                ))
+
+            if nodes:
+                plan = DAGPlan(
+                    session_id=session.session_id,
+                    title=data.get("title", f"Autonomous Swarm: {session.vision[:40]}"),
+                    objective=data.get("objective", session.vision),
+                    nodes=nodes,
+                    estimated_duration_sec=len(nodes) * 8
+                )
+                session.dag_plan = plan
+                return plan
+        except Exception:
+            return None
+        return None
+
     def compile_dag_and_synthesize_workers(self, session: SessionState) -> DAGPlan:
         """Stage 3: DAG Task Decomposition & Dynamic Worker Synthesis."""
+        # Dynamic LLM compilation first
+        if self.llm_client and not settings.is_mock():
+            dynamic_plan = self._llm_compile_dag(session)
+            if dynamic_plan:
+                session.dag_plan = dynamic_plan
+                return dynamic_plan
+
         analysis = session.intent_analysis
         track = analysis.track_type if analysis else "technical_software"
 
@@ -624,8 +796,11 @@ class MetaOrchestrator:
         session.dag_plan = plan
         return plan
 
-    def get_subagent_spec(self, agent_type: str) -> SubAgentSpec:
+    def get_subagent_spec(self, agent_type: str, session: Optional[SessionState] = None) -> SubAgentSpec:
         """Synthesizes dynamic sub-agent specifications with scoped system prompts."""
+        if session and agent_type in session.synthesized_specs:
+            return session.synthesized_specs[agent_type]
+
         specs = {
             "PersonaBlueprintAgent": SubAgentSpec(
                 agent_id="agent_blueprint",
@@ -753,6 +928,7 @@ class MetaOrchestrator:
         
         session.is_running = True
         session.is_completed = False
+        session.clarification_answers = clarification_answers
         track_type = session.intent_analysis.track_type if session.intent_analysis else "business_acquisition"
 
         try:
@@ -809,7 +985,7 @@ class MetaOrchestrator:
 
             worker_engine = DynamicWorkerEngine(mcp=session.mcp, llm_client=self.llm_client)
             for node in dag_plan.nodes:
-                spec = self.get_subagent_spec(node.agent_type)
+                spec = self.get_subagent_spec(node.agent_type, session)
                 success = await worker_engine.execute_task(
                     task=node,
                     spec=spec,
@@ -830,10 +1006,11 @@ class MetaOrchestrator:
                 speech_text="All DAG tasks finished. Initiating Stage 5 evaluator gatekeeper verification."
             ))
 
-            evaluator = EvaluatorGatekeeper(mcp=session.mcp)
+            evaluator = EvaluatorGatekeeper(mcp=session.mcp, llm_client=self.llm_client)
             report = await evaluator.evaluate_deliverables(
                 session_id=session_id,
                 track_type=track_type,
+                session=session,
                 emit_event=lambda evt: self.emit_event(session, evt)
             )
             session.evaluator_report = report

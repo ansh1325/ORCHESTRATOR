@@ -1,5 +1,61 @@
 [
   {
+    "session_id": "session_c6ab338b",
+    "title": "Autonomous Full\u2011Stack Service Acquisition Engine",
+    "prompt": "I know full-stack development and I want to sell it. Build me a high-converting marketing campaign, scrape target client leads, write personalized cold emails, and deploy everything autonomously. Do not bother me unless a client is ready to get on a call.",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-28T19:40:05.726076+00:00",
+    "artifacts": [
+      "dynamodb_setup.tf",
+      "email_builder.py",
+      "enrich.py",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "lambda_fetch_leads.py",
+      "requirements.txt",
+      "app/main.py",
+      "templates/cold_email.html",
+      "templates/cold_email.txt",
+      "__pycache__/email_builder.cpython-314.pyc",
+      "__pycache__/enrich.cpython-314.pyc",
+      "__pycache__/lambda_fetch_leads.cpython-314.pyc",
+      "scraper/spiders/saas_startups.py",
+      "scraper/spiders/__pycache__/saas_startups.cpython-314.pyc",
+      "app/__pycache__/main.cpython-314.pyc"
+    ]
+  },
+  {
+    "session_id": "session_86bb35cc",
+    "title": "Production-Grade Telemetry Microservice on AWS",
+    "prompt": "completely build me a production grade telemetry microservice and deploy it on aws it should know when to have a human when not",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-28T19:36:15.912197+00:00",
+    "artifacts": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "docs/architecture.md",
+      "docs/deployment.md",
+      "docs/monitoring.md"
+    ]
+  },
+  {
+    "session_id": "session_870c6d63",
+    "title": "Production\u2011Grade Telemetry Microservice on AWS",
+    "prompt": "completely build me a production grade telemetry microservice and deploy it on aws it should know when to have a human when not",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-28T19:32:05.029880+00:00",
+    "artifacts": [
+      "evaluator_report.json",
+      "knowledge_base.json"
+    ]
+  },
+  {
     "session_id": "session_76fd489e",
     "title": "Autonomous B2B Agency & Client Acquisition Pipeline",
     "prompt": "start a marketing agency for me and be able to make decisions such as to close this client i need to setup a call with master or just close it over messages and clarify details like payment upi id and setting calls with calendly",

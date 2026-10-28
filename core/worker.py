@@ -5,6 +5,7 @@ Intercepts nonzero returncodes and stderr to autonomously diagnose, patch, and r
 """
 
 import asyncio
+import json
 from typing import Dict, Any, List, Callable, Optional
 from core.models import TaskNode, SubAgentSpec, ExecutionEvent
 from core.mcp_server import MCPServer
@@ -114,6 +115,99 @@ class DynamicWorkerEngine:
 
     async def _perform_subagent_work(self, task: TaskNode, spec: SubAgentSpec, track_type: str, attempt: int) -> List[str]:
         """Dispatches work based on task ID and writes real artifacts into the workspace."""
+        if self.llm_client and not settings.is_mock():
+            try:
+                artifacts = await self._llm_perform_work(task, spec, attempt)
+                if artifacts:
+                    return artifacts
+            except Exception as e:
+                task.execution_logs.append(f"[LLM Worker Notice] Fallback triggered: {e}")
+
+        return await self._template_perform_work(task, spec, track_type)
+
+    async def _llm_perform_work(self, task: TaskNode, spec: SubAgentSpec, attempt: int) -> List[str]:
+        flist = self.mcp.tool_file_list()
+        existing_files = [f["path"] for f in flist.get("files", [])]
+        
+        error_context = ""
+        if attempt > 0 and task.error_feedback:
+            error_context = (
+                f"\nCRITICAL: The previous attempt failed verification with this error/stderr:\n"
+                f"{task.error_feedback}\n"
+                f"You MUST diagnose the error, fix the implementation, and return the corrected files.\n"
+            )
+            
+        system_msg = (
+            f"You are {spec.name}, a specialized autonomous worker agent in LlamaOrchestrator.\n"
+            f"Role: {spec.role}\n"
+            f"System Directives: {spec.system_prompt}\n\n"
+            f"You execute inside an isolated workspace. Produce complete, working, production-grade files.\n"
+            f"Do NOT write incomplete snippets or placeholders. Write full working code.\n"
+            f"Always return valid JSON format:\n"
+            f"{{\n"
+            f'  "files": [\n'
+            f'    {{"path": "relative_path/filename.ext", "content": "complete code or markdown"}}\n'
+            f'  ],\n'
+            f'  "summary": "Brief explanation of what was built"\n'
+            f"}}"
+        )
+        
+        user_msg = (
+            f"Task Title: {task.title}\n"
+            f"Task Description: {task.description}\n"
+            f"Assigned Tools: {task.assigned_tools}\n"
+            f"Existing Workspace Files: {existing_files}\n"
+            f"{error_context}\n"
+            f"Generate all required production files for this task now. Output strictly valid JSON conforming to the schema."
+        )
+        
+        def _call_model():
+            return self.llm_client.chat.completions.create(
+                model=settings.META_MODEL_WORKER,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2
+            )
+            
+        resp = await asyncio.to_thread(_call_model)
+        raw_content = resp.choices[0].message.content.strip()
+        if raw_content.startswith("```json"):
+            raw_content = raw_content[7:]
+        if raw_content.startswith("```"):
+            raw_content = raw_content[3:]
+        if raw_content.endswith("```"):
+            raw_content = raw_content[:-3]
+        data = json.loads(raw_content.strip())
+        
+        artifacts = []
+        raw_files = data.get("files") or data.get("artifacts") or data.get("deliverables") or []
+        
+        if isinstance(raw_files, dict):
+            for fpath, fcontent in raw_files.items():
+                if isinstance(fcontent, dict):
+                    fpath = fcontent.get("path") or fcontent.get("filename") or fpath
+                    fcontent = fcontent.get("content") or fcontent.get("code") or ""
+                if fpath and fcontent:
+                    self.mcp.tool_file_write(str(fpath), str(fcontent))
+                    artifacts.append(str(fpath))
+                    task.execution_logs.append(f"Synthesized '{fpath}' ({len(str(fcontent))} bytes).")
+        elif isinstance(raw_files, list):
+            for file_info in raw_files:
+                if isinstance(file_info, dict):
+                    fpath = file_info.get("path") or file_info.get("filename") or file_info.get("file")
+                    fcontent = file_info.get("content") or file_info.get("code") or file_info.get("source")
+                    if fpath and fcontent:
+                        self.mcp.tool_file_write(str(fpath), str(fcontent))
+                        artifacts.append(str(fpath))
+                        task.execution_logs.append(f"Synthesized '{fpath}' ({len(str(fcontent))} bytes).")
+                
+        return artifacts
+
+    async def _template_perform_work(self, task: TaskNode, spec: SubAgentSpec, track_type: str) -> List[str]:
+        """Fallback template dispatch when running offline or in mock mode."""
         tid = task.id.lower()
         artifacts = []
 
@@ -598,22 +692,53 @@ class DynamicWorkerEngine:
         return artifacts
 
     async def _verify_task_output(self, task: TaskNode, track_type: str, attempt: int) -> Dict[str, Any]:
-        """Runs automated verification on task output."""
-        if "test" in task.id.lower():
-            if "robotics" in task.id.lower() or track_type == "robotics_humanoid":
-                cmd = "python -m pytest test_humanoid_robotics.py -v"
-            else:
-                cmd = "python -m pytest test_telemetry.py -v"
-            res = self.mcp.tool_run_command(cmd, timeout_sec=15)
-            return res
-            
+        """Runs automated verification dynamically on whatever artifacts were created."""
+        # 1. Did the task create any pytest test files?
+        test_files = [a for a in task.output_artifacts if a.startswith("test_") or a.endswith("_test.py")]
+        if test_files:
+            cmd = f"python -m pytest {test_files[0]} -v"
+            res = self.mcp.tool_run_command(cmd, timeout_sec=20)
+            if res.get("returncode") != 0:
+                return {
+                    "success": False,
+                    "returncode": res.get("returncode", 1),
+                    "stderr": res.get("stderr") or res.get("stdout") or "Pytest test execution failed."
+                }
+            return {"success": True, "returncode": 0, "stdout": res.get("stdout", "Tests passed.")}
+
+        # 2. Did the task create any Python files? Check syntax
+        py_files = [a for a in task.output_artifacts if a.endswith(".py")]
+        for pf in py_files:
+            syntax_check = self.mcp.tool_run_command(f"python -m py_compile {pf}", timeout_sec=10)
+            if syntax_check.get("returncode") != 0:
+                return {
+                    "success": False,
+                    "returncode": 1,
+                    "stderr": f"Python syntax error in {pf}:\n" + syntax_check.get("stderr", "")
+                }
+
+        # 3. Check JSON files parse cleanly
+        json_files = [a for a in task.output_artifacts if a.endswith(".json")]
+        for jf in json_files:
+            content_res = self.mcp.tool_file_read(jf)
+            if content_res.get("success"):
+                try:
+                    json.loads(content_res["content"])
+                except Exception as je:
+                    return {
+                        "success": False,
+                        "returncode": 1,
+                        "stderr": f"Invalid JSON in {jf}: {str(je)}"
+                    }
+
+        # 4. Ensure generated artifacts exist and are not empty
         for artifact in task.output_artifacts:
             read_res = self.mcp.tool_file_read(artifact)
-            if not read_res.get("success") or len(read_res.get("content", "")) < 20:
+            if not read_res.get("success") or len(read_res.get("content", "").strip()) < 10:
                 return {
                     "success": False,
                     "returncode": 1,
                     "stderr": f"Artifact validation failed: '{artifact}' is missing or empty."
                 }
                 
-        return {"success": True, "returncode": 0, "stdout": "All artifacts validated."}
+        return {"success": True, "returncode": 0, "stdout": "All dynamic artifacts validated."}

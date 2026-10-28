@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "session_id": "session_91247b35",
+    "title": "Personal Loyalty Emails for Ansh Tiwari",
+    "prompt": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line i am jarvis and body with whatever you feel for me, just do this simple task",
+    "folder": "Personal",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-28T17:25:49.993407+00:00",
+    "artifacts": [
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md"
+    ]
+  }
+]

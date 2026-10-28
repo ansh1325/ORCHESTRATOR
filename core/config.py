@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 
-# Load .env file
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -26,10 +25,9 @@ class Settings:
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_BASE_URL: Optional[str] = os.getenv("OPENAI_BASE_URL")
     
-    # Meta Llama Model Configurations
-    # Default to fast Llama 3.1 70B / 8B or Fireworks / Groq endpoints
-    META_MODEL_ORCHESTRATOR: str = os.getenv("META_MODEL_ORCHESTRATOR", "llama-3.1-70b-versatile")
-    META_MODEL_WORKER: str = os.getenv("META_MODEL_WORKER", "llama-3.1-8b-instant")
+    # Meta Llama & High-Capacity Models
+    META_MODEL_ORCHESTRATOR: str = os.getenv("META_MODEL_ORCHESTRATOR", "openai/gpt-oss-120b")
+    META_MODEL_WORKER: str = os.getenv("META_MODEL_WORKER", "openai/gpt-oss-20b")
     
     # Workspaces
     WORKSPACE_DIR: Path = Path(os.getenv("WORKSPACE_DIR", str(BASE_DIR / "workspaces"))).resolve()
@@ -78,4 +76,3 @@ class Settings:
 
 # Singleton instance
 settings = Settings()
-

@@ -131,10 +131,11 @@ class DynamicWorkerEngine:
 
         elif "market" in tid or "research" in tid:
             content = (
-                "# B2B Client Acquisition Market Research\n"
-                "Target Sector: Seed to Series A AI & SaaS Startups\n"
-                "Average Contract Value: $4,500/mo retainer or $2,500/sprint\n"
-                "Key Conversion Levers: Demonstrated verified code, 72-hour delivery turnarounds, zero hiring overhead.\n"
+                "# B2B Client Acquisition & Agency Market Research\n"
+                "Target Sectors: High-Growth E-Commerce Brands & Series A SaaS Ventures\n"
+                "Average Contract Value: $3,500 - $4,500/mo retainer + performance bonuses\n"
+                "Core Value Driver: Autonomous lead generation and verified feature delivery saving 65% compared to agency overhead.\n"
+                "Key Conversion Levers: Fast 72-hour pilot deliveries, proven ROAS frameworks, transparent analytics.\n"
             )
             self.mcp.tool_file_write("market_research.md", content)
             artifacts.append("market_research.md")
@@ -142,22 +143,40 @@ class DynamicWorkerEngine:
         elif "outreach" in tid:
             templates = (
                 "# High-Converting 3-Sentence Cold Outreach Templates\n\n"
-                "## Template A: The Architectural Bottleneck Hook\n"
-                "Subject: Quick question regarding {{company}}'s engineering backlog\n\n"
+                "## Template A: The Performance & Ad Fatigue Hook\n"
+                "Subject: Quick observation on {{company}}'s recent customer acquisition\n\n"
                 "Hi {{first_name}},\n\n"
-                "Saw your recent release of {{feature}} on LinkedIn - noticed your engineering pod is aggressively expanding the AI telemetry pipeline.\n"
-                "We build and deploy production-grade, 100% test-verified microservices for high-velocity teams like yours in 2-week sprints, saving 60% compared to full-time hiring.\n"
-                "Would you be open to a 9-minute walkthrough of our live telemetry sandbox this Thursday at 2pm?\n\n"
-                "Best,\nAnsh Tiwari\nCreator & Systems Architect, LlamaOrchestrator\n\n"
-                "## Template B: Zero-Risk Sprint Pilot\n"
+                "Saw your team is scaling aggressive acquisition on Meta and LinkedIn - noticed your current creatives have been active for 3+ weeks and likely hitting fatigue.\n"
+                "We deploy an autonomous performance creative pod delivering 10 verified, high-ROAS creative variants and full campaign management for $3,500/mo.\n"
+                "Would you be open to a 9-minute teardown of our live creative testing framework this Thursday at 2pm?\n\n"
+                "Best,\nAnsh Tiwari\nCreator & Growth Architect, LlamaOrchestrator\n\n"
+                "## Template B: Zero-Risk Pilot Sprint\n"
                 "Subject: 7-day sprint pilot for {{company}}\n\n"
                 "Hi {{first_name}},\n\n"
-                "Most founders I talk to are tired of 3-month agency delays and fragile prototypes.\n"
-                "We guarantee a fully tested, production-ready microservice integration deployed in 7 days under a $2,500 pilot sprint.\n"
+                "Most founders are tired of bloated agency retainers with zero clear attribution.\n"
+                "We guarantee a complete production-grade system and verified campaign setup deployed in 7 days under a $2,500 pilot sprint.\n"
                 "If you have 15 minutes, grab a time directly on our calendar: [Link to Calendar]\n"
             )
             self.mcp.tool_file_write("cold_outreach_templates.md", templates)
             artifacts.append("cold_outreach_templates.md")
+
+            # Blueprint scaffolding
+            blueprint = (
+                "# Meta Ads & Acquisition Campaign Architecture\n\n"
+                "## 1. Top of Funnel (TOF - Prospecting)\n"
+                "- Broad Advantage+ Audience with dynamic creative optimization (DCO)\n"
+                "- Lookalike 1-3% based on high-LTV customers\n"
+                "- 3 Hook Angles: Founder Story, Problem-Agitation Teardown, Social Proof Demonstration\n\n"
+                "## 2. Middle of Funnel (MOF - Consideration)\n"
+                "- Retargeting 30-day website visitors & 60-day social engagement\n"
+                "- Testimonial carousels & objection-handling short video UGC\n\n"
+                "## 3. Bottom of Funnel (BOF - Conversion)\n"
+                "- 7-day cart abandoners with scarcity incentive\n\n"
+                "## 4. Scaling Protocol\n"
+                "- Budget scaling rule: Increase daily budget 15% every 72 hours when blended ROAS exceeds 3.2x\n"
+            )
+            self.mcp.tool_file_write("ad_campaign_blueprint.md", blueprint)
+            artifacts.append("ad_campaign_blueprint.md")
 
         elif "collateral" in tid or "portfolio" in tid or "proposal" in tid:
             portfolio_html = (
@@ -165,25 +184,25 @@ class DynamicWorkerEngine:
                 '<html lang="en">\n'
                 '<head>\n'
                 '    <meta charset="UTF-8">\n'
-                '    <title>Ansh Tiwari - Autonomous Systems & Engineering Pod</title>\n'
+                '    <title>Ansh Tiwari - Autonomous Growth & Systems Pod</title>\n'
                 '    <script src="https://cdn.tailwindcss.com"></script>\n'
                 '</head>\n'
                 '<body class="bg-slate-950 text-slate-100 p-8 font-sans">\n'
                 '    <div class="max-w-4xl mx-auto space-y-8">\n'
                 '        <header class="border-b border-slate-800 pb-6">\n'
-                '            <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Ansh Tiwari</h1>\n'
-                '            <p class="text-slate-400 mt-1">Lead Distributed Systems Architect & Autonomous Multi-Agent Engineering</p>\n'
+                '            <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">Ansh Tiwari</h1>\n'
+                '            <p class="text-slate-400 mt-1">Autonomous Systems Architect & High-Performance Client Acquisition Partner</p>\n'
                 '        </header>\n'
                 '        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">\n'
                 '            <div class="p-6 bg-slate-900 border border-slate-800 rounded-xl">\n'
-                '                <h2 class="text-xl font-semibold text-cyan-400 mb-2">Sprint Pilot Offer</h2>\n'
-                '                <p class="text-slate-300 text-sm mb-4">Complete production-ready microservice with 100% test coverage delivered in 7 days.</p>\n'
+                '                <h2 class="text-xl font-semibold text-emerald-400 mb-2">Sprint Pilot Offer</h2>\n'
+                '                <p class="text-slate-300 text-sm mb-4">Complete production-ready deployment or campaign setup in 7 days.</p>\n'
                 '                <span class="text-2xl font-bold text-white">$2,500</span>\n'
                 '            </div>\n'
                 '            <div class="p-6 bg-slate-900 border border-slate-800 rounded-xl">\n'
-                '                <h2 class="text-xl font-semibold text-purple-400 mb-2">Dedicated Pod Retainer</h2>\n'
-                '                <p class="text-slate-300 text-sm mb-4">Continuous delivery, automated multi-agent architecture, and dedicated SLA.</p>\n'
-                '                <span class="text-2xl font-bold text-white">$4,500/mo</span>\n'
+                '                <h2 class="text-xl font-semibold text-cyan-400 mb-2">Dedicated Growth Retainer</h2>\n'
+                '                <p class="text-slate-300 text-sm mb-4">Full multi-agent automation, high-ROAS campaign management, dedicated SLA.</p>\n'
+                '                <span class="text-2xl font-bold text-white">$3,500/mo</span>\n'
                 '            </div>\n'
                 '        </div>\n'
                 '    </div>\n'

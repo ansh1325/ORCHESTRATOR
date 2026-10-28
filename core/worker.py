@@ -15,6 +15,17 @@ class WorkerExecutionError(Exception):
     """Raised when a worker task fails after exhausting self-correction attempts."""
     pass
 
+def clean_code_content(path_str: str, content_str: str) -> str:
+    """Strips markdown code fences (```lang ... ```) from synthesized source code."""
+    clean = str(content_str).strip()
+    if clean.startswith("```"):
+        first_nl = clean.find("\n")
+        if first_nl != -1 and clean.endswith("```"):
+            clean = clean[first_nl + 1:-3].strip()
+        elif clean.endswith("```"):
+            clean = clean[3:-3].strip()
+    return clean
+
 class DynamicWorkerEngine:
     """Executes synthesized Llama sub-agents with autonomous stderr self-correction."""
 
@@ -191,18 +202,20 @@ class DynamicWorkerEngine:
                     fpath = fcontent.get("path") or fcontent.get("filename") or fpath
                     fcontent = fcontent.get("content") or fcontent.get("code") or ""
                 if fpath and fcontent:
-                    self.mcp.tool_file_write(str(fpath), str(fcontent))
+                    clean_content = clean_code_content(str(fpath), str(fcontent))
+                    self.mcp.tool_file_write(str(fpath), clean_content)
                     artifacts.append(str(fpath))
-                    task.execution_logs.append(f"Synthesized '{fpath}' ({len(str(fcontent))} bytes).")
+                    task.execution_logs.append(f"Synthesized '{fpath}' ({len(clean_content)} bytes).")
         elif isinstance(raw_files, list):
             for file_info in raw_files:
                 if isinstance(file_info, dict):
                     fpath = file_info.get("path") or file_info.get("filename") or file_info.get("file")
                     fcontent = file_info.get("content") or file_info.get("code") or file_info.get("source")
                     if fpath and fcontent:
-                        self.mcp.tool_file_write(str(fpath), str(fcontent))
+                        clean_content = clean_code_content(str(fpath), str(fcontent))
+                        self.mcp.tool_file_write(str(fpath), clean_content)
                         artifacts.append(str(fpath))
-                        task.execution_logs.append(f"Synthesized '{fpath}' ({len(str(fcontent))} bytes).")
+                        task.execution_logs.append(f"Synthesized '{fpath}' ({len(clean_content)} bytes).")
                 
         return artifacts
 

@@ -1,5 +1,19 @@
 [
   {
+    "session_id": "session_fbe861d9",
+    "title": "Enterprise AI Automation Service Development Plan",
+    "prompt": "hello what can you do and what are your capabilities",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-28T21:00:57.487359+00:00",
+    "artifacts": [
+      "CAPABILITIES.md",
+      "evaluator_report.json",
+      "knowledge_base.json"
+    ]
+  },
+  {
     "session_id": "session_c6ab338b",
     "title": "Autonomous Full\u2011Stack Service Acquisition Engine",
     "prompt": "I know full-stack development and I want to sell it. Build me a high-converting marketing campaign, scrape target client leads, write personalized cold emails, and deploy everything autonomously. Do not bother me unless a client is ready to get on a call.",

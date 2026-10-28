@@ -15,7 +15,7 @@ from core.creator_memory import CreatorMemory
 from core.mcp_server import MCPServer, MCPSandboxSecurityError
 from core.orchestrator import MetaOrchestrator
 from core.knowledge_agent import KnowledgeAgent
-from core.worker import DynamicWorkerEngine
+from core.worker import DynamicWorkerEngine, clean_code_content
 from core.evaluator import EvaluatorGatekeeper
 from core.models import TaskNode, SubAgentSpec
 from main import app
@@ -223,5 +223,26 @@ def test_fastapi_rest_endpoints():
     d_res = client.get(f"/api/workspace/{sess_id}/download")
     assert d_res.status_code == 200
     assert d_res.headers["content-type"] == "application/zip"
+
+def test_clean_code_content_and_url_normalization(temp_workspace):
+    """Test code fence sanitization and URL schema auto-prefixing."""
+    # 1. Test clean_code_content
+    wrapped_py = "```python\ndef calculate(x: int) -> int:\n    return x * 2\n```"
+    cleaned = clean_code_content("math_service.py", wrapped_py)
+    assert cleaned == "def calculate(x: int) -> int:\n    return x * 2"
+    assert not cleaned.startswith("```")
+    assert not cleaned.endswith("```")
+
+    raw_json = "```json\n{\"status\": \"ok\"}\n```"
+    cleaned_json = clean_code_content("payload.json", raw_json)
+    assert cleaned_json == "{\"status\": \"ok\"}"
+
+    # 2. Test MCP tool_browser_navigate URL normalization
+    mcp = MCPServer(temp_workspace)
+    # Target bare domain without http:// prefix
+    res = mcp.tool_browser_navigate("example.com", timeout_sec=5)
+    assert res["success"] is True
+    assert res["url"] == "https://example.com"
+
 
 

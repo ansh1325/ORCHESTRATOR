@@ -208,10 +208,14 @@ class MCPServer:
         """Navigates to a webpage, extracts UI structure, and detects CAPTCHA / anti-bot challenges."""
         import requests
         try:
+            target_url = url.strip()
+            if not target_url.startswith(("http://", "https://")):
+                target_url = f"https://{target_url}"
+
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
             }
-            resp = requests.get(url, headers=headers, timeout=timeout_sec)
+            resp = requests.get(target_url, headers=headers, timeout=timeout_sec)
             html = resp.text
             
             # Extract title
@@ -232,7 +236,7 @@ class MCPServer:
             
             return {
                 "success": True,
-                "url": url,
+                "url": target_url,
                 "status_code": resp.status_code,
                 "title": title,
                 "captcha_detected": is_captcha,
@@ -250,11 +254,15 @@ class MCPServer:
         """Saves a rendered DOM snapshot or artifact of the webpage into the sandboxed workspace."""
         import requests
         try:
+            target_url = url.strip()
+            if not target_url.startswith(("http://", "https://")):
+                target_url = f"https://{target_url}"
+
             safe_path = self._resolve_safe_path(output_file)
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
             }
-            resp = requests.get(url, headers=headers, timeout=15)
+            resp = requests.get(target_url, headers=headers, timeout=15)
             with open(safe_path, "w", encoding="utf-8", errors="replace") as f:
                 f.write(resp.text)
             return {

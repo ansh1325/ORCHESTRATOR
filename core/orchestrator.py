@@ -87,6 +87,7 @@ class HistoryManager:
             if item.get("session_id") == session_id:
                 item["title"] = title
                 item["artifacts"] = artifacts or []
+                item["deliverables"] = artifacts or []
                 item["status"] = "completed"
                 self._save_history(history)
                 return
@@ -98,7 +99,8 @@ class HistoryManager:
             "is_pinned": False,
             "status": "completed",
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "artifacts": artifacts or []
+            "artifacts": artifacts or [],
+            "deliverables": artifacts or []
         }
         history.insert(0, new_item)
         self._save_history(history)
@@ -1038,7 +1040,7 @@ class MetaOrchestrator:
                 stage=6,
                 stage_name="Mission Accomplished",
                 message="LlamaOrchestrator has successfully fulfilled the entire 6-stage lifecycle.",
-                data={"summary": "All systems verified and operational."},
+                data={"summary": "All systems verified and operational.", "deliverables": flist_names},
                 speech_text=final_speech
             ))
 

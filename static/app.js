@@ -25,7 +25,9 @@ const state = {
   historyItems: [],
   activeFolderFilter: "all",
   searchQuery: "",
-  savedWorkflows: []
+  savedWorkflows: [],
+  activeMode: "chat", // "chat" (Direct Jarvis Q&A) or "swarm" (Multi-Agent Swarm Builder)
+  selectedVoice: null
 };
 
 // Initialize on DOM Ready
@@ -34,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lucide.createIcons();
   }
   setupEventListeners();
+  setupVoiceSelector();
   loadWorkHistory();
   loadSavedWorkflows();
   updateStageUI(0);
@@ -41,12 +44,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Event Listeners Setup
 function setupEventListeners() {
-  // Sidebar Toggle
+  // Sidebar Slide-Over Drawer
   const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+  const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
   const sidebar = document.getElementById("sidebar");
-  if (toggleSidebarBtn && sidebar) {
-    toggleSidebarBtn.addEventListener("click", () => {
-      sidebar.classList.toggle("hidden");
+
+  function openSidebar() {
+    if (sidebar) sidebar.classList.remove("-translate-x-full");
+    if (sidebarOverlay) sidebarOverlay.classList.remove("hidden");
+  }
+
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.add("-translate-x-full");
+    if (sidebarOverlay) sidebarOverlay.classList.add("hidden");
+  }
+
+  if (toggleSidebarBtn) toggleSidebarBtn.addEventListener("click", openSidebar);
+  if (closeSidebarBtn) closeSidebarBtn.addEventListener("click", closeSidebar);
+  if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
+
+  // File Viewer Drawer Close Button
+  const closeFileViewerBtn = document.getElementById("closeFileViewerBtn");
+  const fileViewerPanel = document.getElementById("fileViewerPanel");
+  if (closeFileViewerBtn && fileViewerPanel) {
+    closeFileViewerBtn.addEventListener("click", () => {
+      fileViewerPanel.classList.add("translate-x-full");
     });
   }
 
@@ -63,16 +86,17 @@ function setupEventListeners() {
   if (voiceToggleBtn) {
     voiceToggleBtn.addEventListener("click", () => {
       state.voiceEnabled = !state.voiceEnabled;
-      if (voiceText) voiceText.textContent = state.voiceEnabled ? "Audible Voice: ON" : "Audible Voice: OFF";
+      if (voiceText) voiceText.textContent = state.voiceEnabled ? "Audio: ON" : "Audio: OFF";
       if (state.voiceEnabled) {
         voiceToggleBtn.classList.remove("border-red-800", "text-red-400");
         if (voiceIcon) voiceIcon.setAttribute("data-lucide", "volume-2");
-        speakText("Audible voice synthesis enabled.");
+        speakText("Audible voice synthesis active.");
       } else {
         voiceToggleBtn.classList.add("border-red-800", "text-red-400");
         if (voiceIcon) voiceIcon.setAttribute("data-lucide", "volume-x");
         if (window.speechSynthesis) window.speechSynthesis.cancel();
         setVoiceVisualizer(false);
+        setJarvisVoiceExpression(false);
       }
       if (window.lucide) lucide.createIcons();
     });
@@ -91,11 +115,11 @@ function setupEventListeners() {
   document.querySelectorAll(".folder-filter").forEach(btn => {
     btn.addEventListener("click", (e) => {
       document.querySelectorAll(".folder-filter").forEach(b => {
-        b.classList.remove("active", "bg-emerald-500/20", "text-emerald-400", "border-emerald-500/40");
-        b.classList.add("bg-cyber-850", "text-slate-400", "border-cyber-700/60");
+        b.classList.remove("active", "bg-cyan-500/20", "text-cyan-300", "border-cyan-500/40");
+        b.classList.add("bg-brand-card", "text-slate-400", "border-brand-border");
       });
-      btn.classList.add("active", "bg-emerald-500/20", "text-emerald-400", "border-emerald-500/40");
-      btn.classList.remove("bg-cyber-850", "text-slate-400", "border-cyber-700/60");
+      btn.classList.add("active", "bg-cyan-500/20", "text-cyan-300", "border-cyan-500/40");
+      btn.classList.remove("bg-brand-card", "text-slate-400", "border-brand-border");
       state.activeFolderFilter = btn.getAttribute("data-folder");
       renderHistoryList();
     });
@@ -175,8 +199,53 @@ function setupEventListeners() {
   if (closeModalBtn) {
     closeModalBtn.addEventListener("click", () => {
       document.getElementById("clarificationModal").classList.add("hidden");
+      updateStageUI(0);
+      const submitBtn = document.getElementById("submitBtn");
+      if (submitBtn) submitBtn.disabled = false;
     });
   }
+
+  // Interactive Arc Core Click
+  const jarvisArcCore = document.getElementById("jarvisArcCore");
+  if (jarvisArcCore) {
+    jarvisArcCore.addEventListener("click", () => {
+      speakText("Jarvis Cognitive OS operational. All Llama sub-agents, MCP sandboxes, and autonomous pipelines ready for your directive.");
+    });
+  }
+
+  // Global Keyboard Shortcuts
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("clarificationModal");
+      if (modal && !modal.classList.contains("hidden")) {
+        modal.classList.add("hidden");
+        updateStageUI(0);
+        return;
+      }
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      if (sidebar && !sidebar.classList.contains("-translate-x-full")) {
+        sidebar.classList.add("-translate-x-full");
+        if (overlay) overlay.classList.add("hidden");
+        return;
+      }
+      const fileViewer = document.getElementById("fileViewerPanel");
+      if (fileViewer && !fileViewer.classList.contains("translate-x-full")) {
+        fileViewer.classList.add("translate-x-full");
+        return;
+      }
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      const search = document.getElementById("historySearch");
+      if (sidebar) sidebar.classList.remove("-translate-x-full");
+      if (overlay) overlay.classList.remove("hidden");
+      if (search) search.focus();
+    }
+  });
 
   const autoApproveBtn = document.getElementById("autoApproveBtn");
   if (autoApproveBtn) {
@@ -204,6 +273,9 @@ function setupEventListeners() {
 
       micBtn.addEventListener("click", () => {
         micBtn.classList.add("text-emerald-400", "animate-pulse");
+        setJarvisVoiceExpression(true, "LISTENING // VOICE CAPTURE ACTIVE");
+        const statusDot = document.getElementById("jarvisStatusDot");
+        if (statusDot) statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping";
         recognition.start();
       });
 
@@ -212,22 +284,61 @@ function setupEventListeners() {
         const input = document.getElementById("directiveInput");
         if (input) input.value = transcript;
         micBtn.classList.remove("text-emerald-400", "animate-pulse");
+        setJarvisVoiceExpression(false);
         // Automatically submit voice directive
         handleDirectiveSubmit(new Event("submit"));
       };
 
       recognition.onerror = () => {
         micBtn.classList.remove("text-emerald-400", "animate-pulse");
+        setJarvisVoiceExpression(false);
       };
 
       recognition.onend = () => {
         micBtn.classList.remove("text-emerald-400", "animate-pulse");
+        setJarvisVoiceExpression(false);
       };
     } else {
       micBtn.title = "Web Speech Recognition not supported in this browser.";
       micBtn.style.opacity = "0.5";
     }
   }
+
+  // Mode Switcher Buttons (Direct Jarvis Chat vs Swarm Builder)
+  const chatModeBtn = document.getElementById("chatModeBtn");
+  const swarmModeBtn = document.getElementById("swarmModeBtn");
+  const modeDescription = document.getElementById("modeDescription");
+  const directiveInput = document.getElementById("directiveInput");
+
+  if (chatModeBtn && swarmModeBtn) {
+    chatModeBtn.addEventListener("click", () => {
+      state.activeMode = "chat";
+      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40 transition active";
+      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
+      if (modeDescription) modeDescription.textContent = "Asking questions & direct conversation (No sub-agents spawned)";
+      if (directiveInput) directiveInput.placeholder = "Ask Jarvis anything (code, system architecture, capabilities)...";
+    });
+
+    swarmModeBtn.addEventListener("click", () => {
+      state.activeMode = "swarm";
+      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40 transition active";
+      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
+      if (modeDescription) modeDescription.textContent = "Autonomous Multi-Agent compiler (deploys agent army, generates files)";
+      if (directiveInput) directiveInput.placeholder = "Enter directive to build (e.g. Build AWS telemetry microservice)...";
+    });
+  }
+
+  // Quick Action Chips in Chat
+  document.querySelectorAll(".quick-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const prompt = chip.textContent.replace(/^["']|["']$/g, "").trim();
+      const input = document.getElementById("directiveInput");
+      if (input) {
+        input.value = prompt;
+        handleDirectiveSubmit(new Event("submit"));
+      }
+    });
+  });
 
   // Floating Directive Form Submission
   const directiveForm = document.getElementById("directiveForm");
@@ -254,6 +365,19 @@ function resetSession() {
   const workDoneBanner = document.getElementById("workDoneBanner");
   if (workDoneBanner) workDoneBanner.classList.add("hidden");
 
+  const swarmDeck = document.getElementById("swarmDeckContainer");
+  if (swarmDeck) swarmDeck.classList.add("hidden");
+
+  const chatModeBtn = document.getElementById("chatModeBtn");
+  const swarmModeBtn = document.getElementById("swarmModeBtn");
+  const modeDescription = document.getElementById("modeDescription");
+  if (chatModeBtn && swarmModeBtn) {
+    state.activeMode = "chat";
+    chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40 transition active";
+    swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
+    if (modeDescription) modeDescription.textContent = "Asking questions & direct conversation (No sub-agents spawned)";
+  }
+
   const dagContainer = document.getElementById("dagContainer");
   if (dagContainer) {
     dagContainer.innerHTML = `
@@ -270,39 +394,160 @@ function resetSession() {
   const activeFileName = document.getElementById("activeFileName");
   if (activeFileName) activeFileName.textContent = "No file selected";
 
+  const fileViewerPanel = document.getElementById("fileViewerPanel");
+  if (fileViewerPanel) fileViewerPanel.classList.add("translate-x-full");
+
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  if (sidebar) sidebar.classList.add("-translate-x-full");
+  if (sidebarOverlay) sidebarOverlay.classList.add("hidden");
+
+  setJarvisVoiceExpression(false, "JARVIS COGNITIVE OS // STANDBY");
+
   updateStageUI(0);
   appendChatMessage("Ready for your next objective, Ansh.", "assistant");
 }
 
-// Speak Text via Web Speech API with Soundwave Feedback
+// Setup Voice Selector with Natural Neural Voices
+function setupVoiceSelector() {
+  const voiceSelect = document.getElementById("voiceSelect");
+  if (!voiceSelect || !window.speechSynthesis) return;
+
+  const populate = () => {
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return;
+
+    voiceSelect.innerHTML = "";
+    
+    // Auto recommended option
+    const autoOpt = document.createElement("option");
+    autoOpt.value = "auto";
+    autoOpt.textContent = "🎙️ Natural Voice (Auto)";
+    voiceSelect.appendChild(autoOpt);
+
+    voices.forEach((v, idx) => {
+      if (v.lang.startsWith("en") || v.lang.startsWith("en-")) {
+        const opt = document.createElement("option");
+        opt.value = idx;
+        const isNatural = v.name.includes("Natural") || v.name.includes("Online") || v.name.includes("Neural");
+        opt.textContent = `${isNatural ? "✨ " : ""}${v.name} (${v.lang})`;
+        voiceSelect.appendChild(opt);
+      }
+    });
+
+    voiceSelect.addEventListener("change", (e) => {
+      if (e.target.value === "auto") {
+        state.selectedVoice = null;
+        speakText("Default natural voice selected.");
+      } else {
+        const vIndex = parseInt(e.target.value, 10);
+        state.selectedVoice = voices[vIndex] || null;
+        if (state.selectedVoice) {
+          speakText("Voice configuration updated.");
+        }
+      }
+    });
+  };
+
+  populate();
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = populate;
+  }
+}
+
+// Dynamic Visual & Audio Voice Expression Engine
+function setJarvisVoiceExpression(active, statusText = null) {
+  const statusTextEl = document.getElementById("jarvisStatusText");
+  const statusDot = document.getElementById("jarvisStatusDot");
+  const pulseRing = document.getElementById("jarvisPulseRing");
+  const body = document.body;
+
+  if (active) {
+    body.classList.add("jarvis-speaking");
+    if (statusTextEl) {
+      statusTextEl.textContent = statusText || "JARVIS COMMUNICATING // SYNTHESIS ACTIVE";
+      statusTextEl.className = "text-cyan-300 font-bold tracking-wider uppercase";
+    }
+    if (statusDot) {
+      statusDot.className = "w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping";
+    }
+    if (pulseRing) {
+      pulseRing.classList.remove("opacity-0");
+      pulseRing.classList.add("opacity-80");
+    }
+  } else {
+    body.classList.remove("jarvis-speaking");
+    if (statusTextEl) {
+      statusTextEl.textContent = statusText || "JARVIS COGNITIVE OS // STANDBY";
+      statusTextEl.className = "text-slate-300 font-bold tracking-wider uppercase";
+    }
+    if (statusDot) {
+      statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+    }
+    if (pulseRing) {
+      pulseRing.classList.add("opacity-0");
+      pulseRing.classList.remove("opacity-80");
+    }
+    // Return equalizer bars to resting state
+    document.querySelectorAll(".eq-bar").forEach(bar => {
+      bar.style.height = "6px";
+    });
+  }
+}
+
+// Speak Text via Web Speech API with Dynamic Inflection & Live Frequency Equalizer Expression
 function speakText(text) {
   if (!state.voiceEnabled || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
+  if (window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+  }
 
-  const clean = text.replace(/[*_#`~]/g, "").trim();
+  const clean = text.replace(/[*_#`~]/g, "").replace(/\n+/g, " ").trim();
   if (!clean) return;
 
-  const utterance = new SpeechSynthesisUtterance(clean);
-  utterance.rate = 1.05;
-  utterance.pitch = 0.95;
+  // Keep spoken response punchy and conversational
+  const speechText = clean.length > 250 ? clean.substring(0, 250) + "..." : clean;
 
-  // Prefer natural English voices
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Google") || v.name.includes("David") || v.name.includes("Daniel")));
-  if (preferred) utterance.voice = preferred;
+  const utterance = new SpeechSynthesisUtterance(speechText);
+  
+  // Expression tuning: dynamic rate & natural pitch inflection
+  const isQuestion = speechText.trim().endsWith("?");
+  utterance.rate = 1.02;
+  utterance.pitch = isQuestion ? 1.06 : 0.98;
+
+  if (state.selectedVoice) {
+    utterance.voice = state.selectedVoice;
+  } else {
+    // Prefer natural English voices (Edge Natural, Google Natural, Microsoft Natural)
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Google") || v.name.includes("David") || v.name.includes("Daniel")) && v.lang.startsWith("en"));
+    if (preferred) utterance.voice = preferred;
+  }
+
+  // Word boundary event: animate equalizer bars live on spoken word boundaries!
+  utterance.onboundary = () => {
+    const bars = document.querySelectorAll(".eq-bar");
+    bars.forEach(bar => {
+      const randomH = Math.floor(Math.random() * 18) + 6;
+      bar.style.height = `${randomH}px`;
+    });
+  };
 
   utterance.onstart = () => {
     setVoiceVisualizer(true);
+    setJarvisVoiceExpression(true, "JARVIS SPEAKING // SYNTHESIS ACTIVE");
   };
 
   utterance.onend = utterance.onerror = () => {
     setVoiceVisualizer(false);
+    setJarvisVoiceExpression(false, "JARVIS COGNITIVE OS // STANDBY");
   };
 
   window.speechSynthesis.speak(utterance);
 }
 
-// Toggle Live Soundwave Visualizer
+// Toggle Live Soundwave Visualizer Pill
 function setVoiceVisualizer(active) {
   const visualizer = document.getElementById("voiceVisualizer");
   if (!visualizer) return;
@@ -315,6 +560,65 @@ function setVoiceVisualizer(active) {
   }
 }
 
+// Simple Markdown formatter for Assistant chat responses
+function formatMarkdown(text) {
+  if (!text) return "";
+  let html = escapeHtml(text);
+
+  // Fenced Code Blocks with 1-Click Copy Header
+  html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    const codeId = "code_" + Math.random().toString(36).substring(2, 9);
+    return `<div class="my-2.5 rounded-xl bg-brand-black border border-brand-border overflow-hidden shadow-md">
+      <div class="px-3 py-1.5 bg-brand-surface border-b border-brand-border flex items-center justify-between text-[10px] font-mono">
+        <span class="text-cyan-400 font-bold uppercase">${lang || "code"}</span>
+        <button class="copy-code-btn flex items-center gap-1 text-slate-400 hover:text-cyan-300 transition" onclick="copyCodeSnippet(this, '${codeId}')">
+          <i data-lucide="copy" class="w-3 h-3"></i><span>Copy</span>
+        </button>
+      </div>
+      <pre id="${codeId}" class="p-3 font-mono text-[11px] text-cyan-200 overflow-x-auto leading-relaxed whitespace-pre-wrap"><code>${code.trim()}</code></pre>
+    </div>`;
+  });
+
+  // Inline Code: `code`
+  html = html.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-brand-black border border-brand-border font-mono text-cyan-300 text-[11px]">$1</code>');
+
+  // Bold: **text**
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+
+  // Italic: *text*
+  html = html.replace(/\*([^*]+)\*/g, '<em class="italic text-slate-300">$1</em>');
+
+  // Markdown Links: [label](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-medium inline-flex items-center gap-0.5">$1 ↗</a>');
+
+  // Bullet Lists: lines starting with * or -
+  html = html.replace(/^(?:[*-]\s+)(.+)$/gm, '<li class="ml-4 list-disc text-slate-300 leading-normal">$1</li>');
+
+  // Numbered Lists: lines starting with 1. 2. etc
+  html = html.replace(/^(?:\d+\.\s+)(.+)$/gm, '<li class="ml-4 list-decimal text-slate-300 leading-normal">$1</li>');
+
+  // Headers: ### Header
+  html = html.replace(/^###\s+(.+)$/gm, '<h4 class="text-xs font-bold text-cyan-400 mt-2 mb-1 uppercase tracking-wider">$1</h4>');
+  html = html.replace(/^##\s+(.+)$/gm, '<h3 class="text-sm font-bold text-white mt-2.5 mb-1">$1</h3>');
+
+  // Newlines
+  html = html.replace(/\n\n/g, '<div class="h-2"></div>');
+  html = html.replace(/\n/g, '<br/>');
+
+  return html;
+}
+
+// Global 1-Click Code Snippet Copy Handler
+window.copyCodeSnippet = function(btn, codeId) {
+  const el = document.getElementById(codeId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.innerText || el.textContent).then(() => {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="text-emerald-400 font-semibold">✓ Copied</span>';
+    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+  });
+};
+
 // Append Chat Message to Jarvis Dialogue
 function appendChatMessage(text, role) {
   const container = document.getElementById("chatHistory");
@@ -325,20 +629,20 @@ function appendChatMessage(text, role) {
 
   if (role === "user") {
     msgDiv.innerHTML = `
-      <div class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/30">
-        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+      <div class="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/30 shadow-md">
+        <i data-lucide="user" class="w-4 h-4"></i>
       </div>
-      <div class="p-3 rounded-xl bg-cyber-850 border border-cyber-700/60 text-slate-100 leading-relaxed max-w-[85%]">
+      <div class="p-3.5 rounded-2xl bg-brand-card border border-brand-border text-slate-100 leading-relaxed max-w-[85%] font-medium">
         ${escapeHtml(text)}
       </div>
     `;
   } else {
     msgDiv.innerHTML = `
-      <div class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
-        <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+      <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-400 text-brand-black flex items-center justify-center shrink-0 font-bold shadow-md shadow-cyan-500/20">
+        <i data-lucide="bot" class="w-4 h-4"></i>
       </div>
-      <div class="p-3 rounded-xl bg-cyber-850 border border-cyber-700/60 text-slate-200 leading-relaxed max-w-[85%]">
-        ${escapeHtml(text)}
+      <div class="p-3.5 rounded-2xl bg-brand-card border border-brand-border text-slate-200 leading-relaxed max-w-[88%] space-y-1.5 text-xs">
+        ${formatMarkdown(text)}
       </div>
     `;
   }
@@ -370,12 +674,21 @@ async function handleDirectiveSubmit(e) {
   input.value = "";
   appendChatMessage(text, "user");
 
-  // Determine if this is a conversational query or an actionable execution task
-  const lower = text.toLowerCase();
-  const isConversationalGreeting = (lower.split(/\s+/).length <= 4) && 
-    (lower.startsWith("hi") || lower.startsWith("hello") || lower === "hey" || lower.includes("how are you") || lower.includes("who are you"));
+  // Determine routing based on selected mode and prompt content
+  const lower = text.toLowerCase().trim();
+  
+  // Explicit task execution directives that require deploying a sub-agent swarm
+  const isExplicitDirective = /^(build|deploy|create|launch|scrape|generate|compile|make|set up|scaffold|execute)\b/i.test(lower) ||
+    lower.includes("build me") || lower.includes("deploy it") || lower.includes("scrape leads") || lower.includes("write me 3 mails") || lower.includes("run a campaign");
 
-  if (isConversationalGreeting) {
+  const isConversationalQuery = lower.endsWith("?") ||
+    /^(what|who|how|why|when|where|which|can you|could you|tell me|explain|describe|introduce|are you|do you|hi|hello|hey|status)\b/i.test(lower) ||
+    lower.includes("what can you do") || lower.includes("what are your capabilities") || lower.includes("who are you") || lower.includes("introduce yourself");
+
+  // Force chat if Chat mode is selected, or if user asked a question without explicit swarm directive
+  const shouldRouteToChat = (state.activeMode === "chat") || (!isExplicitDirective && isConversationalQuery && state.activeMode !== "swarm");
+
+  if (shouldRouteToChat) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -391,7 +704,12 @@ async function handleDirectiveSubmit(e) {
     return;
   }
 
-  // Actionable Directive -> Run Intent Analysis & Autonomous Lifecycle
+  // Actionable Directive -> Unhide Swarm Deck & Run Intent Analysis & Autonomous Lifecycle
+  const swarmDeck = document.getElementById("swarmDeckContainer");
+  const swarmObjectiveLabel = document.getElementById("swarmObjectiveLabel");
+  if (swarmDeck) swarmDeck.classList.remove("hidden");
+  if (swarmObjectiveLabel) swarmObjectiveLabel.textContent = `Mission: ${text.substring(0, 50)}...`;
+
   appendChatMessage("Directives received. Analyzing requirements, compiling DAG, and assembling specialized agents...", "assistant");
   speakText("Directives received. Initializing autonomous multi-agent compilation.");
 
@@ -428,6 +746,9 @@ async function handleDirectiveSubmit(e) {
   } catch (err) {
     appendChatMessage(`Analysis error: ${err.message}`, "assistant");
     appendLog(`[Error] Analysis failure: ${err.message}`, "text-red-400");
+    updateStageUI(0);
+    const swarmDeck = document.getElementById("swarmDeckContainer");
+    if (swarmDeck) swarmDeck.classList.add("hidden");
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -442,23 +763,23 @@ function renderClarificationModal(analysis) {
 
   analysis.clarifications.forEach((q, idx) => {
     const qDiv = document.createElement("div");
-    qDiv.className = "p-4 rounded-xl bg-cyber-950 border border-cyber-700/60 space-y-2";
+    qDiv.className = "p-4 rounded-xl bg-brand-black/90 border border-brand-border space-y-2";
 
     let optionsHtml = "";
     q.options.forEach(opt => {
       const isDefault = (opt === q.default_selection);
       optionsHtml += `
-        <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-cyber-850 cursor-pointer border border-transparent transition">
-          <input type="radio" name="${q.id}" value="${escapeHtml(opt)}" ${isDefault ? "checked" : ""} class="accent-emerald-500" onchange="state.selectedAnswers['${q.id}'] = this.value">
+        <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-brand-card cursor-pointer border border-transparent transition">
+          <input type="radio" name="${q.id}" value="${escapeHtml(opt)}" ${isDefault ? "checked" : ""} class="accent-cyan-500" onchange="state.selectedAnswers['${q.id}'] = this.value">
           <span class="text-xs text-slate-300 font-medium">${escapeHtml(opt)}</span>
-          ${isDefault ? '<span class="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-mono">Recommended</span>' : ""}
+          ${isDefault ? '<span class="ml-auto text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-mono">Recommended</span>' : ""}
         </label>
       `;
     });
 
     qDiv.innerHTML = `
       <div class="flex items-start gap-2">
-        <span class="w-5 h-5 rounded-full bg-cyber-850 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] shrink-0 border border-cyber-700">${idx + 1}</span>
+        <span class="w-5 h-5 rounded-full bg-brand-card text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] shrink-0 border border-brand-border">${idx + 1}</span>
         <div>
           <h4 class="text-xs font-semibold text-slate-200">${escapeHtml(q.question)}</h4>
           <p class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(q.why_needed)}</p>
@@ -599,17 +920,17 @@ function renderDAG(dag) {
     state.dagNodes[node.id] = node;
     const nodeDiv = document.createElement("div");
     nodeDiv.id = `node_${node.id}`;
-    nodeDiv.className = "p-3 rounded-xl bg-cyber-900 border border-cyber-700/60 transition duration-300 space-y-2";
+    nodeDiv.className = "p-3 rounded-xl bg-brand-card/90 border border-brand-border transition duration-300 space-y-2 shadow-sm hover:border-cyan-500/40";
 
     nodeDiv.innerHTML = `
       <div class="flex items-center justify-between">
         <span class="text-xs font-semibold text-slate-200">${escapeHtml(node.title)}</span>
-        <span class="status-badge text-[10px] px-2 py-0.5 rounded font-mono bg-cyber-850 text-slate-400 border border-cyber-700">Pending</span>
+        <span class="status-badge text-[10px] px-2 py-0.5 rounded font-mono bg-brand-black text-slate-400 border border-brand-border">Pending</span>
       </div>
       <div class="text-[11px] text-slate-400 leading-tight">${escapeHtml(node.description)}</div>
-      <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1.5 border-t border-cyber-800 font-mono">
-        <span class="text-cyan-400/90">${escapeHtml(node.agent_type)}</span>
-        <span>${node.assigned_tools.join(", ")}</span>
+      <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1.5 border-t border-brand-border/60 font-mono">
+        <span class="text-cyan-400 font-semibold">${escapeHtml(node.agent_type)}</span>
+        <span class="text-slate-400">${node.assigned_tools.join(", ")}</span>
       </div>
     `;
     container.appendChild(nodeDiv);
@@ -663,7 +984,7 @@ function showWorkDoneBanner(deliverables) {
 
     state.activeDeliverables.forEach(file => {
       const btn = document.createElement("button");
-      btn.className = "flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyber-900 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-cyber-700/60 transition cursor-pointer font-mono text-[11px]";
+      btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-card hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-brand-border transition cursor-pointer font-mono text-[11px] shadow-sm";
       btn.innerHTML = `<i data-lucide="file" class="w-3.5 h-3.5"></i><span>${escapeHtml(file)}</span>`;
       btn.addEventListener("click", () => previewWorkspaceFile(file));
       deliverablesList.appendChild(btn);
@@ -685,6 +1006,8 @@ async function previewWorkspaceFile(filePath) {
   if (!state.sessionId) return;
   const fileNameBadge = document.getElementById("activeFileName");
   const pre = document.getElementById("fileContentPre");
+  const fileViewerPanel = document.getElementById("fileViewerPanel");
+  if (fileViewerPanel) fileViewerPanel.classList.remove("translate-x-full");
   if (fileNameBadge) fileNameBadge.textContent = filePath;
 
   try {
@@ -710,11 +1033,11 @@ function updateStageUI(stageNum) {
     const label = el.querySelector("span:last-child");
 
     if (s <= stageNum) {
-      circle.className = "w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-[10px] border border-emerald-500/40";
-      label.className = "text-emerald-300 font-semibold text-[11px] whitespace-nowrap";
+      if (circle) circle.className = "w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-mono font-bold text-[9px] border border-cyan-500/40";
+      if (label) label.className = "text-cyan-300 font-semibold text-[10px] whitespace-nowrap";
     } else {
-      circle.className = "w-5 h-5 rounded-full bg-cyber-850 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] border border-cyber-700";
-      label.className = "text-slate-400 font-medium text-[11px] whitespace-nowrap";
+      if (circle) circle.className = "w-4 h-4 rounded-full bg-brand-card text-slate-500 flex items-center justify-center font-mono font-bold text-[9px] border border-brand-border";
+      if (label) label.className = "text-slate-500 font-medium text-[10px] whitespace-nowrap";
     }
   });
 }
@@ -762,19 +1085,19 @@ function renderHistoryList() {
     const itemDiv = document.createElement("div");
     itemDiv.className = `p-2.5 rounded-xl border transition cursor-pointer group flex flex-col gap-1.5 ${
       state.sessionId === item.session_id 
-        ? "bg-cyber-850 border-emerald-500/50 shadow-sm" 
-        : "bg-cyber-950/70 hover:bg-cyber-850/80 border-cyber-800/80"
+        ? "bg-brand-card border-cyan-500/50 shadow-md" 
+        : "bg-brand-card/50 hover:bg-brand-card border-brand-border/70"
     }`;
 
     itemDiv.innerHTML = `
       <div class="flex items-start justify-between gap-1.5">
-        <span class="font-semibold text-slate-200 line-clamp-1 text-xs group-hover:text-emerald-300 transition">${escapeHtml(item.title || item.prompt)}</span>
+        <span class="font-semibold text-slate-200 line-clamp-1 text-xs group-hover:text-cyan-300 transition">${escapeHtml(item.title || item.prompt)}</span>
         <button class="pin-toggle-btn text-slate-500 hover:text-amber-400 transition" title="${item.is_pinned ? "Unpin task" : "Pin task"}">
           <i data-lucide="pin" class="w-3.5 h-3.5 ${item.is_pinned ? "fill-amber-400 text-amber-400" : ""}"></i>
         </button>
       </div>
       <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-        <span class="px-1.5 py-0.5 rounded bg-cyber-800 text-slate-400">${escapeHtml(item.folder || "Personal")}</span>
+        <span class="px-1.5 py-0.5 rounded bg-brand-surface border border-brand-border/60 text-slate-300">${escapeHtml(item.folder || "Personal")}</span>
         <span>${escapeHtml(item.created_at ? item.created_at.substring(0, 10) : "")}</span>
       </div>
     `;
@@ -806,9 +1129,23 @@ async function selectHistoryItem(item) {
   renderHistoryList();
   appendChatMessage(`Retrieved workspace for: "${item.title || item.prompt}"`, "assistant");
 
-  // Show Deliverables
-  if (item.deliverables && item.deliverables.length > 0) {
-    showWorkDoneBanner(item.deliverables);
+  // Show Deliverables from history or live session
+  const deliverables = item.deliverables || item.artifacts || [];
+  try {
+    const res = await fetch(`/api/session/${item.session_id}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.workspace_files && data.workspace_files.length > 0) {
+        showWorkDoneBanner(data.workspace_files.map(f => typeof f === 'string' ? f : f.path));
+        return;
+      }
+    }
+  } catch (e) {
+    // Fallback to cached deliverables
+  }
+
+  if (deliverables && deliverables.length > 0) {
+    showWorkDoneBanner(deliverables);
   }
 }
 
@@ -844,16 +1181,16 @@ async function loadSavedWorkflows() {
     container.innerHTML = "";
     state.savedWorkflows.forEach(wf => {
       const btn = document.createElement("button");
-      btn.className = "w-full text-left p-2 rounded-lg bg-cyber-900 hover:bg-cyber-850 border border-cyber-800/80 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 text-xs transition flex items-center justify-between";
+      btn.className = "w-full text-left p-2 rounded-lg bg-brand-card hover:bg-brand-card/80 border border-brand-border hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 text-xs transition flex items-center justify-between";
       btn.innerHTML = `
-        <span class="truncate font-medium">${escapeHtml(wf.name)}</span>
+        <span class="truncate font-medium">${escapeHtml(wf.name || wf.title)}</span>
         <i data-lucide="play" class="w-3 h-3 text-slate-500 shrink-0"></i>
       `;
 
       btn.addEventListener("click", () => {
         const input = document.getElementById("directiveInput");
         if (input) {
-          input.value = wf.prompt;
+          input.value = wf.prompt || wf.prompt_template;
           input.focus();
         }
       });

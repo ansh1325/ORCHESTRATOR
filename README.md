@@ -118,8 +118,17 @@ Built on **FastAPI + Asyncio + Server-Sent Events (SSE)**:
 
 ### 6. Persistent Creator Awareness & Voice Synthesis
 Pre-loaded with structured creator memory recognizing **Ansh Tiwari**:
-- Dual-mode conversational interaction: General dialogue & judge introductions vs. autonomous multi-agent task execution.
-- Web Speech API integration with live soundwave visualization when the system is speaking.
+- **Dual-Mode Architecture:** A top-level mode toggle right above the input bar separates `💬 Direct Jarvis Chat` (conversational Q&A, codebase self-introspection, and strategy discussion with zero accidental agent spawns) from `⚡ Multi-Agent Swarm Builder` (autonomous DAG compilation, worker synthesis, and deliverable production).
+- **Holographic Arc Reactor & Dynamic Soundwave Visualizer:** Live interactive Quantum Arc Core with concentric rotating rings and a 9-bar audio frequency equalizer that scales dynamically to spoken word boundaries (`utterance.onboundary`).
+- **Natural Neural Voice Engine:** Browser Web Speech API enhanced with natural neural voice filters (`Edge Natural`, `Microsoft Christopher Online`, `Google UK Male`), question inflection, and automatic 250-character summary caps.
+- **Zero-Clutter Canvas:** Slide-over Mission History drawer and Artifact Inspector stay tucked away off-canvas, giving 100% screen focus to the active conversation.
+
+### 7. Full-Featured Browser & UI Automation via Playwright MCP
+All agents have access to real web interaction tools:
+- `tool_browser_navigate`: Navigates to live websites, extracts DOM titles and clean text snippets, and automatically prepends missing schemes (`https://`).
+- `tool_browser_screenshot`: Captures and persists full HTML snapshots into the sandboxed workspace.
+- `tool_browser_interact`: Simulates clicks, form typing, and button submissions.
+- **Automated CAPTCHA & Anti-Bot Detection:** Detects Cloudflare Turnstile, reCAPTCHA, and hCaptcha challenges, immediately routing them to the **Human-in-the-Loop Gateway** so human verification can take place safely.
 
 ---
 
@@ -203,7 +212,7 @@ Verify all architectural guarantees and sandboxing defenses:
 ```bash
 python -m pytest tests/test_orchestration.py -v
 ```
-**Test Suite Coverage:**
+**Test Suite Coverage (8/8 Passed):**
 - ✅ **Stage 0:** Creator Memory & Ansh Tiwari Recognition
 - ✅ **Stage 1:** Intent Analysis & Clarification Generation
 - ✅ **Stage 2:** MCP Knowledge Base Synthesis
@@ -212,6 +221,7 @@ python -m pytest tests/test_orchestration.py -v
 - ✅ **Stage 4:** Closed-Loop Self-Correction Engine on Subprocess Execution
 - ✅ **Stage 5:** Evaluator Gatekeeper Quality Certification (100% Pass)
 - ✅ **REST & SSE Endpoints:** FastAPI streaming and ZIP export
+- ✅ **Code Sanitization & URL Normalization:** Automated markdown stripping and scheme prefixing
 
 ---
 

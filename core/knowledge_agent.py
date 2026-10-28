@@ -339,8 +339,10 @@ class KnowledgeAgent:
             master["last_updated"] = datetime.now(timezone.utc).isoformat()
             
             MASTER_KB_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(MASTER_KB_FILE, "w", encoding="utf-8") as f:
+            tmp_file = MASTER_KB_FILE.with_suffix(".tmp")
+            with open(tmp_file, "w", encoding="utf-8") as f:
                 json.dump(master, f, indent=2)
+            tmp_file.replace(MASTER_KB_FILE)
         except Exception:
             pass
 

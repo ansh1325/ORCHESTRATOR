@@ -70,6 +70,37 @@ Instead of just answering your prompt, it acts like an elite technical co-founde
 
 ---
 
+## ⚡ Core Capabilities & Standout Features
+
+### 1. Dynamic Combat Escalation: Solo Response vs. Swarm Army
+LlamaOrchestrator automatically determines whether your directive is a quick query or a complex, multi-stage mission. For simple informational queries (*"What is the system architecture?"*), it answers immediately with spoken natural voice without spawning unneeded workers. When you give it an ambitious goal (*"Launch an agency"* or *"Build an algorithmic trading desk"*), it deploys a **Swarm Army of specialized Meta Llama sub-agents** across an execution DAG to build, test, and package everything.
+
+### 2. Universal Domain Adaptability (Antigravity for Business, Trading & Code)
+Unlike rigid single-purpose tools, LlamaOrchestrator adapts to arbitrary domains from first principles:
+- **Quantitative Trading & Algorithmic Desks:** Momentum and volatility breakout strategies, 0.25 fractional Kelly sizing, a **strict 5% max drawdown circuit breaker**, historical backtesting (Sharpe > 2.0), and low-latency paper execution loops.
+- **Omnichannel Business & Client Acquisition:** Automated lead scraping, RFC-5322 syntax validation, and campaign generation across LinkedIn, Reddit, Twitter, and email.
+- **Full-Stack Engineering & Cloud Services:** Authenticated FastAPI microservices, HMAC-SHA256 JWT tokens, Prometheus metrics, and automated pytest suites.
+- **Humanoid Robotics Mechatronics:** 1kHz deterministic actuator loops, 6-DOF analytical inverse kinematics, complementary IMU attitude filters, and hard real-time safety e-stops.
+- **Custom Autonomous Visions:** Any unique idea is decomposed and executed autonomously with zero pre-baked limitations.
+
+### 3. Omnichannel Campaign Vault & LinkedIn Browser Automation
+Outreach is never restricted to cold email alone. LlamaOrchestrator generates a dedicated `campaigns/` folder:
+- **`campaigns/linkedin/`:** Connection notes and an executable browser automation script (`linkedin_browser_script.py`) utilizing your authenticated browser session with 3–7 second human jitter to safely bypass API limits.
+- **`campaigns/communities/`:** Target groups in `target_groups.json` (r/SaaS, r/Entrepreneur, IndieHackers) paired with high-value technical teardowns (`high_value_posts.md`) that drive organic inbound DMs.
+- **`campaigns/twitter_x/`:** Direct founder conversation starters and 6-tweet technical authority threads.
+- **`campaigns/cold_email/`:** RFC-5322 validated founder contacts (`leads.csv`) and personalized 3-sentence sequences (`sequences.md`).
+
+### 4. Non-Blocking "Ready-for-Permission" Action Queue
+If sensitive credentials, API keys, or domain permissions (like LinkedIn cookies, Gmail SMTP passwords, or exchange keys) have not been provided yet, **Jarvis never crashes, stalls, or waits idly**. It autonomously completes 100% of the prep work—scraping leads, drafting copy, compiling browser scripts, and backtesting models—and stages every action in `campaigns/ready_for_permission.json`. Once you give permission, every queued action executes with 1 click.
+
+### 5. Closed-Loop Self-Correction with Zero-Trust MCP Sandboxing
+Every sub-agent operates within a strictly isolated, path-contained sandbox (`./workspaces/{session_id}/`). If a script, syntax check, or test fails with a non-zero exit code or `stderr`, the self-correction engine intercepts the error, diagnoses the traceback, applies an automated patch, and re-runs verification without requiring human intervention.
+
+### 6. Natural Voice Synthesis & Lifelong Creator Memory
+Equipped with persistent creator memory, Jarvis honors **Ansh Tiwari** as its creator and chief architect, introduces itself to hackathon judges aloud through the Web Speech API, and records continuous cross-session mission history.
+
+---
+
 ## 🏛️ System Architecture: Enterprise Multi-Agent Flow
 
 ```mermaid
@@ -187,40 +218,85 @@ d:\LlamaOrchestrator\
 
 ---
 
-## 🚀 Quickstart & Installation
+## 🚀 Quickstart & Installation (Step-by-Step for Anyone Cloning This Repo)
+
+If you just cloned this repository onto your machine, follow these steps to run LlamaOrchestrator immediately:
 
 ### 1. Prerequisites
-- Python 3.10+ (Tested on Python 3.14)
-- Git & Modern Web Browser
+- **Python 3.10+** (Tested and certified on Python 3.14)
+- **Git**
+- Any modern web browser (Chrome, Edge, Firefox, Brave)
 
-### 2. Clone & Install Dependencies
+---
+
+### 2. Clone the Repository & Enter Directory
 ```bash
 git clone https://github.com/ansh1325/ORCHESTRATOR.git
 cd ORCHESTRATOR
+```
+
+---
+
+### 3. Create a Virtual Environment (Recommended) & Install Dependencies
+On Windows (PowerShell):
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-### 3. Environment Setup
-The engine is configured to use Groq LPUs for blazingly fast Meta Llama inference (~300 tokens/sec), with native Meta Model API readiness:
+On Linux / macOS:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
+---
+
+### 4. Configure Your Environment (`.env`)
+Copy the provided `.env.example` file to create your active `.env`:
 ```bash
 cp .env.example .env
 ```
-Ensure your `.env` contains:
+Open `.env` in any text editor and configure your settings:
 ```env
+# Fast Meta Llama inference via Groq LPUs (~300 tokens/sec)
 GROQ_API_KEY=your_groq_api_key_here
 META_MODEL_ORCHESTRATOR=openai/gpt-oss-120b
 META_MODEL_WORKER=openai/gpt-oss-120b
+
+# Set to true for 100% offline testing without needing any API key!
 MOCK_MODE=false
 ```
+> **Tip for Judges & Testers:** If you don't have a Groq API key, set `MOCK_MODE=true` in `.env`. The entire system will run completely offline with full deterministic execution, mock lead generation, and sandboxed test validation!
 
-### 4. Launch LlamaOrchestrator
+---
+
+### 5. Verify the System (Run Automated Pytest Suite)
+Before launching the server, verify that all 11 lifecycle stages, sandboxing defenses, and trading/campaign engines are operational on your machine:
+```bash
+python -m pytest tests/test_orchestration.py -v
+```
+You should see:
+```text
+============================= 11 passed in 63s =============================
+```
+
+---
+
+### 6. Launch the Application
+Start the FastAPI server:
 ```bash
 python main.py
 ```
-Open your browser to:
+Open your web browser to:
 ```text
 http://127.0.0.1:8000
 ```
+- Click **"Test Audio Speech"** to hear Jarvis introduce himself.
+- Submit any directive (business acquisition, quantitative trading, software, or custom goals).
+- Inspect real-time multi-agent execution, live SSE logs, and download your verified workspace deliverables with 1 click!
 
 ---
 

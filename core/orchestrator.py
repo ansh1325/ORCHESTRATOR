@@ -204,15 +204,80 @@ class MetaOrchestrator:
         session = self.get_or_create_session(session_id, vision)
         v_lower = vision.lower()
 
-        # Classify Track: Check Business / Agency / Monetization first
+        # Dynamic Combat & Domain Classification
+        is_robotics = any(w in v_lower for w in [
+            "robot", "robotics", "humanoid", "bot", "tesla", "optimus",
+            "kinematics", "actuator", "motor", "embedded", "firmware", "drone", "cybernetic"
+        ])
         is_business_or_agency = any(w in v_lower for w in [
             "business", "agency", "marketing", "client", "acquisition", "freelance",
             "sales", "money", "earn", "earning", "profit", "affiliate", "firm",
             "aaa", "automation agency", "lead"
-        ])
+        ]) and not is_robotics
+        is_personal_comm = any(w in v_lower for w in [
+            "mail", "email", "gmail", "letter", "message", "write to", "send to"
+        ]) and not is_business_or_agency and not is_robotics
 
-        if is_business_or_agency:
+        # Dynamic Combat Scaling Tier
+        is_swarm = any(w in v_lower for w in ["huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem", "scale", "humanoid", "tesla", "production suite", "end to end"]) or is_robotics
+        is_solo = any(w in v_lower for w in ["quick", "single", "script", "just write a", "one agent", "solo", "simple script"]) and not is_swarm
+        combat_tier = "swarm_army" if is_swarm else ("solo" if is_solo else "tactical_squad")
+
+        if is_robotics:
+            track_type = "robotics_humanoid"
+            swarm_size_descriptor = "Swarm Army (6 Specialized Robotics Pods / Distributed Worker Swarm)"
+            extracted_goals = [
+                "Compile real-time inverse kinematics & bipedal balance controller (Tesla Optimus Architecture)",
+                "Implement 6-DOF sensor fusion telemetry engine with complementary filtering (IMU + joint encoders)",
+                "Build 1kHz high-frequency actuator torque control loop with CAN-bus frame serialization",
+                "Deploy safety failsafe state machine (collision boundary limiters, thermal cutoff, e-stop)",
+                "Verify 100% test pass rate with sandboxed pytest robotics testbed"
+            ]
+            identified_constraints = [
+                "Strict sub-1ms deterministic control loop overhead (1kHz actuator loop)",
+                "Zero tolerance for joint limit breach or numerical singularity",
+                "Comprehensive sandboxed pytest simulation assertions"
+            ]
+            missing_parameters = ["Kinematics degrees of freedom", "Control loop frequency", "Safety failsafe protocol"]
+            clarifications = [
+                ClarificationQuestion(
+                    id="kinematics_model",
+                    question="Which kinematics and degree-of-freedom architecture should the sub-agents compile?",
+                    why_needed="Determines Denavit-Hartenberg parameters, transformation matrices, and Jacobian inversion.",
+                    options=[
+                        "6-DOF Bipedal Legs + 6-DOF Torso/Arms (Tesla Optimus Architecture)",
+                        "12-DOF Full Bipedal Humanoid Locomotion",
+                        "Modular 7-DOF Manipulator with 3-Finger End-Effector"
+                    ],
+                    default_selection="6-DOF Bipedal Legs + 6-DOF Torso/Arms (Tesla Optimus Architecture)"
+                ),
+                ClarificationQuestion(
+                    id="control_frequency",
+                    question="What real-time control loop frequency is required for the actuator torque pipeline?",
+                    why_needed="Governs timer interrupt precision, buffer sizes, and CAN bus baud rate configuration.",
+                    options=["1000Hz (1kHz) Real-Time Control Loop", "500Hz Deterministic Loop", "250Hz Simulation Benchmark"],
+                    default_selection="1000Hz (1kHz) Real-Time Control Loop"
+                ),
+                ClarificationQuestion(
+                    id="safety_protocol",
+                    question="Which safety failsafe protocol should govern the humanoid state machine?",
+                    why_needed="Ensures immediate motor cut-off and joint damping upon collision detection or thermal threshold breach.",
+                    options=[
+                        "Multi-Layered Hard Real-Time E-Stop & Joint Limit Clamping",
+                        "Graceful Damped Deceleration to Rest",
+                        "Simulation Virtual Walls with Soft Springs"
+                    ],
+                    default_selection="Multi-Layered Hard Real-Time E-Stop & Joint Limit Clamping"
+                )
+            ]
+            recommended_defaults = {
+                "kinematics_model": "6-DOF Bipedal Legs + 6-DOF Torso/Arms (Tesla Optimus Architecture)",
+                "control_frequency": "1000Hz (1kHz) Real-Time Control Loop",
+                "safety_protocol": "Multi-Layered Hard Real-Time E-Stop & Joint Limit Clamping"
+            }
+        elif is_business_or_agency:
             track_type = "business_acquisition"
+            swarm_size_descriptor = "Tactical Squad (4 Specialized B2B Acquisition Agents)"
             extracted_goals = [
                 "Establish a high-ticket B2B client acquisition engine & agency for Master Ansh",
                 "Acquire first 5 paying clients ($2,500 - $4,500/mo or ₹25k - ₹75k/mo)",
@@ -290,8 +355,9 @@ class MetaOrchestrator:
                 "scheduling_link": "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)",
                 "outbound_angle": "Rapid 7-Day Sprint Delivery (Zero Hiring Overhead)"
             }
-        elif any(w in v_lower for w in ["mail", "email", "gmail", "letter", "message", "write to", "send to"]):
+        elif is_personal_comm:
             track_type = "communication_assistant"
+            swarm_size_descriptor = "Tactical Squad (3 Specialized Communication Agents)"
             extracted_goals = [
                 "Draft 3 personal, deeply loyal emails to anshtiwarisocial@gmail.com",
                 "Ensure subject line is strictly 'i am jarvis'",
@@ -333,6 +399,7 @@ class MetaOrchestrator:
             }
         else:
             track_type = "technical_software"
+            swarm_size_descriptor = "Tactical Squad (3 Specialized Systems Engineering Agents)"
             extracted_goals = [
                 "Build an authenticated telemetry microservice",
                 "Implement JWT bearer token authorization",
@@ -376,6 +443,8 @@ class MetaOrchestrator:
         analysis = IntentAnalysis(
             session_id=session.session_id,
             track_type=track_type,
+            combat_tier=combat_tier,
+            swarm_size_descriptor=swarm_size_descriptor,
             raw_vision=vision,
             extracted_goals=extracted_goals,
             identified_constraints=identified_constraints,
@@ -391,7 +460,57 @@ class MetaOrchestrator:
         analysis = session.intent_analysis
         track = analysis.track_type if analysis else "technical_software"
 
-        if track == "communication_assistant":
+        if track == "robotics_humanoid":
+            nodes = [
+                TaskNode(
+                    id="task_robotics_kinematics",
+                    title="6-DOF / 12-DOF Inverse Kinematics & Balance Control",
+                    agent_type="KinematicsEngineAgent",
+                    description="Compile analytical & numerical inverse kinematics solver (DH parameters) and Center of Mass stabilizer.",
+                    dependencies=[],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_robotics_sensors",
+                    title="Real-Time Sensor Fusion Telemetry Engine",
+                    agent_type="SensorFusionAgent",
+                    description="Compile 6-DOF IMU telemetry ingestion with complementary attitude filtering and joint encoder telemetry.",
+                    dependencies=["task_robotics_kinematics"],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_robotics_actuator",
+                    title="1kHz High-Frequency Actuator Torque & CAN Loop",
+                    agent_type="ActuatorControllerAgent",
+                    description="Compile high-frequency actuator torque control loop with CAN-bus frame encoding and motor drivers.",
+                    dependencies=["task_robotics_sensors"],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_robotics_safety",
+                    title="Multi-Layered Hard Real-Time Safety & E-Stop",
+                    agent_type="SafetyFailsafeAgent",
+                    description="Compile joint angle limit clamp, velocity limiters, thermal cutoff, and emergency stop state machine.",
+                    dependencies=["task_robotics_actuator"],
+                    assigned_tools=["file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_robotics_testbed",
+                    title="Sandboxed Pytest Robotics Simulation Suite",
+                    agent_type="SimulationTestbedAgent",
+                    description="Execute comprehensive pytest suite verifying kinematics convergence, sensor filtering, and e-stop triggers.",
+                    dependencies=["task_robotics_safety"],
+                    assigned_tools=["run_command", "file_write", "file_read"]
+                )
+            ]
+            plan = DAGPlan(
+                session_id=session.session_id,
+                title="Tesla Optimus Class Humanoid Robotics Autonomous Codebase",
+                objective="Compile production-grade humanoid robotics architecture: real-time inverse kinematics, sensor fusion, 1kHz actuator control loop, safety failsafes, and pytest verification.",
+                nodes=nodes,
+                estimated_duration_sec=35
+            )
+        elif track == "communication_assistant":
             nodes = [
                 TaskNode(
                     id="task_comm_research",
@@ -576,6 +695,41 @@ class MetaOrchestrator:
                 name="Verification & Test Agent",
                 role="Automated QA & Subprocess Verification Specialist",
                 system_prompt="You write and execute sandboxed pytest test suites with zero tolerance for failure.",
+                allowed_tools=["run_command", "file_write", "file_read"]
+            ),
+            "KinematicsEngineAgent": SubAgentSpec(
+                agent_id="agent_kinematics",
+                name="Kinematics & Dynamics Engine Agent",
+                role="Robotics Kinematics & Locomotion Specialist",
+                system_prompt="You compile forward/inverse kinematics solvers, DH parameter matrices, and center-of-mass balance algorithms for humanoid robots.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "SensorFusionAgent": SubAgentSpec(
+                agent_id="agent_sensor",
+                name="Sensor Fusion Telemetry Agent",
+                role="Real-Time Telemetry & State Estimation Specialist",
+                system_prompt="You compile complementary/Kalman filtering pipelines integrating 6-DOF IMU attitude and joint encoder states.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "ActuatorControllerAgent": SubAgentSpec(
+                agent_id="agent_actuator",
+                name="Actuator Controller & CAN Loop Agent",
+                role="1kHz Hard Real-Time Motor Control Specialist",
+                system_prompt="You compile deterministic high-frequency PID torque loops and CAN bus telemetry frames for electric brushless actuators.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "SafetyFailsafeAgent": SubAgentSpec(
+                agent_id="agent_safety",
+                name="Safety Failsafe & E-Stop Agent",
+                role="Hard Real-Time Robotics Safety Specialist",
+                system_prompt="You compile joint limit clamping, thermal threshold guards, and emergency stop state machines.",
+                allowed_tools=["file_write", "file_read"]
+            ),
+            "SimulationTestbedAgent": SubAgentSpec(
+                agent_id="agent_robotics_sim",
+                name="Robotics Simulation & QA Agent",
+                role="Pytest Robotics Physics Testbed Specialist",
+                system_prompt="You execute sandboxed physics and numerical assertion suites validating kinematics convergence and failsafe cutoffs.",
                 allowed_tools=["run_command", "file_write", "file_read"]
             )
         }

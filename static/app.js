@@ -409,7 +409,19 @@ async function handleDirectiveSubmit(e) {
     state.sessionId = analysis.session_id;
     state.clarificationData = analysis;
 
-    appendLog(`[Intent Analyzer] Session ${state.sessionId} established. Identified track: ${analysis.detected_track}`, "text-cyan-400");
+    const tierBadge = document.getElementById("combatTierBadge");
+    if (tierBadge && analysis.swarm_size_descriptor) {
+      tierBadge.textContent = analysis.swarm_size_descriptor;
+      if (analysis.combat_tier === "swarm_army") {
+        tierBadge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono font-bold animate-pulse";
+      } else if (analysis.combat_tier === "solo") {
+        tierBadge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-semibold";
+      } else {
+        tierBadge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-semibold";
+      }
+    }
+
+    appendLog(`[Intent Analyzer] Session ${state.sessionId} established. Identified track: ${analysis.track_type || analysis.detected_track} (${analysis.swarm_size_descriptor || "Standard"})`, "text-cyan-400");
 
     // Open Clarification Gate Modal for verification
     renderClarificationModal(analysis);

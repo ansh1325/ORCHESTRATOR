@@ -20,7 +20,9 @@ class ClarificationQuestion(BaseModel):
 
 class IntentAnalysis(BaseModel):
     session_id: str
-    track_type: str = Field(description="business_acquisition | technical_software | hybrid")
+    track_type: str = Field(description="business_acquisition | technical_software | communication_assistant | robotics_humanoid | general")
+    combat_tier: str = Field(default="tactical_squad", description="solo | tactical_squad | swarm_army")
+    swarm_size_descriptor: str = Field(default="Tactical Squad (3-4 Specialized Agents)")
     raw_vision: str
     extracted_goals: List[str]
     identified_constraints: List[str]

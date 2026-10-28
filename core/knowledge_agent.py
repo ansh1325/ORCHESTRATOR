@@ -33,7 +33,15 @@ class KnowledgeAgent:
 
         # Step 1: Research query formulation
         if emit_event:
-            query_desc = "Meta Ads agency acquisition benchmarks" if is_marketing else ("B2B client acquisition agency benchmarks" if track_type == "business_acquisition" else "FastAPI telemetry architecture")
+            if track_type == "robotics_humanoid":
+                query_desc = "Humanoid robotics inverse kinematics and 1kHz actuator control loop"
+            elif is_marketing:
+                query_desc = "Meta Ads agency acquisition benchmarks"
+            elif track_type == "business_acquisition":
+                query_desc = "B2B client acquisition agency benchmarks"
+            else:
+                query_desc = "FastAPI telemetry architecture"
+
             await emit_event(ExecutionEvent(
                 event_type="log",
                 session_id=session_id,
@@ -45,7 +53,15 @@ class KnowledgeAgent:
             await asyncio.sleep(0.3)
 
         # Step 2: Query MCP Web Search Tool
-        search_query = "Meta ads B2B agency pricing and client acquisition" if is_marketing else ("B2B client acquisition agency pricing benchmarks" if track_type == "business_acquisition" else "FastAPI telemetry authenticated microservice architecture")
+        if track_type == "robotics_humanoid":
+            search_query = "Tesla Optimus humanoid robot kinematics control loop ROS2 architecture"
+        elif is_marketing:
+            search_query = "Meta ads B2B agency pricing and client acquisition"
+        elif track_type == "business_acquisition":
+            search_query = "B2B client acquisition agency pricing benchmarks"
+        else:
+            search_query = "FastAPI telemetry authenticated microservice architecture"
+            
         search_results = mcp.tool_web_search(search_query)
 
         if emit_event:
@@ -60,7 +76,41 @@ class KnowledgeAgent:
             await asyncio.sleep(0.4)
 
         # Step 3: Synthesis of Structured Knowledge Base
-        if track_type == "communication_assistant":
+        if track_type == "robotics_humanoid":
+            kb = KnowledgeBase(
+                session_id=session_id,
+                target_niche="Autonomous Humanoid Robotics Control Architecture (Tesla Optimus / Bipedal Systems)",
+                icp={
+                    "degrees_of_freedom": "28-DOF (6-DOF bipedal legs, 6-DOF arms, 2-DOF neck)",
+                    "control_loops": {
+                        "kinematics_frequency": "100Hz Cartesian trajectory generation & Jacobian solver",
+                        "actuator_loop": "1000Hz (1kHz) deterministic motor torque control via CAN-FD",
+                        "sensor_fusion": "500Hz complementary filter (6-axis IMU + joint position encoders)"
+                    },
+                    "safety_thresholds": {
+                        "max_joint_velocity_rad_s": 5.2,
+                        "thermal_cutoff_celsius": 85.0,
+                        "e_stop_latency_ms": 2.5
+                    }
+                },
+                pricing_tiers=[{"tier": "Production Grade Firmware & Control Core", "price": "Open Mechatronics Core", "scope": "Full humanoid control stack"}],
+                milestone_1="Compile analytical inverse kinematics, sensor fusion, and 1kHz actuator control loops.",
+                milestone_2="Execute sandboxed pytest physics suite verifying kinematics convergence and failsafe cutoffs.",
+                technical_blueprint={
+                    "robotics_stack": ["Python 3.14 Math Core", "CAN-FD Telemetry Protocol", "Pytest Physics Simulation"],
+                    "deliverables": [
+                        "kinematics_controller.py (DH parameters, forward/inverse kinematics, balance)",
+                        "sensor_fusion.py (IMU complementary attitude filter & joint telemetry)",
+                        "actuator_loop.py (1kHz high-frequency PID torque loop & CAN bus frames)",
+                        "safety_failsafe.py (joint limits, thermal monitor, e-stop state machine)",
+                        "test_humanoid_robotics.py (comprehensive sandboxed pytest suite)",
+                        "humanoid_architecture_spec.md (complete engineering whitepaper for Tesla Optimus class bots)"
+                    ]
+                },
+                scraped_sources=search_results.get("results", []),
+                synthesis_summary="Synthesized complete autonomous humanoid robotics control architecture for Master Ansh."
+            )
+        elif track_type == "communication_assistant":
             kb = KnowledgeBase(
                 session_id=session_id,
                 target_niche="Personal Executive Communications (Ansh Tiwari)",

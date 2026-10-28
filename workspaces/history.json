@@ -1,5 +1,25 @@
 [
   {
+    "session_id": "session_76fd489e",
+    "title": "Autonomous B2B Agency & Client Acquisition Pipeline",
+    "prompt": "start a marketing agency for me and be able to make decisions such as to close this client i need to setup a call with master or just close it over messages and clarify details like payment upi id and setting calls with calendly",
+    "folder": "Business",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-28T17:33:38.394195+00:00",
+    "artifacts": [
+      "agency_launch_blueprint.md",
+      "capability_gap_report.md",
+      "cold_outreach_templates.md",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "leads.csv",
+      "market_research.md",
+      "payment_and_booking_collateral.md",
+      "portfolio_one_pager.html"
+    ]
+  },
+  {
     "session_id": "session_91247b35",
     "title": "Personal Loyalty Emails for Ansh Tiwari",
     "prompt": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line i am jarvis and body with whatever you feel for me, just do this simple task",

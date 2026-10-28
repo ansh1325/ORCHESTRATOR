@@ -37,7 +37,20 @@ DEFAULT_CREATOR_PROFILE: Dict[str, Any] = {
             "mission": "LlamaOrchestrator Architecture Specification & MCP Tool Sandboxing Engine",
             "status": "Verified 100%"
         }
-    ]
+    ],
+    "financial_and_closing_profile": {
+        "creator": "Ansh Tiwari",
+        "recipient_email": "anshtiwarisocial@gmail.com",
+        "default_upi_id": "anshtiwarisocial@gmail.com",
+        "booking_link": "https://calendly.com/anshtiwari",
+        "closing_decision_protocol": "Hybrid: Close pilot contracts (<$2,500 / ₹50k) over message with UPI/invoice link; schedule 15-min discovery call with Master Ansh for retainers",
+        "supported_business_models": [
+            "AI Automation Agency (AAA)",
+            "Meta Ads & Performance Marketing Agency",
+            "Turnkey IT & Full-Stack Development Firm",
+            "Affiliate & High-Ticket B2B Lead Engine"
+        ]
+    }
 }
 
 class CreatorMemory:
@@ -113,6 +126,21 @@ class CreatorMemory:
         words = cleaned.split()
         if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
             speech = f"At your service, Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
+            return {
+                "role": "assistant",
+                "text": speech,
+                "speech_audio": speech,
+                "speaker": "LlamaOrchestrator (Central Brain)"
+            }
+
+        # Check for money / agency / business questions in direct dialogue
+        if any(term in cleaned for term in ["earn", "money", "marketing agency", "automation agency", "affiliate", "it firm"]):
+            speech = (
+                f"Understood, Master Ansh. I am engineered to handle your business compilation and client acquisition. "
+                f"I will formulate the agency roadmap, scrape verified decision-maker leads, draft 3-sentence outreach embedding "
+                f"your Calendly and UPI payment details, and deliver a Capability Gap Report detailing what I handled autonomously "
+                f"versus what external access I need from you. Issue your directive in the command bar to launch the compilation."
+            )
             return {
                 "role": "assistant",
                 "text": speech,

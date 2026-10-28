@@ -87,6 +87,10 @@ class KnowledgeAgent:
                 synthesis_summary="Synthesized personal executive communication blueprint for Ansh Tiwari."
             )
         elif track_type == "business_acquisition":
+            closing_strategy = clarification_answers.get("closing_strategy", "Hybrid: Close low-friction pilots over direct message; schedule 15-min discovery call with Master Ansh for retainers")
+            payment_details = clarification_answers.get("payment_details", "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit")
+            scheduling_link = clarification_answers.get("scheduling_link", "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)")
+
             if is_marketing:
                 target_niche = clarification_answers.get("target_niche", "High-Growth DTC & E-Commerce Brands ($50k-$500k/mo Ad Spend)")
                 kb = KnowledgeBase(
@@ -111,11 +115,16 @@ class KnowledgeAgent:
                     milestone_2="Scale agency to $35k+ MRR with automated prospect scraping and referral loops.",
                     technical_blueprint={
                         "ad_stack": ["Meta Ads Manager API", "Figma / Canva Creative Scaffolding", "Triple Whale / Hyros Attribution"],
+                        "closing_strategy": closing_strategy,
+                        "payment_details": payment_details,
+                        "scheduling_link": scheduling_link,
                         "deliverables": [
                             "leads.csv (qualified ecom/SaaS founders with validated emails)",
-                            "cold_outreach_templates.md (3-sentence ad teardown hooks)",
-                            "ad_campaign_blueprint.md (Top/Middle/Bottom of Funnel Meta Ads structure)",
-                            "portfolio_one_pager.html (interactive social proof & booking form)"
+                            "cold_outreach_templates.md (3-sentence ad teardown hooks with Calendly / UPI close)",
+                            "agency_launch_blueprint.md (Top/Middle/Bottom of Funnel Meta Ads structure)",
+                            "payment_and_booking_collateral.md (UPI payment details, 50% upfront agreement)",
+                            "portfolio_one_pager.html (interactive social proof & booking form)",
+                            "capability_gap_report.md (itemized autonomous output vs external credentials needed)"
                         ]
                     },
                     scraped_sources=search_results.get("results", []),
@@ -145,11 +154,16 @@ class KnowledgeAgent:
                     milestone_2="Scale to 15 recurring retainers ($67.5k MRR) with automated lead ingestion and referral loops.",
                     technical_blueprint={
                         "outreach_stack": ["Apollo/LinkedIn Scraper", "Smartlead/Instantly", "Custom MCP Email Verifier"],
+                        "closing_strategy": closing_strategy,
+                        "payment_details": payment_details,
+                        "scheduling_link": scheduling_link,
                         "deliverables": [
                             "leads.csv (decision maker list with validated emails)",
-                            "cold_outreach_templates.md (high-converting 3-sentence frameworks)",
-                            "client_proposal_template.md (pricing & SLA contract)",
-                            "portfolio_one_pager.html (interactive social proof showcase)"
+                            "cold_outreach_templates.md (high-converting 3-sentence frameworks with Calendly & UPI close)",
+                            "agency_launch_blueprint.md (operations & fulfillment blueprint for Ansh Tiwari)",
+                            "payment_and_booking_collateral.md (UPI payment details, 50% upfront agreement)",
+                            "portfolio_one_pager.html (interactive social proof showcase)",
+                            "capability_gap_report.md (itemized autonomous output vs external credentials needed)"
                         ]
                     },
                     scraped_sources=search_results.get("results", []),

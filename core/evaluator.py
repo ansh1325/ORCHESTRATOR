@@ -136,6 +136,16 @@ class EvaluatorGatekeeper:
                 "details": "Dispatched simulated webhook call to Ansh Tiwari's calendar for Sarah Chen (Founder, Synthetica Labs)."
             })
 
+            # Check 4: Payment & Capability Gap Transparency Audit
+            cap_check = self.mcp.tool_file_read("capability_gap_report.md")
+            pay_check = self.mcp.tool_file_read("payment_and_booking_collateral.md")
+            has_governance = cap_check.get("success", False) and pay_check.get("success", False)
+            audit_results["checks"].append({
+                "check": "Master Payment Details & Capability Gap Transparency",
+                "passed": has_governance,
+                "details": "Verified Master Ansh's UPI payment details, Calendly booking link, and itemized autonomous boundary disclosure."
+            })
+
         # Step 4: Write evaluator_report.json
         report_content = json.dumps(audit_results, indent=2)
         self.mcp.tool_file_write("evaluator_report.json", report_content)

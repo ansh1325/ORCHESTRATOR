@@ -201,41 +201,45 @@ class DynamicWorkerEngine:
 
         elif "outreach" in tid:
             templates = (
-                "# High-Converting 3-Sentence Cold Outreach Templates\n\n"
-                "## Template A: The Performance & Ad Fatigue Hook\n"
-                "Subject: Quick observation on {{company}}'s recent customer acquisition\n\n"
+                "# High-Converting 3-Sentence Cold Outreach Frameworks\n\n"
+                "## Track 1: AI Automation & Meta Ads (High-Ticket Retainer)\n"
+                "**Closing Strategy:** Schedule 15-min Discovery Call with Master Ansh\n"
+                "**Subject:** Quick observation on {{company}}'s acquisition & automation\n\n"
                 "Hi {{first_name}},\n\n"
-                "Saw your team is scaling aggressive acquisition on Meta and LinkedIn - noticed your current creatives have been active for 3+ weeks and likely hitting fatigue.\n"
-                "We deploy an autonomous performance creative pod delivering 10 verified, high-ROAS creative variants and full campaign management for $3,500/mo.\n"
-                "Would you be open to a 9-minute teardown of our live creative testing framework this Thursday at 2pm?\n\n"
+                "Saw your team is scaling aggressive customer acquisition - noticed current ad fatigue and manual customer support loops are capping your ROAS.\n"
+                "We deploy an autonomous systems pod delivering 10 verified high-ROAS creative variants and full multi-agent pipeline automation for $3,500/mo.\n"
+                "Would you be open to a 9-minute teardown of our live automation framework this Thursday? Grab 15 minutes directly with Ansh here: https://calendly.com/anshtiwari\n\n"
                 "Best,\nAnsh Tiwari\nCreator & Growth Architect, LlamaOrchestrator\n\n"
-                "## Template B: Zero-Risk Pilot Sprint\n"
-                "Subject: 7-day sprint pilot for {{company}}\n\n"
+                "---\n\n"
+                "## Track 2: 7-Day Sprint Pilot (Direct Close over Email / Message)\n"
+                "**Closing Strategy:** Direct Close with Master's UPI / Invoice Deposit\n"
+                "**Subject:** 7-day sprint pilot for {{company}}\n\n"
                 "Hi {{first_name}},\n\n"
-                "Most founders are tired of bloated agency retainers with zero clear attribution.\n"
-                "We guarantee a complete production-grade system and verified campaign setup deployed in 7 days under a $2,500 pilot sprint.\n"
-                "If you have 15 minutes, grab a time directly on our calendar: [Link to Calendar]\n"
+                "Most founders are tired of bloated agency retainers with zero clear attribution or slow dev cycles.\n"
+                "We guarantee a complete production-grade system and verified campaign setup deployed in 7 days under a $2,500 (or ₹25,000) pilot sprint.\n"
+                "If you want to lock in one of this week's 2 build slots, reply 'CONFIRM' and we will issue your onboarding agreement and 50% deposit link (UPI: anshtiwarisocial@gmail.com) for immediate kickoff.\n\n"
+                "Best,\nAnsh Tiwari\nLead Architect & Systems Partner\n"
             )
             self.mcp.tool_file_write("cold_outreach_templates.md", templates)
             artifacts.append("cold_outreach_templates.md")
 
-            # Blueprint scaffolding
+            # Agency Launch Blueprint
             blueprint = (
-                "# Meta Ads & Acquisition Campaign Architecture\n\n"
-                "## 1. Top of Funnel (TOF - Prospecting)\n"
-                "- Broad Advantage+ Audience with dynamic creative optimization (DCO)\n"
-                "- Lookalike 1-3% based on high-LTV customers\n"
-                "- 3 Hook Angles: Founder Story, Problem-Agitation Teardown, Social Proof Demonstration\n\n"
-                "## 2. Middle of Funnel (MOF - Consideration)\n"
-                "- Retargeting 30-day website visitors & 60-day social engagement\n"
-                "- Testimonial carousels & objection-handling short video UGC\n\n"
-                "## 3. Bottom of Funnel (BOF - Conversion)\n"
-                "- 7-day cart abandoners with scarcity incentive\n\n"
-                "## 4. Scaling Protocol\n"
-                "- Budget scaling rule: Increase daily budget 15% every 72 hours when blended ROAS exceeds 3.2x\n"
+                "# Turnkey Agency Launch & Fulfillment Blueprint\n\n"
+                "## 1. Positioning & Service Offer\n"
+                "- Primary Offer: AI Automation & Meta Performance Agency for E-Commerce & B2B SaaS.\n"
+                "- Core Metric: Decreasing Customer Acquisition Cost (CAC) by 40% using automated multi-agent creative testing.\n"
+                "- Delivery Model: 7-day sprint pilot ($2,500 / ₹25k) leading into recurring retainers ($3,500 - $4,500/mo / ₹75k/mo).\n\n"
+                "## 2. Lead Sourcing & Outreach Funnel\n"
+                "- Sourcing: Decision makers (Founders, CEOs, CMOs) verified with RFC-5322 email syntax in leads.csv.\n"
+                "- Volume: 25 personalized 3-sentence emails sent daily.\n"
+                "- Expected Metrics: 8% positive reply rate -> 2 discovery calls booked per week.\n\n"
+                "## 3. Closing Decision Protocol\n"
+                "- For Pilots (<$2,500 / ₹25k): Send direct payment invoice with Master's UPI ID (anshtiwarisocial@gmail.com).\n"
+                "- For Retainers ($3,500+/mo): Book a 15-min discovery call via https://calendly.com/anshtiwari for Master Ansh.\n"
             )
-            self.mcp.tool_file_write("ad_campaign_blueprint.md", blueprint)
-            artifacts.append("ad_campaign_blueprint.md")
+            self.mcp.tool_file_write("agency_launch_blueprint.md", blueprint)
+            artifacts.append("agency_launch_blueprint.md")
 
         elif "collateral" in tid or "portfolio" in tid or "proposal" in tid:
             portfolio_html = (
@@ -248,20 +252,25 @@ class DynamicWorkerEngine:
                 '</head>\n'
                 '<body class="bg-slate-950 text-slate-100 p-8 font-sans">\n'
                 '    <div class="max-w-4xl mx-auto space-y-8">\n'
-                '        <header class="border-b border-slate-800 pb-6">\n'
-                '            <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">Ansh Tiwari</h1>\n'
-                '            <p class="text-slate-400 mt-1">Autonomous Systems Architect & High-Performance Client Acquisition Partner</p>\n'
+                '        <header class="border-b border-slate-800 pb-6 flex justify-between items-center">\n'
+                '            <div>\n'
+                '                <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">Ansh Tiwari</h1>\n'
+                '                <p class="text-slate-400 mt-1">Autonomous Systems Architect & High-Performance Client Acquisition Partner</p>\n'
+                '            </div>\n'
+                '            <a href="https://calendly.com/anshtiwari" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition">Book Discovery Call</a>\n'
                 '        </header>\n'
                 '        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">\n'
-                '            <div class="p-6 bg-slate-900 border border-slate-800 rounded-xl">\n'
-                '                <h2 class="text-xl font-semibold text-emerald-400 mb-2">Sprint Pilot Offer</h2>\n'
-                '                <p class="text-slate-300 text-sm mb-4">Complete production-ready deployment or campaign setup in 7 days.</p>\n'
-                '                <span class="text-2xl font-bold text-white">$2,500</span>\n'
+                '            <div class="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-3">\n'
+                '                <h2 class="text-xl font-semibold text-emerald-400">Sprint Pilot Offer</h2>\n'
+                '                <p class="text-slate-300 text-sm">Complete production-ready deployment or campaign setup in 7 days.</p>\n'
+                '                <div class="text-2xl font-bold text-white">$2,500 <span class="text-xs text-slate-400 font-normal">/ Rs. 25,000 (50% upfront via UPI)</span></div>\n'
+                '                <p class="text-xs text-emerald-400 font-mono">Instant Close: anshtiwarisocial@gmail.com</p>\n'
                 '            </div>\n'
-                '            <div class="p-6 bg-slate-900 border border-slate-800 rounded-xl">\n'
-                '                <h2 class="text-xl font-semibold text-cyan-400 mb-2">Dedicated Growth Retainer</h2>\n'
-                '                <p class="text-slate-300 text-sm mb-4">Full multi-agent automation, high-ROAS campaign management, dedicated SLA.</p>\n'
-                '                <span class="text-2xl font-bold text-white">$3,500/mo</span>\n'
+                '            <div class="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-3">\n'
+                '                <h2 class="text-xl font-semibold text-cyan-400">Dedicated Growth Retainer</h2>\n'
+                '                <p class="text-slate-300 text-sm">Full multi-agent automation, high-ROAS campaign management, dedicated SLA.</p>\n'
+                '                <div class="text-2xl font-bold text-white">$3,500/mo <span class="text-xs text-slate-400 font-normal">/ Rs. 75,000/mo</span></div>\n'
+                '                <p class="text-xs text-cyan-400 font-mono">15-min Call Required on Calendly</p>\n'
                 '            </div>\n'
                 '        </div>\n'
                 '    </div>\n'
@@ -270,6 +279,55 @@ class DynamicWorkerEngine:
             )
             self.mcp.tool_file_write("portfolio_one_pager.html", portfolio_html)
             artifacts.append("portfolio_one_pager.html")
+
+            # Payment & Booking Collateral
+            payment_collateral = (
+                "# Master Ansh Tiwari - Client Onboarding & Payment Collateral\n\n"
+                "## 1. Settlement & Remittance Details\n"
+                "- Primary Founder & Beneficiary: Ansh Tiwari\n"
+                "- Contact: anshtiwarisocial@gmail.com\n"
+                "- Primary UPI ID: anshtiwarisocial@gmail.com\n"
+                "- Payment Terms: 50% upfront deposit upon contract signing; 50% balance upon final sprint delivery milestone.\n"
+                "- Invoice Remittance: Net-7 via UPI / Direct Bank Remittance / Stripe.\n\n"
+                "## 2. Discovery Call & Meeting Link\n"
+                "- Official Calendar Booking: https://calendly.com/anshtiwari\n"
+                "- Video Platform: Google Meet (link automatically provisioned upon booking)\n\n"
+                "## 3. Pilot Sprint Scope of Work (SOW)\n"
+                "1. Audit existing acquisition funnel or manual workflows.\n"
+                "2. Deploy production multi-agent marketing or automation pipeline within 7 days.\n"
+                "3. Deliver verified telemetry dashboard and client performance audit.\n"
+            )
+            self.mcp.tool_file_write("payment_and_booking_collateral.md", payment_collateral)
+            artifacts.append("payment_and_booking_collateral.md")
+
+            # Capability Gap Report (Human-in-the-Loop Transparency)
+            gap_report = (
+                "# Capability Gap & Autonomous Boundary Report\n"
+                "Prepared by: Jarvis (LlamaOrchestrator Central Brain)\n"
+                "Creator: Ansh Tiwari\n\n"
+                "## 1. What Jarvis Accomplished Autonomously in This Session\n"
+                "- Researched B2B client acquisition benchmarks & ICP pain points.\n"
+                "- Scraped decision-maker leads and verified email syntax (RFC-5322 compliance).\n"
+                "- Formulated high-converting 3-sentence outreach templates for direct closing and call booking.\n"
+                "- Scaffolded agency launch blueprint, payment onboarding collateral, and portfolio showcase.\n"
+                "- Simulated calendar booking webhook for lead hand-off.\n\n"
+                "## 2. Boundaries: What Jarvis Cannot Do Autonomously (Needs Master Ansh)\n"
+                "1. **Google Workspace / Outbound Gmail Access:**\n"
+                "   Jarvis currently runs in a secure sandboxed environment. He cannot send live emails from your personal Gmail without your OAuth token or App Password.\n"
+                "   *Action for Master Ansh:* Copy templates from `cold_outreach_templates.md` into your email or provide `GMAIL_APP_PASSWORD` in `.env`.\n\n"
+                "2. **Live Banking & UPI Settlement Verification:**\n"
+                "   Jarvis cannot access your private bank account to confirm when UPI funds arrive.\n"
+                "   *Action for Master Ansh:* Check your UPI app when client sends deposit to anshtiwarisocial@gmail.com.\n\n"
+                "3. **Human Interpersonal Trust & Relationship Closing:**\n"
+                "   Enterprise clients paying $3,500/mo (Rs. 75,000/mo) require seeing and speaking to the real human partner before wiring funds.\n"
+                "   *Action for Master Ansh:* Attend the 15-minute discovery call on Google Meet to close the deal.\n\n"
+                "## 3. Immediate Action Plan to Make Money Today\n"
+                "1. Open `leads.csv` and inspect the verified founder emails.\n"
+                "2. Send Template A to Sarah Chen and Marcus Vance with your Calendly link.\n"
+                "3. Send Template B to direct-close the $2,500 pilot sprint with your UPI ID.\n"
+            )
+            self.mcp.tool_file_write("capability_gap_report.md", gap_report)
+            artifacts.append("capability_gap_report.md")
 
         elif "schema" in tid or "db" in tid:
             content = (

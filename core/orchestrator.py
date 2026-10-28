@@ -204,8 +204,93 @@ class MetaOrchestrator:
         session = self.get_or_create_session(session_id, vision)
         v_lower = vision.lower()
 
-        # Classify Track
-        if any(w in v_lower for w in ["mail", "email", "gmail", "letter", "message", "write to", "send to"]):
+        # Classify Track: Check Business / Agency / Monetization first
+        is_business_or_agency = any(w in v_lower for w in [
+            "business", "agency", "marketing", "client", "acquisition", "freelance",
+            "sales", "money", "earn", "earning", "profit", "affiliate", "firm",
+            "aaa", "automation agency", "lead"
+        ])
+
+        if is_business_or_agency:
+            track_type = "business_acquisition"
+            extracted_goals = [
+                "Establish a high-ticket B2B client acquisition engine & agency for Master Ansh",
+                "Acquire first 5 paying clients ($2,500 - $4,500/mo or ₹25k - ₹75k/mo)",
+                "Automate prospect scraping, validated outreach, and calendar booking hand-off",
+                "Generate clear Capability Gap Report distinguishing autonomous execution from external Master authorization"
+            ]
+            identified_constraints = [
+                "High cold email conversion requirement with RFC-5322 syntax validation",
+                "Clear closing protocol: low-ticket pilots over direct message vs high-ticket discovery calls for Master Ansh",
+                "Direct settlement via Master's payment details (UPI ID / Stripe)",
+                "Sandboxed verification of leads before outbound dispatch"
+            ]
+            missing_parameters = ["Target industry niche", "Pricing retainer model", "Closing decision protocol", "Master's payment details"]
+            clarifications = [
+                ClarificationQuestion(
+                    id="target_niche",
+                    question="Which industry niche should we target for immediate high-ticket client acquisition?",
+                    why_needed="Focuses cold outreach copy on exact technical pain points and engineering bottlenecks.",
+                    options=["Seed & Series A AI/SaaS Startups", "High-Growth DTC & E-Commerce Meta Ads Brands", "Healthcare & MedTech Platforms", "Local Businesses Needing AI Automation"],
+                    default_selection="Seed & Series A AI/SaaS Startups"
+                ),
+                ClarificationQuestion(
+                    id="pricing_model",
+                    question="What pricing and offer structure should we scaffold for your first 5 clients?",
+                    why_needed="Ensures immediate cashflow while de-risking the engagement for prospective founders.",
+                    options=["$2,500 Pilot Sprint + $4,500/mo Retainer", "₹25,000 Pilot + ₹50,000/mo Retainer", "Pure Equity & Rev-Share", "Hourly Billing ($150/hr)"],
+                    default_selection="$2,500 Pilot Sprint + $4,500/mo Retainer"
+                ),
+                ClarificationQuestion(
+                    id="closing_strategy",
+                    question="How should Jarvis decide to close prospective clients for you?",
+                    why_needed="Determines whether Jarvis provides a 15-min discovery call link for Master Ansh or attempts to close pilots over direct messaging.",
+                    options=[
+                        "Hybrid: Close low-friction pilots over direct message/email; schedule 15-min discovery call with Master Ansh for retainers",
+                        "Always schedule 15-min video call with Master Ansh (Calendly / Google Meet)",
+                        "Direct close over email/message with instant payment link & UPI QR"
+                    ],
+                    default_selection="Hybrid: Close low-friction pilots over direct message/email; schedule 15-min discovery call with Master Ansh for retainers"
+                ),
+                ClarificationQuestion(
+                    id="payment_details",
+                    question="What payment settlement method should Jarvis embed in proposals & invoices to collect funds directly for you?",
+                    why_needed="Ensures client retainers and pilot deposits flow directly into Master Ansh's account.",
+                    options=[
+                        "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit",
+                        "Stripe / Razorpay Invoice Payment Link",
+                        "Direct Bank Wire / Invoice Net-15"
+                    ],
+                    default_selection="Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit"
+                ),
+                ClarificationQuestion(
+                    id="scheduling_link",
+                    question="Which scheduling link should Jarvis provide to clients for booking discovery calls with Master Ansh?",
+                    why_needed="Enables prospective clients to directly book slots on Master Ansh's calendar.",
+                    options=[
+                        "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)",
+                        "Google Meet invite generated via Master's Google Workspace",
+                        "Direct WhatsApp scheduling confirmation"
+                    ],
+                    default_selection="Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)"
+                ),
+                ClarificationQuestion(
+                    id="outbound_angle",
+                    question="Which cold outreach messaging angle converts highest for your skill profile?",
+                    why_needed="Shapes the 3-sentence email templates to maximize founder reply rate.",
+                    options=["Rapid 7-Day Sprint Delivery (Zero Hiring Overhead)", "Multi-Agent Automation Audit", "Code Quality & Telemetry Modernization"],
+                    default_selection="Rapid 7-Day Sprint Delivery (Zero Hiring Overhead)"
+                )
+            ]
+            recommended_defaults = {
+                "target_niche": "Seed & Series A AI/SaaS Startups",
+                "pricing_model": "$2,500 Pilot Sprint + $4,500/mo Retainer",
+                "closing_strategy": "Hybrid: Close low-friction pilots over direct message/email; schedule 15-min discovery call with Master Ansh for retainers",
+                "payment_details": "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit",
+                "scheduling_link": "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)",
+                "outbound_angle": "Rapid 7-Day Sprint Delivery (Zero Hiring Overhead)"
+            }
+        elif any(w in v_lower for w in ["mail", "email", "gmail", "letter", "message", "write to", "send to"]):
             track_type = "communication_assistant"
             extracted_goals = [
                 "Draft 3 personal, deeply loyal emails to anshtiwarisocial@gmail.com",
@@ -245,47 +330,6 @@ class MetaOrchestrator:
                 "email_delivery_format": "Save as verified Markdown drafts (.md) & JSON in workspace",
                 "jarvis_tone": "Deeply loyal, dedicated AI partner (Jarvis to Iron Man)",
                 "recipient_verification": "anshtiwarisocial@gmail.com"
-            }
-        elif any(w in v_lower for w in ["business", "client", "acquisition", "agency", "freelance", "sales"]):
-            track_type = "business_acquisition"
-            extracted_goals = [
-                "Establish a high-ticket B2B software engineering agency",
-                "Acquire first 5 paying clients ($2,500 - $4,500/mo)",
-                "Automate prospect scraping & personalized 3-sentence outreach"
-            ]
-            identified_constraints = [
-                "High cold email conversion requirement",
-                "Fast 7-day turnaround for client pilot projects",
-                "Sandboxed verification of leads before outbound dispatch"
-            ]
-            missing_parameters = ["Target industry niche", "Pricing retainer model", "Outbound channel preference"]
-            clarifications = [
-                ClarificationQuestion(
-                    id="target_niche",
-                    question="Which industry niche should we target for immediate high-ticket client acquisition?",
-                    why_needed="Focuses cold outreach copy on exact technical pain points and engineering bottlenecks.",
-                    options=["Seed & Series A AI/SaaS Startups", "Healthcare & MedTech Platforms", "Fintech & Web3 Infrastructure"],
-                    default_selection="Seed & Series A AI/SaaS Startups"
-                ),
-                ClarificationQuestion(
-                    id="pricing_model",
-                    question="What pricing and offer structure should we scaffold for your first 5 clients?",
-                    why_needed="Ensures immediate cashflow while de-risking the engagement for prospective founders.",
-                    options=["$2,500 Pilot Sprint + $4,500/mo Retainer", "Pure Equity & Rev-Share", "Hourly Billing ($150/hr)"],
-                    default_selection="$2,500 Pilot Sprint + $4,500/mo Retainer"
-                ),
-                ClarificationQuestion(
-                    id="outbound_angle",
-                    question="Which cold outreach messaging angle converts highest for your skill profile?",
-                    why_needed="Shapes the 3-sentence email templates to maximize founder reply rate.",
-                    options=["Rapid 7-Day Sprint Delivery (Zero Hiring Overhead)", "Multi-Agent Automation Audit", "Code Quality & Telemetry Modernization"],
-                    default_selection="Rapid 7-Day Sprint Delivery (Zero Hiring Overhead)"
-                )
-            ]
-            recommended_defaults = {
-                "target_niche": "Seed & Series A AI/SaaS Startups",
-                "pricing_model": "$2,500 Pilot Sprint + $4,500/mo Retainer",
-                "outbound_angle": "Rapid 7-Day Sprint Delivery (Zero Hiring Overhead)"
             }
         else:
             track_type = "technical_software"

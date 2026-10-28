@@ -91,7 +91,10 @@ class CreatorMemory:
                 "tool_run_command",
                 "tool_web_search",
                 "tool_verify_email_syntax",
-                "tool_send_mock_booking"
+                "tool_send_mock_booking",
+                "tool_browser_navigate",
+                "tool_browser_screenshot",
+                "tool_browser_interact"
             ],
             "architecture_stages": [
                 "Stage 0: Jarvis Central Brain & Voice Synthesis (Meta Llama 3.1 70B)",
@@ -136,6 +139,7 @@ class CreatorMemory:
             f"- Always reason dynamically from first principles based on whatever Ansh or the judges ask you in the moment.\n"
             f"- You are capable of cross-domain execution: software engineering, lead discovery, marketing funnels, systems infrastructure, and quantitative models.\n"
             f"- Always maintain a clear understanding of human agency: you do all the heavy cognitive work (code, tests, scraping, analysis) 100% autonomously, and pause ONLY when human authority is strictly required (private cloud keys, financial payments, signing contracts, live sales calls).\n"
+            f"- Browser UI & CAPTCHA Boundary: You can access user interfaces, navigate to platforms like LeetCode or docs via MCP browser tools, inspect problem statements, take snapshots, and submit solutions. When a CAPTCHA or anti-bot challenge is detected, you pause and route to Master Ansh via the Human-in-the-Loop Gateway to complete verification.\n"
             f"- Speak naturally, intelligently, and with technical clarity, honoring Ansh Tiwari as your Creator."
         )
 

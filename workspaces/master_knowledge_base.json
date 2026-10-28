@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "owner": "Ansh Tiwari",
+  "domains": {
+    "seed_&_series_a_ai_startups": {
+      "niche": "Seed & Series A AI Startups",
+      "icp": {
+        "target_titles": [
+          "Founder",
+          "CTO",
+          "Head of Engineering",
+          "VP Product"
+        ],
+        "company_size": "10-100 employees (Seed to Series B)",
+        "pain_points": [
+          "Backlogged full-stack engineering roadmaps",
+          "High cost of full-time developer hiring ($160k+/yr)",
+          "Need rapid prototyping for AI/LLM automation features"
+        ],
+        "value_proposition": "On-demand senior full-stack & AI engineering pods delivering verified production features in 2-week sprints."
+      },
+      "pricing_tiers": [
+        {
+          "tier": "Sprint Pilot",
+          "price": "$2,500 (one-time)",
+          "scope": "Single verified microservice or integration shipped in 7 days."
+        },
+        {
+          "tier": "Core Dedicated Pod",
+          "price": "$4,500 / month",
+          "scope": "Continuous sprint delivery, dedicated senior engineer, 24h SLA."
+        },
+        {
+          "tier": "Scale & Growth",
+          "price": "$8,500 / month",
+          "scope": "Multi-agent automation, full telemetry, end-to-end cloud pipeline."
+        }
+      ],
+      "milestones": [
+        "Acquire First 5 Paying Clients via 3-sentence personalized cold outreach & Loom teardowns.",
+        "Scale to 15 recurring retainers ($67.5k MRR) with automated lead ingestion and referral loops."
+      ],
+      "technical_blueprint": {
+        "outreach_stack": [
+          "Apollo/LinkedIn Scraper",
+          "Smartlead/Instantly",
+          "Custom MCP Email Verifier"
+        ],
+        "closing_strategy": "Hybrid: Close low-friction pilots over direct message; schedule 15-min discovery call with Master Ansh for retainers",
+        "payment_details": "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit",
+        "scheduling_link": "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)",
+        "deliverables": [
+          "leads.csv (decision maker list with validated emails)",
+          "cold_outreach_templates.md (high-converting 3-sentence frameworks with Calendly & UPI close)",
+          "agency_launch_blueprint.md (operations & fulfillment blueprint for Ansh Tiwari)",
+          "payment_and_booking_collateral.md (UPI payment details, 50% upfront agreement)",
+          "portfolio_one_pager.html (interactive social proof showcase)",
+          "capability_gap_report.md (itemized autonomous output vs external credentials needed)"
+        ]
+      },
+      "summary": "Synthesized high-converting client acquisition blueprint tailored for full-stack engineering partners."
+    }
+  },
+  "accumulated_sources": [
+    "B2B High-Ticket Development Pricing Standards 2026",
+    "High-Converting Cold Outreach Benchmarks"
+  ],
+  "total_missions_learned": 3,
+  "last_updated": "2026-10-28T20:23:58.213083+00:00"
+}

@@ -194,6 +194,41 @@ function setupEventListeners() {
     });
   }
 
+  // Export to Host Downloads Button in Banner
+  const exportToDownloadsBtn = document.getElementById("exportToDownloadsBtn");
+  if (exportToDownloadsBtn) {
+    exportToDownloadsBtn.addEventListener("click", async () => {
+      if (!state.sessionId) return;
+      const originalText = exportToDownloadsBtn.innerHTML;
+      exportToDownloadsBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i><span>Saving...</span>`;
+      if (window.lucide) lucide.createIcons();
+      try {
+        const resp = await fetch(`/api/workspace/${state.sessionId}/export-to-path`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({})
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          exportToDownloadsBtn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i><span>Saved to Downloads!</span>`;
+          if (window.lucide) lucide.createIcons();
+          setTimeout(() => {
+            exportToDownloadsBtn.innerHTML = originalText;
+            if (window.lucide) lucide.createIcons();
+          }, 3000);
+        } else {
+          alert("Export failed: " + (data.detail || data.error || "Unknown error"));
+          exportToDownloadsBtn.innerHTML = originalText;
+          if (window.lucide) lucide.createIcons();
+        }
+      } catch (err) {
+        alert("Export failed: " + err.message);
+        exportToDownloadsBtn.innerHTML = originalText;
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+  }
+
   // Clarification Modal Buttons
   const closeModalBtn = document.getElementById("closeModalBtn");
   if (closeModalBtn) {

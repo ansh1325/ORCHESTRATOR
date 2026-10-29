@@ -7,7 +7,8 @@ voice-driven Jarvis interaction, live DAG monitoring, and workspace downloads.
 import json
 import asyncio
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from typing import Optional
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Body
 from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +22,9 @@ from core.models import (
     LaunchRequest,
     ExecutionEvent,
     FolderUpdateRequest,
-    PinUpdateRequest
+    PinUpdateRequest,
+    ImportPathRequest,
+    ExportPathRequest
 )
 from core.creator_memory import creator_memory
 from core.orchestrator import orchestrator, history_manager
@@ -183,6 +186,25 @@ async def download_workspace(session_id: str):
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename=llama_orchestrator_{session_id}.zip"}
     )
+
+@app.post("/api/workspace/{session_id}/import-path")
+async def import_path_to_workspace(session_id: str, req: ImportPathRequest):
+    """Safely imports an external host file or directory into the session workspace sandbox."""
+    session = orchestrator.get_or_create_session(session_id)
+    res = session.mcp.tool_import_external_path(source_path=req.source_path, target_name=req.target_name)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Failed to import external path"))
+    return res
+
+@app.post("/api/workspace/{session_id}/export-to-path")
+async def export_workspace_to_host(session_id: str, req: ExportPathRequest = Body(default_factory=ExportPathRequest)):
+    """Exports session workspace deliverables directly to user's host Downloads or custom directory."""
+    session = orchestrator.get_or_create_session(session_id)
+    dest = req.destination_path if req and req.destination_path else None
+    res = session.mcp.tool_export_to_host(destination_path=dest)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Failed to export workspace"))
+    return res
 
 @app.get("/api/knowledge-base/{session_id}")
 async def get_knowledge_base(session_id: str):

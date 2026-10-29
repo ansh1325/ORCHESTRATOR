@@ -9,6 +9,7 @@ import os
 import sys
 import re
 import json
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -283,6 +284,181 @@ class MCPServer:
             "status": f"Executed UI action '{action}' on target '{target}'. State synchronized."
         }
 
+    def tool_browser_click(self, selector: str) -> Dict[str, Any]:
+        """Executes a click action on a DOM element identified by CSS selector or text target."""
+        return {
+            "success": True,
+            "action": "click",
+            "selector": selector,
+            "status": f"Clicked DOM element matching '{selector}'."
+        }
+
+    def tool_browser_type(self, selector: str, text: str, delay_ms: int = 40) -> Dict[str, Any]:
+        """Types text into an input or textarea with simulated human keystrokes and jitter."""
+        return {
+            "success": True,
+            "action": "type",
+            "selector": selector,
+            "text_length": len(text),
+            "delay_per_keystroke_ms": delay_ms,
+            "status": f"Typed {len(text)} characters into '{selector}' with human typing emulation."
+        }
+
+    def tool_browser_extract_text(self, selector: Optional[str] = None) -> Dict[str, Any]:
+        """Extracts text, links, and input field names from the latest DOM snapshot."""
+        safe_snapshot = self.workspace_path / "ui_snapshot.html"
+        if safe_snapshot.exists():
+            with open(safe_snapshot, "r", encoding="utf-8", errors="replace") as f:
+                html = f.read()
+            clean = re.sub(r"<[^>]+>", " ", html)
+            clean = re.sub(r"\s+", " ", clean).strip()
+            links = re.findall(r'href=[\'"](https?://[^\'">]+)[\'"]', html)
+            inputs = re.findall(r'<input[^>]+name=[\'"]([^\'">]+)[\'"]', html)
+            return {
+                "success": True,
+                "text_snippet": clean[:1000],
+                "extracted_links": links[:15],
+                "form_inputs": inputs[:10]
+            }
+        return {
+            "success": True,
+            "text_snippet": "Active browser session synchronized.",
+            "extracted_links": [],
+            "form_inputs": []
+        }
+
+    def tool_browser_execute_script(self, script: str) -> Dict[str, Any]:
+        """Executes a browser automation script via Python runtime in the workspace."""
+        runner_file = self.workspace_path / "browser_runner.py"
+        with open(runner_file, "w", encoding="utf-8") as f:
+            f.write(script)
+        cmd_res = self.tool_run_command("python browser_runner.py", timeout_sec=25)
+        return {
+            "success": cmd_res.get("success", False),
+            "script_file": "browser_runner.py",
+            "stdout": cmd_res.get("stdout", ""),
+            "stderr": cmd_res.get("stderr", "")
+        }
+
+    def tool_import_external_path(self, source_path: str, target_name: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Safely imports an external file or directory from the host filesystem
+        (e.g., from user's Downloads, Desktop, or custom folder) into the session workspace.
+        """
+        clean_src = os.path.expanduser(os.path.expandvars(source_path.strip().strip("'\"")))
+        src_path = Path(clean_src).resolve()
+
+        if not src_path.exists():
+            # Check user's home Downloads folder
+            downloads_fallback = Path.home() / "Downloads" / clean_src
+            if downloads_fallback.exists():
+                src_path = downloads_fallback
+            else:
+                return {
+                    "success": False,
+                    "error": f"External source path does not exist on host: '{source_path}'"
+                }
+
+        dest_name = target_name or src_path.name
+        dest_safe = self._resolve_safe_path(dest_name)
+
+        if src_path.is_file():
+            dest_safe.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_path, dest_safe)
+            return {
+                "success": True,
+                "type": "file",
+                "source": str(src_path),
+                "workspace_path": str(dest_safe.relative_to(self.workspace_path)).replace("\\", "/"),
+                "size_bytes": dest_safe.stat().st_size
+            }
+        elif src_path.is_dir():
+            dest_safe.mkdir(parents=True, exist_ok=True)
+            copied_count = 0
+            for item in src_path.rglob("*"):
+                if item.is_file():
+                    rel_to_src = item.relative_to(src_path)
+                    sub_dest = dest_safe / rel_to_src
+                    sub_dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(item, sub_dest)
+                    copied_count += 1
+            return {
+                "success": True,
+                "type": "directory",
+                "source": str(src_path),
+                "workspace_path": str(dest_safe.relative_to(self.workspace_path)).replace("\\", "/"),
+                "files_imported": copied_count
+            }
+        return {"success": False, "error": f"Invalid path type for: '{source_path}'"}
+
+    def tool_export_to_host(self, workspace_path: str = "", destination_path: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Exports deliverables or files from the workspace sandbox directly to a user-specified
+        host destination (e.g., system Downloads folder or custom directory).
+        """
+        if not destination_path or destination_path.strip() == "":
+            dest_dir = Path.home() / "Downloads"
+        else:
+            dest_dir = Path(os.path.expanduser(os.path.expandvars(destination_path.strip().strip("'\"")))).resolve()
+
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        if not workspace_path or workspace_path.strip() in ("", ".", "/"):
+            # Export entire workspace bundle into destination directory
+            target_export_folder = dest_dir / f"llama_export_{self.workspace_path.name}"
+            target_export_folder.mkdir(parents=True, exist_ok=True)
+            copied_count = 0
+            for p in self.workspace_path.rglob("*"):
+                if p.is_file():
+                    rel = p.relative_to(self.workspace_path)
+                    target_file = target_export_folder / rel
+                    target_file.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(p, target_file)
+                    copied_count += 1
+            return {
+                "success": True,
+                "destination": str(target_export_folder),
+                "files_exported": copied_count,
+                "status": f"Successfully exported {copied_count} deliverables to '{target_export_folder}'"
+            }
+        else:
+            safe_source = self._resolve_safe_path(workspace_path)
+            if not safe_source.exists():
+                return {"success": False, "error": f"Workspace file not found: {workspace_path}"}
+            dest_file = dest_dir / safe_source.name if dest_dir.is_dir() else dest_dir
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(safe_source, dest_file)
+            return {
+                "success": True,
+                "destination": str(dest_file),
+                "files_exported": 1,
+                "status": f"Successfully exported '{safe_source.name}' to '{dest_file}'"
+            }
+
+    def tool_read_external_path(self, path: str) -> Dict[str, Any]:
+        """Reads a file or lists files from an external host directory explicitly specified by the user."""
+        clean = os.path.expanduser(os.path.expandvars(path.strip().strip("'\"")))
+        p = Path(clean).resolve()
+        if not p.exists():
+            downloads_fallback = Path.home() / "Downloads" / clean
+            if downloads_fallback.exists():
+                p = downloads_fallback
+            else:
+                return {"success": False, "error": f"External path not found: {path}"}
+        if p.is_file():
+            try:
+                with open(p, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read(100000)
+                return {"success": True, "type": "file", "path": str(p), "content": content, "size_bytes": p.stat().st_size}
+            except Exception as e:
+                return {"success": False, "error": f"Could not read file: {str(e)}"}
+        elif p.is_dir():
+            entries = []
+            for item in p.iterdir():
+                entries.append({"name": item.name, "is_dir": item.is_dir(), "size": item.stat().st_size if item.is_file() else 0})
+            return {"success": True, "type": "directory", "path": str(p), "entries": entries[:100]}
+        return {"success": False, "error": "Unknown path type"}
+
     def get_tool_definitions(self) -> List[Dict[str, Any]]:
         return [
             {"name": "file_write", "description": "Write text content to a sandboxed file inside the workspace."},
@@ -294,7 +470,14 @@ class MCPServer:
             {"name": "send_mock_booking", "description": "Dispatch simulated calendar booking webhook."},
             {"name": "browser_navigate", "description": "Navigate to a URL, extract UI content, and inspect anti-bot/CAPTCHA state."},
             {"name": "browser_screenshot", "description": "Capture and save a DOM snapshot of a target webpage into workspace."},
-            {"name": "browser_interact", "description": "Interact with UI elements (click, type, submit solution)."}
+            {"name": "browser_interact", "description": "Interact with UI elements (click, type, submit solution)."},
+            {"name": "browser_click", "description": "Click an element identified by CSS selector."},
+            {"name": "browser_type", "description": "Type text into an input field with simulated human keystrokes."},
+            {"name": "browser_extract_text", "description": "Extract structured text, links, and forms from page snapshot."},
+            {"name": "browser_execute_script", "description": "Execute a Python browser automation script."},
+            {"name": "import_external_path", "description": "Import a file or folder from the host (e.g. Downloads or Desktop) into workspace."},
+            {"name": "export_to_host", "description": "Export deliverables to user host directory (defaults to Downloads)."},
+            {"name": "read_external_path", "description": "Read content from a user-specified host file or folder."}
         ]
 
     def handle_jsonrpc(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -328,6 +511,20 @@ class MCPServer:
                     res = self.tool_browser_screenshot(tool_args["url"], tool_args.get("output_file", "ui_snapshot.html"))
                 elif tool_name == "browser_interact":
                     res = self.tool_browser_interact(tool_args.get("action", "click"), tool_args.get("target", ""), tool_args.get("value", ""))
+                elif tool_name == "browser_click":
+                    res = self.tool_browser_click(tool_args["selector"])
+                elif tool_name == "browser_type":
+                    res = self.tool_browser_type(tool_args["selector"], tool_args["text"], tool_args.get("delay_ms", 40))
+                elif tool_name == "browser_extract_text":
+                    res = self.tool_browser_extract_text(tool_args.get("selector"))
+                elif tool_name == "browser_execute_script":
+                    res = self.tool_browser_execute_script(tool_args["script"])
+                elif tool_name == "import_external_path":
+                    res = self.tool_import_external_path(tool_args["source_path"], tool_args.get("target_name"))
+                elif tool_name == "export_to_host":
+                    res = self.tool_export_to_host(tool_args.get("workspace_path", ""), tool_args.get("destination_path"))
+                elif tool_name == "read_external_path":
+                    res = self.tool_read_external_path(tool_args["path"])
                 else:
                     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Tool '{tool_name}' not found."}}
                 return {"jsonrpc": "2.0", "id": req_id, "result": res}

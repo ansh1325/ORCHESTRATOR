@@ -265,25 +265,42 @@ class MetaOrchestrator:
                 and not any(act in v_low for act in ["build", "create", "launch", "execute", "start", "trade", "run", "make", "deploy", "scale", "swarm", "army"])
             )
             response_mode = "direct_response" if is_query_only else "swarm_army"
-            is_swarm = any(w in v_low for w in ["huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem", "scale", "humanoid", "tesla", "trading", "quant", "crypto"])
+            # Swarm triggers: large-scale, multi-domain, trading, agency, omnichannel campaigns
+            is_swarm = any(w in v_low for w in [
+                "huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem",
+                "scale", "humanoid", "tesla", "trading", "quant", "crypto", "agency", "launch",
+                "omnichannel", "acquisition", "empire", "all channels", "full", "end to end"
+            ])
             if is_query_only:
                 c_tier = "solo"
-            elif is_swarm:
+            elif is_swarm or t_type in ("business_acquisition", "quantitative_trading", "robotics_humanoid"):
                 c_tier = "swarm_army"
             else:
-                c_tier = data.get("combat_tier", "tactical_squad")
+                llm_tier = data.get("combat_tier", "tactical_squad")
+                c_tier = llm_tier if llm_tier in ("solo", "tactical_squad", "swarm_army") else "tactical_squad"
 
-            clarifications = []
-            for c in data.get("clarifications", []):
-                opts = c.get("options", ["Recommended Default"])
-                def_sel = c.get("default_selection") or (opts[0] if opts else "Standard Default")
-                clarifications.append(ClarificationQuestion(
-                    id=c.get("id", f"q_{len(clarifications)+1}"),
-                    question=c.get("question", "Requirement specification:"),
-                    why_needed=c.get("why_needed", "Ensures precise autonomous execution."),
-                    options=opts,
-                    default_selection=def_sel
-                ))
+            if is_query_only:
+                clarifications = []
+            else:
+                clarifications = []
+                for c in data.get("clarifications", []):
+                    # Only ask if not already explicitly provided in vision
+                    opts = c.get("options", ["Recommended Default"])
+                    def_sel = c.get("default_selection") or (opts[0] if opts else "Standard Default")
+                    matched = False
+                    for opt in opts:
+                        if len(opt) > 4 and opt.lower() in v_low:
+                            def_sel = opt
+                            matched = True
+                            break
+                    if not matched:
+                        clarifications.append(ClarificationQuestion(
+                            id=c.get("id", f"q_{len(clarifications)+1}"),
+                            question=c.get("question", "Requirement specification:"),
+                            why_needed=c.get("why_needed", "Ensures precise autonomous execution."),
+                            options=opts,
+                            default_selection=def_sel
+                        ))
 
             analysis = IntentAnalysis(
                 session_id=session.session_id,
@@ -341,7 +358,11 @@ class MetaOrchestrator:
         response_mode = "direct_response" if is_query_only else "swarm_army"
 
         # Dynamic Combat Scaling Tier
-        is_swarm = any(w in v_lower for w in ["huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem", "scale", "humanoid", "tesla", "production suite", "end to end"]) or is_robotics or is_trading
+        is_swarm = any(w in v_lower for w in [
+            "huge", "swarm", "army", "10000", "ten thousand", "massive", "entire", "ecosystem",
+            "scale", "humanoid", "tesla", "production suite", "end to end",
+            "agency", "launch", "omnichannel", "acquisition", "empire"
+        ]) or is_robotics or is_trading or is_business_or_agency
         is_solo = any(w in v_lower for w in ["quick", "single", "script", "just write a", "one agent", "solo", "simple script"]) and not is_swarm
         combat_tier = "solo" if (is_query_only or is_solo) else ("swarm_army" if is_swarm else "tactical_squad")
 
@@ -605,6 +626,29 @@ class MetaOrchestrator:
                 "storage_backend": "In-Memory Fast Buffer + SQLite",
                 "test_rigor": "100% Pytest Coverage + Negative Auth Assertions"
             }
+
+        # Dynamic Question Asking Behavior:
+        # 1. Zero clarification questions if it's direct query mode
+        if response_mode == "direct_response":
+            clarifications = []
+        else:
+            # 2. Filter out questions where the user's vision explicitly already specifies the parameter
+            needed_clarifications = []
+            for cq in clarifications:
+                already_specified = False
+                for opt in cq.options:
+                    # check if core identifier is in vision
+                    clean_opt = re.sub(r'[^a-zA-Z0-9\s]', ' ', opt.lower())
+                    tokens = [t for t in clean_opt.split() if len(t) >= 4 and t not in ('with', 'from', 'only', 'mode', 'risk', 'pilot', 'call', 'link')]
+                    if tokens and all(t in v_lower for t in tokens[:2]):
+                        recommended_defaults[cq.id] = opt
+                        already_specified = True
+                        break
+                if not already_specified:
+                    needed_clarifications.append(cq)
+            # Retain questions when genuinely needed for human signoff
+            if needed_clarifications:
+                clarifications = needed_clarifications
 
         analysis = IntentAnalysis(
             session_id=session.session_id,
@@ -1119,6 +1163,21 @@ class MetaOrchestrator:
                 speech_text="Directive acknowledged. Launching autonomous multi-agent compilation."
             ))
 
+            # Auto-ingest any external files or folders referenced by the user in directive
+            path_matches = re.findall(r'(?:[a-zA-Z]:[\\/][^\s\'",;]+|~[\\/][^\s\'",;]+|(?:Downloads|Desktop)[\\/][^\s\'",;]+|\b[a-zA-Z0-9_\-]+\.(?:csv|json|py|txt|pdf|md|html)\b)', session.vision)
+            for p_match in path_matches:
+                clean_p = p_match.strip()
+                import_res = session.mcp.tool_import_external_path(clean_p)
+                if import_res.get("success"):
+                    await self.emit_event(session, ExecutionEvent(
+                        event_type="log",
+                        session_id=session_id,
+                        stage=2,
+                        stage_name="Knowledge Gathering",
+                        message=f"[CentralBrain] Ingested host file '{clean_p}' into workspace sandbox ({import_res.get('size_bytes', 0)} bytes).",
+                        speech_text="Imported host file into active workspace sandbox."
+                    ))
+
             # Stage 2: Autonomous Knowledge Gathering
             knowledge_agent = KnowledgeAgent(llm_client=self.llm_client)
             session.knowledge_base = await knowledge_agent.gather_and_synthesize(
@@ -1208,6 +1267,19 @@ class MetaOrchestrator:
                 artifacts=flist_names
             )
             
+            # Auto-export to Downloads if user requested it in directive
+            if any(w in session.vision.lower() for w in ["download", "downloads", "export to downloads", "save in downloads"]):
+                exp_res = session.mcp.tool_export_to_host()
+                if exp_res.get("success"):
+                    await self.emit_event(session, ExecutionEvent(
+                        event_type="log",
+                        session_id=session_id,
+                        stage=6,
+                        stage_name="Mission Accomplished",
+                        message=f"[CentralBrain] Exported deliverables directly to host Downloads folder: '{exp_res.get('destination')}'.",
+                        data={"host_export": exp_res}
+                    ))
+
             final_speech = "Mission completed successfully, Ansh. All deliverables are 100 percent verified, sandboxed, and ready for deployment."
             await self.emit_event(session, ExecutionEvent(
                 event_type="done",

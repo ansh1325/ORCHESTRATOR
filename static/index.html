@@ -367,10 +367,16 @@
               <p class="text-xs text-slate-300" id="workDoneSummary">All autonomous tasks executed, verified, and certified.</p>
             </div>
           </div>
-          <button id="downloadCompletedZipBtn" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow-lg shadow-cyan-500/25">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            <span>Download (.ZIP)</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button id="exportToDownloadsBtn" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-cyan-300 border border-cyan-500/30 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition">
+              <i data-lucide="folder-output" class="w-3.5 h-3.5"></i>
+              <span>Save to Downloads</span>
+            </button>
+            <button id="downloadCompletedZipBtn" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow-lg shadow-cyan-500/25">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Download (.ZIP)</span>
+            </button>
+          </div>
         </div>
         <div class="pt-2 border-t border-emerald-500/25 flex flex-wrap gap-2 text-xs" id="completedDeliverablesList"></div>
       </div>

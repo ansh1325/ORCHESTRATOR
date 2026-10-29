@@ -143,3 +143,10 @@ class LaunchRequest(BaseModel):
     session_id: str
     auto_approve: bool = True
     answers: Optional[Dict[str, str]] = None
+
+class ImportPathRequest(BaseModel):
+    source_path: str
+    target_name: Optional[str] = None
+
+class ExportPathRequest(BaseModel):
+    destination_path: Optional[str] = None

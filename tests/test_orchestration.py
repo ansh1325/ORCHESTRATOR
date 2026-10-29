@@ -349,11 +349,89 @@ def test_autonomous_response_escalation():
     query_analysis = orch.analyze_intent("what is the architecture of LlamaOrchestrator")
     assert query_analysis.response_mode == "direct_response"
     assert query_analysis.combat_tier == "solo"
+    assert len(query_analysis.clarifications) == 0
 
     # Actionable building directive
     action_analysis = orch.analyze_intent("launch an omnichannel marketing and client acquisition agency")
     assert action_analysis.response_mode == "swarm_army"
     assert action_analysis.combat_tier in ["tactical_squad", "swarm_army"]
+
+
+def test_host_file_ingestion_and_browser_tools(temp_workspace, tmp_path):
+    """Verifies host file ingestion, host export, and advanced browser automation tools."""
+    mcp = MCPServer(workspace_path=temp_workspace)
+
+    # 1. Host File Ingestion
+    host_file = tmp_path / "external_leads.csv"
+    host_file.write_text("name,email,company\nAlice,alice@example.com,Acme Corp", encoding="utf-8")
+
+    import_res = mcp.tool_import_external_path(str(host_file), target_name="imported_leads.csv")
+    assert import_res["success"] is True
+    assert (temp_workspace / "imported_leads.csv").exists()
+    assert "Acme Corp" in (temp_workspace / "imported_leads.csv").read_text(encoding="utf-8")
+
+    # 2. Host File Read
+    read_ext = mcp.tool_read_external_path(str(host_file))
+    assert read_ext["success"] is True
+    assert "Alice" in read_ext["content"]
+
+    # 3. Host Export
+    export_dest = tmp_path / "host_downloads"
+    export_res = mcp.tool_export_to_host(destination_path=str(export_dest))
+    assert export_res["success"] is True
+    # Export creates a subfolder named llama_export_<workspace_name> inside destination
+    export_dir = Path(export_res["destination"])
+    assert (export_dir / "imported_leads.csv").exists()
+
+    # 4. Browser Automation Tools
+    click_res = mcp.tool_browser_click(selector="#login-btn")
+    assert click_res["success"] is True
+    assert click_res["action"] == "click"
+
+    type_res = mcp.tool_browser_type(selector="input[name='search']", text="CEO Founders", delay_ms=20)
+    assert type_res["success"] is True
+    assert type_res["text_length"] == 12
+
+    # Browser DOM text extraction
+    mock_dom = temp_workspace / "ui_snapshot.html"
+    mock_dom.write_text("<html><body><h1>Dashboard</h1><a href='https://example.com/item'>Link</a><input name='lead_email'/></body></html>", encoding="utf-8")
+    extract_res = mcp.tool_browser_extract_text()
+    assert extract_res["success"] is True
+    assert "Dashboard" in extract_res["text_snippet"]
+    assert "https://example.com/item" in extract_res["extracted_links"]
+    assert "lead_email" in extract_res["form_inputs"]
+
+
+def test_import_export_fastapi_endpoints(tmp_path):
+    """Verifies REST endpoints for importing external host paths and exporting to host."""
+    client = TestClient(app)
+    sess_id = "test_rest_io"
+    client.post("/api/analyze", json={"vision": "build a quick service", "session_id": sess_id})
+
+    # Prepare external file
+    external_doc = tmp_path / "directive_brief.txt"
+    external_doc.write_text("Launch campaign for Q4 target market.", encoding="utf-8")
+
+    # Test Import Endpoint
+    resp_import = client.post(
+        f"/api/workspace/{sess_id}/import-path",
+        json={"source_path": str(external_doc), "target_name": "brief.txt"}
+    )
+    assert resp_import.status_code == 200
+    assert resp_import.json()["success"] is True
+
+    # Test Export Endpoint
+    export_target = tmp_path / "rest_exports"
+    resp_export = client.post(
+        f"/api/workspace/{sess_id}/export-to-path",
+        json={"destination_path": str(export_target)}
+    )
+    assert resp_export.status_code == 200
+    assert resp_export.json()["success"] is True
+    # Export creates llama_export_<workspace> subfolder inside destination
+    export_actual = Path(resp_export.json()["destination"])
+    assert export_actual.exists()
+    assert (export_actual / "brief.txt").exists()
 
 
 

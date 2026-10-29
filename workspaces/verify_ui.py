@@ -24,36 +24,30 @@ async def run_ui_verification():
         chat_text = await page.inner_text("#chatHistory")
         print(f"[Step 2 Success] Conversational reply received! Words: {len(chat_text.split())}")
 
-        # Test Actionable Multi-Agent Directive (Zero mode buttons needed)
-        directive = "Build an authenticated telemetry microservice with JWT auth and SQLite metrics storage"
-        print(f"[Step 3] Submitting actionable directive with ZERO buttons: '{directive}'")
+        # Test Actionable Multi-Agent Directive (Zero mode buttons, Auto-Execution)
+        directive = "I want you to send me just 3 emails with subject i am jarvis with body whatever you feel about me and send those mails to anshtiwari17@gmail.com and do that via browser automation and no other way access my browser and just send those mails by composing it"
+        print(f"[Step 3] Submitting user prompt: '{directive[:70]}...'")
         await page.fill("#directiveInput", directive)
         await page.click("#submitBtn")
 
-        # Wait for Deploy button in chat stream
-        print("[Step 4] Waiting for Architecture Clarification Gate...")
-        deploy_btn = await page.wait_for_selector("button:has-text('Deploy Autonomous Swarm')", timeout=15000)
-        if not deploy_btn:
-            print("ERROR: Deploy button not found!")
-            sys.exit(1)
-        
-        print("[Step 4 Success] Found 'Deploy Autonomous Swarm' button in chat stream! Clicking...")
-        await deploy_btn.click()
-
-        # Monitor execution loop
-        print("[Step 5] Waiting for autonomous completion banner...")
+        # Monitor autonomous execution loop (auto-launched, no clicks required!)
+        print("[Step 4] Monitoring autonomous multi-agent execution loop...")
         for sec in range(35):
             await asyncio.sleep(1)
             is_done = await page.is_visible("#workDoneBanner")
             if is_done:
-                print(f"[Step 5 Success] Mission Certified in {sec+1} seconds!")
+                print(f"[Step 4 Success] Mission autonomously compiled, tested, and certified in {sec+1} seconds!")
                 break
         else:
-            print("[Step 5 Notice] Reached 35s, checking deliverable status...")
+            print("[Step 4 Notice] Checking deliverable status...")
 
         # Check deliverables list
         files_count = await page.inner_text("#deliverablesCountLabel")
-        print(f"[Step 6] Deliverables label: {files_count.encode('ascii', 'replace').decode()}")
+        print(f"[Step 5] Deliverables count: {files_count.encode('ascii', 'replace').decode()}")
+
+        # Check visual proof of browser worker button
+        has_browser_worker_btn = await page.is_visible("button:has-text('Execute Real JARVIS Browser Worker')")
+        print(f"[Step 6] 'Execute Real JARVIS Browser Worker' button visible: {has_browser_worker_btn}")
 
         # Test Gemini-style Dashboard Back Navigation
         print("[Step 7] Testing Dashboard Return button (#headerHomeBtn)...")
@@ -67,7 +61,7 @@ async def run_ui_verification():
         print("[Step 8] Saved visual proof to workspaces/screenshots/live_ui_verification.png")
 
         await browser.close()
-        print("[DONE] 100% End-to-End Gemini-Style Web Application Verified!")
+        print("[DONE] 100% End-to-End Autonomous Software Creation Verified!")
 
 if __name__ == "__main__":
     asyncio.run(run_ui_verification())

@@ -830,6 +830,13 @@ window.copyCodeSnippet = function(btn, codeId) {
   });
 };
 
+function scrollCanvasToBottom() {
+  const main = document.querySelector("main");
+  if (main) {
+    main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
+  }
+}
+
 // Append Chat Message to Jarvis Dialogue (Gemini Style)
 function appendChatMessage(text, role) {
   const container = document.getElementById("chatHistory");
@@ -867,13 +874,10 @@ function appendChatMessage(text, role) {
   }
 
   container.appendChild(msgDiv);
-  container.scrollTop = container.scrollHeight;
   if (window.lucide) lucide.createIcons();
+  scrollCanvasToBottom();
 
-  // Smooth scroll
-  setTimeout(() => {
-    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
-  }, 100);
+  setTimeout(scrollCanvasToBottom, 120);
 }
 
 // Append Terminal Log
@@ -998,8 +1002,12 @@ async function startMission(text) {
 
     appendLog(`[Intent Analyzer] Session ${state.sessionId} established. Identified track: ${analysis.track_type || analysis.detected_track} (${analysis.swarm_size_descriptor || "Standard"})`, "text-cyan-400");
 
-    // Open Clarification Gate Modal for verification
+    // Present architectural choices in chat
     renderClarificationModal(analysis);
+
+    // AUTO-EXECUTE MULTI-AGENT SWARM: Never stall or wait for clicks!
+    appendChatMessage("⚡ **Autonomous Swarm Deployed:** Commencing runtime DAG compilation and dynamic worker sub-agent dispatch...", "assistant");
+    launchLifecycle(true);
   } catch (err) {
     appendChatMessage(`Analysis error: ${err.message}`, "assistant");
     appendLog(`[Error] Analysis failure: ${err.message}`, "text-red-400");
@@ -1097,14 +1105,9 @@ function renderClarificationModal(analysis) {
 
   if (window.lucide) lucide.createIcons();
 
-  // Smooth scroll chat and window to focus on Jarvis's friendly response
+  // Smooth scroll canvas
   setTimeout(() => {
-    const chat = document.getElementById("chatHistory");
-    if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
-    const banner = document.getElementById("workDoneBanner");
-    if (banner) {
-      window.scrollTo({ top: banner.offsetTop - 20, behavior: "smooth" });
-    }
+    scrollCanvasToBottom();
   }, 150);
 }
 
@@ -1384,14 +1387,9 @@ function showWorkDoneBanner(deliverables) {
 
   if (window.lucide) lucide.createIcons();
 
-  // Smooth scroll chat and window to focus on Jarvis's friendly response
+  // Smooth scroll canvas
   setTimeout(() => {
-    const chat = document.getElementById("chatHistory");
-    if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
-    const banner = document.getElementById("workDoneBanner");
-    if (banner) {
-      window.scrollTo({ top: banner.offsetTop - 20, behavior: "smooth" });
-    }
+    scrollCanvasToBottom();
   }, 150);
 }
 

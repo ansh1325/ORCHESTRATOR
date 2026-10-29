@@ -411,6 +411,83 @@ class JarvisCLI:
         print(f"\n{C.GREEN}✓ Exported {count} deliverable files to:{C.RESET} {dest.resolve()}\n")
         self.speak(f"Exported {count} deliverables to your destination.")
 
+    async def process_directive(self, line: str) -> bool:
+        """Processes any typed or spoken directive. Returns False to exit."""
+        line = line.strip()
+        if not line:
+            return True
+
+        low = line.lower()
+        if low in ["exit", "quit", "q", "power down", "goodbye"]:
+            print(f"\n{C.DIM}Powering down terminal interface. Central Brain standing by.{C.RESET}")
+            self.speak("Standing by, Master Ansh.")
+            return False
+
+        if low in ["help", "?", "commands"]:
+            self.print_help()
+            return True
+
+        if low in ["clear", "cls"]:
+            os.system("cls" if os.name == "nt" else "clear")
+            self.print_banner()
+            return True
+
+        if low.startswith("voice "):
+            parts = low.split()
+            if len(parts) > 1:
+                self.voice_enabled = (parts[1] == "on")
+                print(f"Voice output set to: {C.GREEN if self.voice_enabled else C.RED}{'ON' if self.voice_enabled else 'OFF'}{C.RESET}\n")
+                if self.voice_enabled:
+                    self.speak("Voice output activated.")
+            return True
+
+        if low in ["listen", "mic", "voice in", "speak"]:
+            self.speak("Listening for your voice command.")
+            heard = self.listen_for_voice(timeout_sec=8)
+            if heard:
+                print(f"\n{C.GREEN}{C.BOLD}🎙️ [Heard Command]:{C.RESET} '{heard}'\n")
+                return await self.process_directive(heard)
+            else:
+                print(f"{C.DIM}[No voice command detected or microphone timed out]{C.RESET}\n")
+                return True
+
+        if low.startswith("browse "):
+            goal = line[7:].strip()
+            await self.handle_autonomous_browse(goal)
+            return True
+
+        if low.startswith("browser "):
+            parts = shlex.split(line)
+            self.handle_browser_cmd(parts)
+            return True
+
+        if low == "history":
+            self.list_history()
+            return True
+
+        if low.startswith("session "):
+            parts = line.split()
+            if len(parts) > 1:
+                self.inspect_session(parts[1])
+            return True
+
+        if low.startswith("export "):
+            parts = line.split()
+            if len(parts) > 1:
+                sid = parts[1]
+                dest = parts[2] if len(parts) > 2 else None
+                self.export_session(sid, dest)
+            return True
+
+        if low.startswith("chat "):
+            msg = line[5:].strip()
+            await self.handle_chat(msg)
+            return True
+
+        # Autonomous Multi-Agent Swarm execution for actionable directives
+        await self.run_mission(line)
+        return True
+
     async def run_interactive(self):
         self.print_banner()
         self.speak("Jarvis Terminal Cognitive Interface online. Standing by for directives, Master Ansh.")
@@ -418,75 +495,9 @@ class JarvisCLI:
         while True:
             try:
                 line = input(f"{C.BOLD}{C.BLUE}Jarvis > {C.RESET}").strip()
-                if not line:
-                    continue
-
-                if line.lower() in ["exit", "quit", "q"]:
-                    print(f"\n{C.DIM}Powering down terminal interface. Central Brain standing by.{C.RESET}")
-                    self.speak("Standing by.")
+                should_continue = await self.process_directive(line)
+                if not should_continue:
                     break
-
-                if line.lower() in ["help", "?"]:
-                    self.print_help()
-                    continue
-
-                if line.lower() == "clear":
-                    os.system("cls" if os.name == "nt" else "clear")
-                    self.print_banner()
-                    continue
-
-                if line.lower().startswith("voice "):
-                    setting = line.lower().split()[1]
-                    self.voice_enabled = (setting == "on")
-                    print(f"Voice output set to: {C.GREEN if self.voice_enabled else C.RED}{'ON' if self.voice_enabled else 'OFF'}{C.RESET}\n")
-                    if self.voice_enabled:
-                        self.speak("Voice output activated.")
-                    continue
-
-                if line.lower() in ["listen", "mic", "voice in", "speak"]:
-                    self.speak("Listening for your voice command.")
-                    heard = self.listen_for_voice(timeout_sec=8)
-                    if heard:
-                        print(f"{C.GREEN}{C.BOLD}🎙️ [Heard]:{C.RESET} '{heard}'\n")
-                        line = heard
-                    else:
-                        print(f"{C.DIM}[No voice command detected or microphone timed out]{C.RESET}\n")
-                        continue
-
-                if line.lower().startswith("browse "):
-                    goal = line[7:].strip()
-                    await self.handle_autonomous_browse(goal)
-                    continue
-
-                if line.lower().startswith("browser "):
-                    parts = shlex.split(line)
-                    self.handle_browser_cmd(parts)
-                    continue
-
-                if line.lower() == "history":
-                    self.list_history()
-                    continue
-
-                if line.lower().startswith("session "):
-                    sid = line.split()[1]
-                    self.inspect_session(sid)
-                    continue
-
-                if line.lower().startswith("export "):
-                    parts = line.split()
-                    sid = parts[1]
-                    dest = parts[2] if len(parts) > 2 else None
-                    self.export_session(sid, dest)
-                    continue
-
-                if line.lower().startswith("chat "):
-                    msg = line[5:].strip()
-                    await self.handle_chat(msg)
-                    continue
-
-                # Autonomous Multi-Agent Swarm execution for actionable directives
-                await self.run_mission(line)
-
             except (KeyboardInterrupt, EOFError):
                 print(f"\n{C.DIM}Session interrupted. Central Brain standing by.{C.RESET}")
                 break

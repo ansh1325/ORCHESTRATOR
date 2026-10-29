@@ -7,6 +7,7 @@ voice-driven Jarvis interaction, live DAG monitoring, and workspace downloads.
 import asyncio
 import json
 import re
+import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -284,6 +285,20 @@ async def update_history_pin(req: PinUpdateRequest):
     """Toggles pin status for a session."""
     history_manager.toggle_pin(req.session_id, req.is_pinned)
     return {"success": True}
+
+@app.delete("/api/history/{session_id}")
+async def delete_history_session(session_id: str):
+    """Deletes a mission session from history and removes its workspace files."""
+    deleted = history_manager.delete_session(session_id)
+    try:
+        ws_dir = (settings.WORKSPACE_DIR / session_id).resolve()
+        if ws_dir.exists() and ws_dir.is_dir():
+            shutil.rmtree(ws_dir, ignore_errors=True)
+    except Exception:
+        pass
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Session not found in history")
+    return {"success": True, "session_id": session_id}
 
 @app.get("/api/workflows")
 async def get_saved_workflows():

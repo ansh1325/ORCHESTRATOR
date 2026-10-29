@@ -180,6 +180,16 @@
             openai/gpt-oss-120b
           </span>
         </div>
+        <!-- Gemini-Style Back to Dashboard Button -->
+        <button type="button" id="headerHomeBtn" onclick="resetSession()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gemini-card hover:bg-gemini-cardHover border border-gemini-border text-xs font-semibold text-white transition cursor-pointer" title="Return to Dashboard">
+          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-gemini-blue"></i>
+          <span class="hidden sm:inline">Dashboard</span>
+        </button>
+        <!-- Active Session Breadcrumb -->
+        <div id="activeSessionBreadcrumb" class="hidden items-center gap-1.5 text-xs text-gemini-muted">
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gemini-subtle"></i>
+          <span id="activeSessionBreadcrumbTitle" class="text-white truncate max-w-[160px] sm:max-w-xs font-semibold"></span>
+        </div>
       </div>
 
       <!-- Quick Action Controls -->
@@ -320,26 +330,20 @@
           
           <!-- Textarea / Input Bar -->
           <div class="px-3 pt-1">
-            <textarea id="directiveInput" rows="2" class="w-full bg-transparent text-sm text-gemini-text placeholder-gemini-subtle focus:outline-none resize-none custom-scrollbar leading-relaxed" placeholder="Ask Jarvis anything, deploy a multi-agent swarm, or command a browser task..."></textarea>
+            <textarea id="directiveInput" rows="2" class="w-full bg-transparent text-sm text-gemini-text placeholder-gemini-subtle focus:outline-none resize-none custom-scrollbar leading-relaxed" placeholder="Ask Jarvis anything, or command an autonomous software, workflow, or business directive..."></textarea>
           </div>
 
-          <!-- Action Bar: Mode Switcher + Controls -->
+          <!-- Action Bar: Status Pill + Controls -->
           <div class="flex items-center justify-between pt-1 px-2 border-t border-gemini-border/40">
             
-            <!-- Left: Mode Switcher Pill (Direct Jarvis Chat vs Multi-Agent Swarm Builder) -->
-            <div class="flex items-center gap-1 bg-gemini-bg p-1 rounded-full border border-gemini-border/60 text-xs select-none">
-              <button type="button" id="chatModeBtn" onclick="window.setMode('chat')" class="mode-pill px-3 py-1.5 rounded-full bg-gemini-card text-white font-medium transition cursor-pointer shadow-sm border border-gemini-borderLight relative z-10">
-                💬 Direct Jarvis Chat
-              </button>
-              <button type="button" id="swarmModeBtn" onclick="window.setMode('swarm')" class="mode-pill px-3 py-1.5 rounded-full text-gemini-subtle hover:text-white transition cursor-pointer border border-transparent relative z-10">
-                ⚡ Multi-Agent Swarm Builder
-              </button>
+            <!-- Left: Intelligent Auto-Routing Status -->
+            <div class="flex items-center gap-2 text-[11px] text-gemini-subtle font-mono select-none px-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="autoRoutingStatus">Autonomous Agent Army · Dynamic Auto-Routing</span>
             </div>
 
             <!-- Right: Voice Mic & Send Button -->
             <div class="flex items-center gap-2">
-              <span id="modeDescription" class="hidden md:inline text-[11px] text-gemini-subtle font-mono">Solo Jarvis responses</span>
-              
               <button type="button" id="micBtn" class="p-2 rounded-full text-gemini-muted hover:text-white hover:bg-gemini-cardHover transition cursor-pointer" title="Voice input">
                 <i data-lucide="mic" class="w-4 h-4"></i>
               </button>

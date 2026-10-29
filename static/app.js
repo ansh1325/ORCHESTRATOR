@@ -40,11 +40,43 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   setupEventListeners();
   setupVoiceSelector();
-  loadWorkHistory();
+  loadWorkHistory().then(() => {
+    handleHashRouting();
+  });
   loadSavedWorkflows();
   loadSchedules();
   updateStageUI(0);
+
+  window.addEventListener("hashchange", handleHashRouting);
 });
+
+// Gemini-style Client-Side SPA URL Hash Router
+function handleHashRouting() {
+  const hash = window.location.hash || "#/";
+  if (hash === "#/" || hash === "" || hash === "#") {
+    if (state.sessionId) {
+      resetSession(false);
+    }
+  } else if (hash.startsWith("#/session/")) {
+    const sid = hash.substring(10);
+    if (sid && sid !== state.sessionId) {
+      const match = state.historyItems.find(h => h.session_id === sid);
+      if (match) {
+        selectHistoryItem(match);
+      } else {
+        fetch(`/api/session/${sid}`).then(res => res.json()).then(data => {
+          if (data && data.session_id) {
+            selectHistoryItem({ session_id: sid, title: data.dag_plan?.title || sid, deliverables: data.workspace_files });
+          }
+        }).catch(() => {});
+      }
+    }
+  } else if (hash === "#/scheduler") {
+    openSchedulerModal();
+  } else if (hash === "#/workflows") {
+    openWorkflowsModal();
+  }
+}
 
 // Event Listeners Setup
 function setupEventListeners() {
@@ -467,14 +499,22 @@ window.setMode = function(mode) {
   }
 };
 
-// Reset Current Session & UI
-function resetSession() {
+// Reset Current Session & UI (Gemini-style Dashboard Return)
+function resetSession(updateHash = true) {
   state.sessionId = null;
   state.activeDeliverables = [];
   state.activeFileContent = "";
   state.clarificationData = null;
   state.selectedAnswers = {};
   state.dagNodes = {};
+
+  if (updateHash && window.location.hash !== "#/") {
+    window.location.hash = "#/";
+  }
+
+  // Clear Top Header Breadcrumb
+  const breadcrumb = document.getElementById("activeSessionBreadcrumb");
+  if (breadcrumb) breadcrumb.classList.add("hidden");
 
   const input = document.getElementById("directiveInput");
   if (input) {
@@ -487,8 +527,6 @@ function resetSession() {
 
   const swarmDeck = document.getElementById("swarmDeckContainer");
   if (swarmDeck) swarmDeck.classList.add("hidden");
-
-  window.setMode("chat");
 
   const dagContainer = document.getElementById("dagContainer");
   if (dagContainer) {
@@ -517,7 +555,7 @@ function resetSession() {
   setJarvisVoiceExpression(false, "JARVIS COGNITIVE OS // STANDBY");
 
   updateStageUI(0);
-  appendChatMessage("Ready for your next objective, Ansh.", "assistant");
+  appendChatMessage("Welcome back to Dashboard. Ready for your next objective, Master Ansh.", "assistant");
 }
 
 // Helper: Finds the highest-fidelity natural AI voice available for free in the browser
@@ -860,23 +898,32 @@ async function handleDirectiveSubmit(e) {
   input.value = "";
   appendChatMessage(text, "user");
 
-  // Autonomous Escalation Intelligence: Understands automatically when to give a simple direct response vs deploy a whole army of agents
-  const isSwarmDirective = (state.activeMode === "swarm") ||
-    /^(build|deploy|create|launch|scrape|generate|compile|make|set up|scaffold|execute|send|write|mail|dispatch|automate|schedule)\b/i.test(lower) ||
-    lower.includes("build me") || lower.includes("deploy it") || lower.includes("scrape leads") || lower.includes("send mail") || lower.includes("send email") ||
-    lower.includes("3 mails") || lower.includes("mails to") || lower.includes("email to") || lower.includes("i want you to") || lower.includes("trading desk") ||
-    lower.includes("quant") || lower.includes("continuous") || lower.includes("daily at") || lower.includes("workflow");
+  const lower = text.toLowerCase().trim();
 
-  const isConversational = !isSwarmDirective && (
-    state.activeMode === "chat" ||
+  // Actionable Keywords check: if the prompt demands building, coding, scraping, emailing, or business execution
+  const actionTerms = [
+    "build", "create", "make", "deploy", "launch", "compile", "generate",
+    "scaffold", "code", "develop", "implement", "execute", "run", "start",
+    "send", "write", "draft", "mail", "email", "gmail", "dispatch",
+    "scrape", "lead", "client", "acquisition", "outreach", "campaign",
+    "service", "microservice", "api", "backend", "frontend", "dashboard",
+    "jwt", "telemetry", "database", "postgres", "sqlite", "table", "schema",
+    "agency", "business", "saas", "software", "tool", "app", "bot",
+    "trading", "trade", "quant", "stock", "arbitrage", "strategy",
+    "robot", "robotics", "humanoid", "kinematics", "actuator", "optimus",
+    "automate", "automation", "browser", "playwright", "continuous",
+    "schedule", "daily", "workflow", "army", "swarm", "agents"
+  ];
+  const hasAction = actionTerms.some(term => lower.includes(term));
+
+  // Pure Conversational Inquiry vs Multi-Agent Swarm Army
+  const isConversational = !hasAction && (
     lower.endsWith("?") ||
-    /^(hi|hello|hey|who|what|how|why|when|where|which|tell me|explain|describe|status|are you|can you)\b/i.test(lower) ||
+    /^(hi|hello|hey|greetings|who|what|how|why|when|where|which|tell me|explain|describe|status|are you|can you)\b/i.test(lower) ||
     lower.includes("what can you do") || lower.includes("capabilities") || lower.includes("who are you") || lower.includes("how does")
   );
 
-  const shouldRouteToChat = !isSwarmDirective && isConversational;
-
-  if (shouldRouteToChat) {
+  if (isConversational) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -892,7 +939,12 @@ async function handleDirectiveSubmit(e) {
     return;
   }
 
-  // Actionable Directive -> Unhide Swarm Deck & Run Intent Analysis & Autonomous Lifecycle
+  // Actionable Directive -> Automatically deploy Multi-Agent Swarm Army
+  await startMission(text);
+}
+
+// Autonomous Multi-Agent Swarm Mission Runner
+async function startMission(text) {
   const swarmDeck = document.getElementById("swarmDeckContainer");
   const swarmObjectiveLabel = document.getElementById("swarmObjectiveLabel");
   if (swarmDeck) swarmDeck.classList.remove("hidden");
@@ -915,6 +967,18 @@ async function handleDirectiveSubmit(e) {
     state.sessionId = analysis.session_id;
     state.clarificationData = analysis;
     state.currentVision = text;
+    
+    // Update Browser URL Hash for Gemini-like SPA Navigation
+    window.location.hash = `#/session/${state.sessionId}`;
+
+    // Update Top Header Breadcrumb
+    const breadcrumb = document.getElementById("activeSessionBreadcrumb");
+    const breadcrumbTitle = document.getElementById("activeSessionBreadcrumbTitle");
+    if (breadcrumb && breadcrumbTitle) {
+      breadcrumb.classList.remove("hidden");
+      breadcrumbTitle.textContent = text.substring(0, 35) + "...";
+    }
+
     const emMatch = text.match(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/);
     if (emMatch) state.targetRecipient = emMatch[0];
     const subMatch = text.match(/subject\s+["']?([^"',\n]+?)["']?(?:\s+with|\s+and|\s+body|$)/i);
@@ -940,7 +1004,6 @@ async function handleDirectiveSubmit(e) {
     appendChatMessage(`Analysis error: ${err.message}`, "assistant");
     appendLog(`[Error] Analysis failure: ${err.message}`, "text-red-400");
     updateStageUI(0);
-    const swarmDeck = document.getElementById("swarmDeckContainer");
     if (swarmDeck) swarmDeck.classList.add("hidden");
   } finally {
     if (submitBtn) submitBtn.disabled = false;
@@ -1525,9 +1588,14 @@ function renderHistoryList() {
     itemDiv.innerHTML = `
       <div class="flex items-start justify-between gap-1.5">
         <span class="font-semibold text-slate-200 line-clamp-1 text-xs group-hover:text-cyan-300 transition">${escapeHtml(item.title || item.prompt)}</span>
-        <button class="pin-toggle-btn text-slate-500 hover:text-amber-400 transition" title="${item.is_pinned ? "Unpin task" : "Pin task"}">
-          <i data-lucide="pin" class="w-3.5 h-3.5 ${item.is_pinned ? "fill-amber-400 text-amber-400" : ""}"></i>
-        </button>
+        <div class="flex items-center gap-1">
+          <button class="pin-toggle-btn text-slate-500 hover:text-amber-400 p-1 rounded transition" title="${item.is_pinned ? "Unpin task" : "Pin task"}">
+            <i data-lucide="pin" class="w-3.5 h-3.5 ${item.is_pinned ? "fill-amber-400 text-amber-400" : ""}"></i>
+          </button>
+          <button class="delete-task-btn text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 p-1 rounded transition" title="Delete mission">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
       </div>
       <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
         <span class="px-1.5 py-0.5 rounded bg-brand-surface border border-brand-border/60 text-slate-300">${escapeHtml(item.folder || "Personal")}</span>
@@ -1537,7 +1605,7 @@ function renderHistoryList() {
 
     // Click to select task
     itemDiv.addEventListener("click", (e) => {
-      if (e.target.closest(".pin-toggle-btn")) return;
+      if (e.target.closest(".pin-toggle-btn") || e.target.closest(".delete-task-btn")) return;
       selectHistoryItem(item);
     });
 
@@ -1547,6 +1615,15 @@ function renderHistoryList() {
       pinBtn.addEventListener("click", async (e) => {
         e.stopPropagation();
         await togglePinTask(item.session_id, !item.is_pinned);
+      });
+    }
+
+    // Delete button click
+    const deleteBtn = itemDiv.querySelector(".delete-task-btn");
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await deleteHistorySession(item.session_id);
       });
     }
 
@@ -1562,6 +1639,19 @@ async function selectHistoryItem(item) {
   updatePinButtonUI(!!item.is_pinned);
   renderHistoryList();
   appendChatMessage(`Retrieved workspace for: "${item.title || item.prompt}"`, "assistant");
+
+  // Update URL Hash for Gemini-like Navigation
+  if (window.location.hash !== `#/session/${item.session_id}`) {
+    window.location.hash = `#/session/${item.session_id}`;
+  }
+
+  // Update Top Header Breadcrumb
+  const breadcrumb = document.getElementById("activeSessionBreadcrumb");
+  const breadcrumbTitle = document.getElementById("activeSessionBreadcrumbTitle");
+  if (breadcrumb && breadcrumbTitle) {
+    breadcrumb.classList.remove("hidden");
+    breadcrumbTitle.textContent = item.title || item.prompt || item.session_id;
+  }
 
   // Automatically close sidebar drawer on selection
   const sidebar = document.getElementById("sidebar");
@@ -1595,6 +1685,23 @@ async function selectHistoryItem(item) {
     updateStageUI(5);
   }
 }
+
+// Delete Mission Session
+window.deleteHistorySession = async function(sessionId) {
+  if (!confirm("Are you sure you want to delete this mission from history?")) return;
+  try {
+    const res = await fetch(`/api/history/${sessionId}`, { method: "DELETE" });
+    if (res.ok) {
+      appendLog(`[Session Deleted] Mission '${sessionId}' deleted successfully.`, "text-amber-400");
+      if (state.sessionId === sessionId) {
+        resetSession(true);
+      }
+      await loadWorkHistory();
+    }
+  } catch (err) {
+    console.error("Failed to delete mission:", err);
+  }
+};
 
 // Toggle Task Pin Status
 async function togglePinTask(sessionId, isPinned) {

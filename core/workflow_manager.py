@@ -115,6 +115,15 @@ class WorkflowAndHistoryManager:
                 break
         self._save_history(history)
 
+    def delete_session(self, session_id: str) -> bool:
+        history = self.list_history()
+        initial_len = len(history)
+        history = [item for item in history if item.get("session_id") != session_id]
+        if len(history) < initial_len:
+            self._save_history(history)
+            return True
+        return False
+
     def _save_history(self, history: list[dict[str, Any]]):
         h_file = self.workspace_dir / "history.json"
         try:

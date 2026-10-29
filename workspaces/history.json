@@ -1,5 +1,16 @@
 [
   {
+    "session_id": "sess_pinned",
+    "title": "Pinned Task",
+    "prompt": "Prompt 2",
+    "folder": "General",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T13:35:04.894934+00:00",
+    "artifacts": [],
+    "deliverables": []
+  },
+  {
     "session_id": "sched_run_aff03672",
     "title": "Daily 6AM Test Run",
     "prompt": "Test prompt",
@@ -261,17 +272,6 @@
       "telemetry_service.py",
       "test_telemetry.py"
     ]
-  },
-  {
-    "session_id": "sess_pinned",
-    "title": "Pinned Task",
-    "prompt": "Prompt 2",
-    "folder": "General",
-    "is_pinned": false,
-    "status": "completed",
-    "created_at": "2026-10-29T13:35:04.894934+00:00",
-    "artifacts": [],
-    "deliverables": []
   },
   {
     "session_id": "sess_unpinned",

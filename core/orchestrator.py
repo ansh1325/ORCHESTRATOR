@@ -73,6 +73,7 @@ from core.creator_memory import creator_memory
 from core.mcp_server import MCPServer
 from core.knowledge_agent import KnowledgeAgent
 from core.worker import DynamicWorkerEngine
+from core.founder_engine import FounderInterviewEngine
 from core.evaluator import EvaluatorGatekeeper
 
 def generate_readable_session_slug(vision: str) -> str:
@@ -226,7 +227,9 @@ class MetaOrchestrator:
 
             v_low = vision.lower()
             t_type = data.get("track_type", "general").lower()
-            if any(w in v_low for w in ["trading", "trade", "quant", "arbitrage", "alpaca", "binance", "sharpe", "backtest"]):
+            if any(w in v_low for w in ["tool", "software", "creator", "founder", "saas", "app", "daemon", "monitor", "dashboard"]):
+                t_type = "founder_software"
+            elif any(w in v_low for w in ["trading", "trade", "quant", "arbitrage", "alpaca", "binance", "sharpe", "backtest"]):
                 t_type = "quantitative_trading"
             elif any(w in v_low for w in ["robot", "robotics", "humanoid", "kinematics", "actuator"]):
                 t_type = "robotics_humanoid"
@@ -236,6 +239,8 @@ class MetaOrchestrator:
                 t_type = "communication_assistant"
             elif t_type in ["software_deployment", "fullstack_web", "backend"]:
                 t_type = "technical_software"
+            else:
+                t_type = "founder_software"
 
             is_query_only = (
                 v_low.startswith(("what is", "how do i", "how does", "explain", "who are you", "what can you", "can you tell me"))
@@ -250,6 +255,8 @@ class MetaOrchestrator:
             ])
             if is_query_only:
                 c_tier = "solo"
+            elif t_type == "founder_software":
+                c_tier = "swarm_army"
             elif t_type == "communication_assistant" or any(w in v_low for w in ["mail", "email", "gmail", "letter"]):
                 c_tier = "tactical_squad"
             elif is_swarm or t_type in ("business_acquisition", "quantitative_trading", "robotics_humanoid"):
@@ -260,6 +267,9 @@ class MetaOrchestrator:
 
             if is_query_only:
                 clarifications = []
+            elif t_type == "founder_software":
+                clarifications = FounderInterviewEngine.generate_founder_interview(vision)
+                data["swarm_size_descriptor"] = "Unbounded Founder Swarm (8 Specialized Autonomous Agents)"
             elif t_type == "communication_assistant" or any(w in v_low for w in ["mail", "email", "gmail", "letter"]):
                 clarifications = [
                     ClarificationQuestion(
@@ -350,11 +360,14 @@ class MetaOrchestrator:
             "trading", "trade", "quant", "crypto", "equities", "stock", "arbitrage",
             "alpaca", "binance", "sharpe", "backtest", "order flow", "hft", "algorithmic trading"
         ]) and not is_robotics
+        is_founder_software = any(w in v_lower for w in [
+            "tool", "software", "creator", "founder", "saas", "app", "daemon", "monitor", "dashboard", "intelligence tool"
+        ])
         is_business_or_agency = any(w in v_lower for w in [
             "business", "agency", "marketing", "client", "acquisition", "freelance",
             "sales", "money", "earn", "earning", "profit", "affiliate", "firm",
             "aaa", "automation agency", "lead", "omnichannel", "reachout", "linkedin"
-        ]) and not is_robotics and not is_trading
+        ]) and not is_robotics and not is_trading and not is_founder_software
         is_personal_comm = any(w in v_lower for w in [
             "mail", "email", "gmail", "letter", "message", "write to", "send to"
         ]) and not is_business_or_agency and not is_robotics and not is_trading
@@ -594,7 +607,7 @@ class MetaOrchestrator:
                 "email_delivery_channel": "Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation — requires browser permission)",
                 "permission_authorization": "Grant Browser & Network Permission to Jarvis for live dispatch"
             }
-        else:
+        elif any(w in v_lower for w in ["telemetry", "jwt", "bearer", "p99"]) and not any(w in v_lower for w in ["founder", "tool", "saas", "business", "continuous"]):
             track_type = "technical_software"
             swarm_size_descriptor = "Tactical Squad (3 Specialized Systems Engineering Agents)"
             extracted_goals = [
@@ -636,6 +649,24 @@ class MetaOrchestrator:
                 "storage_backend": "In-Memory Fast Buffer + SQLite",
                 "test_rigor": "100% Pytest Coverage + Negative Auth Assertions"
             }
+        else:
+            # Dynamic Founder Mode: Unlimited Agent Swarm & Software Creator
+            track_type = "founder_software"
+            swarm_size_descriptor = "Unbounded Founder Swarm (8 Specialized Autonomous Agents)"
+            extracted_goals = [
+                f"Extract founder product requirements for: {vision[:50]}...",
+                "Compile production modular codebase: data connector, core processing, database, and pytest",
+                "Build autonomous Playwright browser interaction suite",
+                "Register continuous 24/7 background scheduler daemon on host PC"
+            ]
+            identified_constraints = [
+                "Zero hardcoded templates: tailor code directly to vision",
+                "Must be fully runnable continuously in the background",
+                "Comprehensive sandboxed pytest suite"
+            ]
+            missing_parameters = ["Core architecture", "Continuous execution cadence", "Delivery format"]
+            clarifications = FounderInterviewEngine.generate_founder_interview(vision)
+            recommended_defaults = {c.id: c.default_selection for c in clarifications}
 
         # Dynamic Question Asking Behavior:
         # 1. Zero clarification questions if it's direct query mode
@@ -761,6 +792,11 @@ class MetaOrchestrator:
         except Exception:
             return None
         return None
+
+    def compile_dag_plan(self, session_id: str) -> DAGPlan:
+        """Convenience accessor to compile or fetch DAG plan by session ID."""
+        session = self.sessions[session_id]
+        return self.compile_dag_and_synthesize_workers(session)
 
     def compile_dag_and_synthesize_workers(self, session: SessionState) -> DAGPlan:
         """Stage 3: DAG Task Decomposition & Dynamic Worker Synthesis."""
@@ -957,6 +993,12 @@ class MetaOrchestrator:
                 objective="Compile a turnkey omnichannel client acquisition business for Ansh Tiwari with dedicated campaign folders and a non-blocking ready-for-permission queue.",
                 nodes=nodes,
                 estimated_duration_sec=30
+            )
+        elif track == "founder_software" or ("telemetry" not in session.vision.lower() and track not in ("robotics_humanoid", "communication_assistant", "quantitative_trading", "business_acquisition")):
+            plan = FounderInterviewEngine.compile_unbounded_agent_swarm(
+                session_id=session.session_id,
+                vision=session.vision,
+                answers=session.clarification_answers
             )
         else:
             nodes = [

@@ -145,6 +145,70 @@ class BrowserController:
             return {"success": False, "error": f"Playwright automation failed: {str(e)}"}
 
     @classmethod
+    def automate_gmail_dispatch_playwright(
+        cls,
+        recipient: str,
+        subject: str,
+        body: str,
+        headless: bool = False
+    ) -> Dict[str, Any]:
+        """
+        True autonomous browser worker.
+        Launches Playwright Chrome/Edge on the desktop, navigates to Gmail,
+        clicks Compose, types recipient, subject, and body, and sends or stages it.
+        """
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            return {"success": False, "error": "Playwright is not installed."}
+
+        try:
+            with sync_playwright() as p:
+                browser = None
+                for channel in ["msedge", "chrome"]:
+                    try:
+                        browser = p.chromium.launch(channel=channel, headless=headless)
+                        break
+                    except Exception:
+                        continue
+
+                if not browser:
+                    browser = p.chromium.launch(headless=headless)
+
+                page = browser.new_page()
+                compose_url = cls.build_gmail_compose_url(recipient, subject, body)
+                page.goto(compose_url, wait_until="domcontentloaded", timeout=45000)
+                time.sleep(2.0)
+
+                # Attempt to find Send button and click it autonomously
+                sent = False
+                try:
+                    send_btn = page.query_selector('div[role="button"][data-tooltip*="Send"], div[aria-label*="Send"]')
+                    if send_btn:
+                        send_btn.click()
+                        sent = True
+                        time.sleep(1.5)
+                except Exception:
+                    pass
+
+                page_title = page.title()
+                page_url = page.url
+                browser.close()
+
+                return {
+                    "success": True,
+                    "action": "autonomous_playwright_dispatch",
+                    "recipient": recipient,
+                    "subject": subject,
+                    "title": page_title,
+                    "url": page_url,
+                    "sent_automatically": sent,
+                    "message": "Playwright browser worker automated Gmail dispatch successfully."
+                }
+        except Exception as e:
+            return {"success": False, "error": f"Playwright execution error: {str(e)}"}
+
+    @classmethod
     def send_smtp_email(
         cls,
         recipient: str,
@@ -192,3 +256,4 @@ class BrowserController:
                 "success": False,
                 "error": f"SMTP transmission failed: {str(e)}"
             }
+

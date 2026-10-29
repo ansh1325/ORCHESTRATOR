@@ -427,16 +427,16 @@ window.setMode = function(mode) {
 
   if (mode === "swarm") {
     if (swarmModeBtn) {
-      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-full bg-gemini-card text-white font-medium transition cursor-pointer shadow-sm border border-gemini-borderLight";
+      swarmModeBtn.className = "mode-pill px-3 py-1.5 rounded-full bg-gemini-card text-white font-medium transition cursor-pointer shadow-sm border border-gemini-borderLight relative z-10";
     }
     if (chatModeBtn) {
-      chatModeBtn.className = "mode-pill px-3 py-1 rounded-full text-gemini-subtle hover:text-white transition cursor-pointer border border-transparent";
+      chatModeBtn.className = "mode-pill px-3 py-1.5 rounded-full text-gemini-subtle hover:text-white transition cursor-pointer border border-transparent relative z-10";
     }
     if (modeDescription) {
       modeDescription.textContent = "Autonomous Multi-Agent compiler (deploys agent army, generates files)";
     }
     if (directiveInput) {
-      directiveInput.placeholder = "Enter directive to build (e.g. Build quantitative trading desk or full-stack agency)...";
+      directiveInput.placeholder = "Enter directive to build (e.g. Build quantitative trading desk or creator software tool)...";
       directiveInput.focus();
     }
     if (swarmDeck && swarmDeck.classList.contains("hidden")) {
@@ -444,10 +444,10 @@ window.setMode = function(mode) {
     }
   } else {
     if (chatModeBtn) {
-      chatModeBtn.className = "mode-pill px-3 py-1 rounded-full bg-gemini-card text-white font-medium transition cursor-pointer shadow-sm border border-gemini-borderLight";
+      chatModeBtn.className = "mode-pill px-3 py-1.5 rounded-full bg-gemini-card text-white font-medium transition cursor-pointer shadow-sm border border-gemini-borderLight relative z-10";
     }
     if (swarmModeBtn) {
-      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-full text-gemini-subtle hover:text-white transition cursor-pointer border border-transparent";
+      swarmModeBtn.className = "mode-pill px-3 py-1.5 rounded-full text-gemini-subtle hover:text-white transition cursor-pointer border border-transparent relative z-10";
     }
     if (modeDescription) {
       modeDescription.textContent = "Asking questions & direct conversation (Solo Jarvis responses)";

@@ -407,8 +407,21 @@ async def browser_compose_email(req: dict = Body(...)):
 @app.post("/api/browser/playwright-run")
 async def browser_playwright_run(req: dict = Body(...)):
     """Executes a real Playwright browser session (Edge/Chrome) on the user's desktop."""
-    url = req.get("url", "https://mail.google.com")
+    recipient = req.get("recipient")
+    subject = req.get("subject", "hello i am jarvis")
+    body = req.get("body", "Hello Master Ansh, this is Jarvis executing autonomously via Playwright.")
     headless = bool(req.get("headless", False))
+
+    if recipient:
+        res = BrowserController.automate_gmail_dispatch_playwright(
+            recipient=recipient,
+            subject=subject,
+            body=body,
+            headless=headless
+        )
+        return res
+
+    url = req.get("url", "https://mail.google.com")
     actions = req.get("actions", [])
     res = BrowserController.run_playwright_automation(url=url, headless=headless, actions=actions)
     return res

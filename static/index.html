@@ -323,13 +323,13 @@
           <!-- Action Bar: Mode Switcher + Controls -->
           <div class="flex items-center justify-between pt-1 px-2 border-t border-gemini-border/40">
             
-            <!-- Left: Minimal Mode Switcher Pill -->
-            <div class="flex items-center gap-1 bg-gemini-bg p-1 rounded-full border border-gemini-border/60 text-xs">
-              <button type="button" id="chatModeBtn" onclick="setMode('chat')" class="mode-pill px-3 py-1 rounded-full bg-gemini-card text-white font-medium transition cursor-pointer">
-                💬 Direct Chat
+            <!-- Left: Mode Switcher Pill (Direct Jarvis Chat vs Multi-Agent Swarm Builder) -->
+            <div class="flex items-center gap-1 bg-gemini-bg p-1 rounded-full border border-gemini-border/60 text-xs select-none">
+              <button type="button" id="chatModeBtn" onclick="window.setMode('chat')" class="mode-pill px-3 py-1.5 rounded-full bg-gemini-card text-white font-medium transition cursor-pointer shadow-sm border border-gemini-borderLight relative z-10">
+                💬 Direct Jarvis Chat
               </button>
-              <button type="button" id="swarmModeBtn" onclick="setMode('swarm')" class="mode-pill px-3 py-1 rounded-full text-gemini-subtle hover:text-white transition cursor-pointer">
-                ⚡ Swarm Builder
+              <button type="button" id="swarmModeBtn" onclick="window.setMode('swarm')" class="mode-pill px-3 py-1.5 rounded-full text-gemini-subtle hover:text-white transition cursor-pointer border border-transparent relative z-10">
+                ⚡ Multi-Agent Swarm Builder
               </button>
             </div>
 

@@ -8,15 +8,16 @@ Executes real browser actions:
 """
 
 import os
+import smtplib
 import sys
 import time
 import urllib.parse
 import webbrowser
-import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 
 class BrowserController:
     """Unified controller for system browser interaction and Playwright automation."""
@@ -39,7 +40,7 @@ class BrowserController:
             return False
 
     @classmethod
-    def compose_in_gmail(cls, recipient: str, subject: str, body: str) -> Dict[str, Any]:
+    def compose_in_gmail(cls, recipient: str, subject: str, body: str) -> dict[str, Any]:
         """
         Opens user's default browser directly into Gmail Compose.
         Because the user is already logged in to Google in their browser, this immediately
@@ -57,7 +58,7 @@ class BrowserController:
         }
 
     @classmethod
-    def compose_batch_in_gmail(cls, emails: List[Dict[str, str]]) -> Dict[str, Any]:
+    def compose_batch_in_gmail(cls, emails: list[dict[str, str]]) -> dict[str, Any]:
         """Opens Gmail Compose tabs for a batch of letters/emails with safe staggered timing."""
         results = []
         for idx, item in enumerate(emails):
@@ -79,9 +80,9 @@ class BrowserController:
         cls,
         url: str,
         headless: bool = False,
-        actions: Optional[List[Dict[str, Any]]] = None,
-        screenshot_path: Optional[str] = None
-    ) -> Dict[str, Any]:
+        actions: list[dict[str, Any]] | None = None,
+        screenshot_path: str | None = None
+    ) -> dict[str, Any]:
         """
         Launches real Playwright browser (Edge or Chrome) on Windows.
         When headless=False, the browser window physically appears on the user's screen.
@@ -95,7 +96,7 @@ class BrowserController:
             }
 
         actions = actions or []
-        captured_data: Dict[str, Any] = {"title": "", "url": "", "executed_actions": []}
+        captured_data: dict[str, Any] = {"title": "", "url": "", "executed_actions": []}
 
         try:
             with sync_playwright() as p:
@@ -142,7 +143,7 @@ class BrowserController:
                 browser.close()
                 return {"success": True, **captured_data}
         except Exception as e:
-            return {"success": False, "error": f"Playwright automation failed: {str(e)}"}
+            return {"success": False, "error": f"Playwright automation failed: {e!s}"}
 
     @classmethod
     def automate_gmail_dispatch_playwright(
@@ -151,8 +152,8 @@ class BrowserController:
         subject: str,
         body: str,
         headless: bool = False,
-        user_data_dir: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_data_dir: str | None = None
+    ) -> dict[str, Any]:
         """
         True autonomous human-like browser worker (Zero templates).
         Operates exactly like a real person:
@@ -173,7 +174,7 @@ class BrowserController:
         profile_path = Path(user_data_dir) if user_data_dir else (Path.home() / ".llama_orchestrator" / "browser_profile")
         profile_path.mkdir(parents=True, exist_ok=True)
 
-        executed_actions: List[str] = []
+        executed_actions: list[str] = []
         screenshot_path = Path("workspaces/screenshots/gmail_real_person_dispatch.png")
         screenshot_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -375,7 +376,7 @@ class BrowserController:
                     "message": "Jarvis real-person browser worker successfully navigated Gmail, clicked Compose, typed content, and triggered Send."
                 }
         except Exception as e:
-            return {"success": False, "error": f"Playwright real-person execution error: {str(e)}"}
+            return {"success": False, "error": f"Playwright real-person execution error: {e!s}"}
 
     @classmethod
     def send_smtp_email(
@@ -383,11 +384,11 @@ class BrowserController:
         recipient: str,
         subject: str,
         body: str,
-        sender_email: Optional[str] = None,
-        password: Optional[str] = None,
+        sender_email: str | None = None,
+        password: str | None = None,
         smtp_server: str = "smtp.gmail.com",
         smtp_port: int = 587
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Sends an email over direct SMTP if credentials are configured in .env or arguments.
         """
@@ -423,6 +424,6 @@ class BrowserController:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"SMTP transmission failed: {str(e)}"
+                "error": f"SMTP transmission failed: {e!s}"
             }
 

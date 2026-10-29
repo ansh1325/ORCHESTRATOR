@@ -5,39 +5,40 @@ performs Intent Analysis, compiles DAG plans, synthesizes dynamic Llama workers,
 and manages SSE event queues.
 """
 
-import uuid
 import asyncio
-import zipfile
 import io
-from typing import Dict, Any, Optional
-from datetime import datetime, timezone
+import uuid
+import zipfile
+from datetime import UTC, datetime
+from typing import Any
 
 try:
     from core.config import settings  # pyright: ignore[reportMissingImports]
     from core.models import (  # pyright: ignore[reportMissingImports]
-        IntentAnalysis,
         ClarificationQuestion,
         DAGPlan,
-        TaskNode,
-        SubAgentSpec,
         ExecutionEvent,
-        KnowledgeBase
+        IntentAnalysis,
+        KnowledgeBase,
+        SubAgentSpec,
+        TaskNode,
     )
 except ImportError:
     from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
     from .models import (  # type: ignore # pyright: ignore[reportMissingImports]
-        IntentAnalysis,
         ClarificationQuestion,
         DAGPlan,
-        TaskNode,
-        SubAgentSpec,
         ExecutionEvent,
-        KnowledgeBase
+        IntentAnalysis,
+        KnowledgeBase,
+        SubAgentSpec,
+        TaskNode,
     )
 import json
 import re
 
-def robust_json_loads(raw: Optional[str]) -> dict:
+
+def robust_json_loads(raw: str | None) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
     if not raw:
         return {}
@@ -52,29 +53,25 @@ def robust_json_loads(raw: Optional[str]) -> dict:
             clean = clean[first_brace:last_brace + 1]
     return json.loads(clean)
 
-from core.workflow_manager import (  # pyright: ignore[reportMissingImports]
-    history_manager,
-    HistoryManager
-)
-from core.scheduler import (  # pyright: ignore[reportMissingImports]
-    parse_schedule_directive
-)
+from core.scheduler import parse_schedule_directive  # pyright: ignore[reportMissingImports]
+from core.workflow_manager import HistoryManager, history_manager  # pyright: ignore[reportMissingImports]
 
 __all__ = [
-    "MetaOrchestrator",
-    "orchestrator",
-    "history_manager",
     "HistoryManager",
-    "parse_schedule_directive",
-    "SessionState"
+    "MetaOrchestrator",
+    "SessionState",
+    "history_manager",
+    "orchestrator",
+    "parse_schedule_directive"
 ]
 
 from core.creator_memory import creator_memory
-from core.mcp_server import MCPServer
-from core.knowledge_agent import KnowledgeAgent
-from core.worker import DynamicWorkerEngine
-from core.founder_engine import FounderInterviewEngine
 from core.evaluator import EvaluatorGatekeeper
+from core.founder_engine import FounderInterviewEngine
+from core.knowledge_agent import KnowledgeAgent
+from core.mcp_server import MCPServer
+from core.worker import DynamicWorkerEngine
+
 
 def generate_readable_session_slug(vision: str) -> str:
     """Generates an Antigravity/Gemini-style human-readable slug for session IDs and export folders."""
@@ -147,25 +144,25 @@ class SessionState:
         self.workspace_path = (settings.WORKSPACE_DIR / session_id).resolve()
         self.mcp = MCPServer(self.workspace_path)
         self.event_queue: asyncio.Queue = asyncio.Queue()
-        self.intent_analysis: Optional[IntentAnalysis] = None
-        self.clarification_answers: Dict[str, str] = {}
-        self.knowledge_base: Optional[KnowledgeBase] = None
-        self.dag_plan: Optional[DAGPlan] = None
-        self.synthesized_specs: Dict[str, SubAgentSpec] = {}
-        self.evaluator_report: Optional[Dict[str, Any]] = None
+        self.intent_analysis: IntentAnalysis | None = None
+        self.clarification_answers: dict[str, str] = {}
+        self.knowledge_base: KnowledgeBase | None = None
+        self.dag_plan: DAGPlan | None = None
+        self.synthesized_specs: dict[str, SubAgentSpec] = {}
+        self.evaluator_report: dict[str, Any] | None = None
         self.current_stage: int = 0
         self.is_running: bool = False
         self.is_completed: bool = False
-        self.created_at = datetime.now(timezone.utc).isoformat()
+        self.created_at = datetime.now(UTC).isoformat()
 
 class MetaOrchestrator:
     """Central Brain coordinating multi-agent synthesis, DAG compilation, and lifecycle execution."""
 
     def __init__(self):
-        self.sessions: Dict[str, SessionState] = {}
+        self.sessions: dict[str, SessionState] = {}
         self.llm_client = settings.get_llm_client()
 
-    def get_or_create_session(self, session_id: Optional[str] = None, vision: str = "") -> SessionState:
+    def get_or_create_session(self, session_id: str | None = None, vision: str = "") -> SessionState:
         if not session_id:
             session_id = generate_readable_session_slug(vision)
         if session_id not in self.sessions:
@@ -181,7 +178,7 @@ class MetaOrchestrator:
         """Pushes an execution event to the session SSE queue."""
         await session.event_queue.put(event)
 
-    def _llm_analyze_intent(self, vision: str, session: SessionState) -> Optional[IntentAnalysis]:
+    def _llm_analyze_intent(self, vision: str, session: SessionState) -> IntentAnalysis | None:
         """Uses Meta Llama to dynamically analyze vision, extract goals, identify human intervention boundaries, and synthesize clarifying questions."""
         if not self.llm_client or settings.is_mock():
             return None
@@ -333,7 +330,7 @@ class MetaOrchestrator:
         except Exception:
             return None
 
-    def analyze_intent(self, vision: str, session_id: Optional[str] = None) -> IntentAnalysis:
+    def analyze_intent(self, vision: str, session_id: str | None = None) -> IntentAnalysis:
         """Stage 1: Intent Analysis & Human Clarification Gate."""
         session = self.get_or_create_session(session_id, vision)
 
@@ -707,7 +704,7 @@ class MetaOrchestrator:
         session.intent_analysis = analysis
         return analysis
 
-    def _llm_compile_dag(self, session: SessionState) -> Optional[DAGPlan]:
+    def _llm_compile_dag(self, session: SessionState) -> DAGPlan | None:
         """Uses Meta Llama to decompose the mission into dynamic DAG task nodes and synthesize specialized sub-agents."""
         if not self.llm_client or settings.is_mock():
             return None
@@ -1038,7 +1035,7 @@ class MetaOrchestrator:
         session.dag_plan = plan
         return plan
 
-    def get_subagent_spec(self, agent_type: str, session: Optional[SessionState] = None) -> SubAgentSpec:
+    def get_subagent_spec(self, agent_type: str, session: SessionState | None = None) -> SubAgentSpec:
         """Synthesizes dynamic sub-agent specifications with scoped system prompts."""
         if session and agent_type in session.synthesized_specs:
             return session.synthesized_specs[agent_type]
@@ -1203,7 +1200,7 @@ class MetaOrchestrator:
     async def execute_full_lifecycle(
         self,
         session_id: str,
-        clarification_answers: Dict[str, str]
+        clarification_answers: dict[str, str]
     ):
         """Runs stages 2 through 5 autonomously, emitting real-time telemetry events."""
         session = self.get_or_create_session(session_id)
@@ -1362,7 +1359,7 @@ class MetaOrchestrator:
                 session_id=session_id,
                 stage=session.current_stage,
                 stage_name="Execution Error",
-                message=f"Lifecycle execution halted with error: {str(e)}"
+                message=f"Lifecycle execution halted with error: {e!s}"
             ))
 
     async def run_scheduled_mission(self, prompt: str, title: str) -> str:

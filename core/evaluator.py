@@ -5,21 +5,23 @@ and dynamically determines the precise human-in-the-loop boundary (e.g. AWS cred
 sales closing call, or zero-intervention autonomous execution) powered by Meta Llama.
 """
 
+import asyncio
 import json
 import re
-import asyncio
+from collections.abc import Callable
 from pathlib import Path
-from typing import Dict, Any, List, Callable, Optional
-try:
-    from core.models import ExecutionEvent  # pyright: ignore[reportMissingImports]
-    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
-    from core.config import settings  # pyright: ignore[reportMissingImports]
-except ImportError:
-    from .models import ExecutionEvent  # type: ignore # pyright: ignore[reportMissingImports]
-    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
-    from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
+from typing import Any
 
-def robust_json_loads(raw: Optional[str]) -> dict:
+try:
+    from core.config import settings  # pyright: ignore[reportMissingImports]
+    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
+    from core.models import ExecutionEvent  # pyright: ignore[reportMissingImports]
+except ImportError:
+    from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
+    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
+    from .models import ExecutionEvent  # type: ignore # pyright: ignore[reportMissingImports]
+
+def robust_json_loads(raw: str | None) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
     if not raw:
         return {}
@@ -46,8 +48,8 @@ class EvaluatorGatekeeper:
         session_id: str,
         track_type: str = "general",
         session: Any = None,
-        emit_event: Optional[Callable[[ExecutionEvent], Any]] = None
-    ) -> Dict[str, Any]:
+        emit_event: Callable[[ExecutionEvent], Any] | None = None
+    ) -> dict[str, Any]:
         """Audits all deliverables in the workspace, validates code/tests, and synthesizes dynamic human hand-off."""
         if emit_event:
             await emit_event(ExecutionEvent(
@@ -65,7 +67,7 @@ class EvaluatorGatekeeper:
             f["path"] for f in flist.get("files", [])
             if not any(skip in f["path"] for skip in ["__pycache__", ".pytest_cache", ".git", ".venv", ".coverage"])
         ]
-        checks: List[Dict[str, Any]] = []
+        checks: list[dict[str, Any]] = []
         overall_passed = True
         score = 100.0
 
@@ -194,10 +196,10 @@ class EvaluatorGatekeeper:
         self,
         session_id: str,
         vision: str,
-        files: List[str],
-        checks: List[Dict[str, Any]],
+        files: list[str],
+        checks: list[dict[str, Any]],
         score: float
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calls Meta Llama to dynamically assess achievements and establish the exact human hand-off boundary."""
         if not self.llm_client or settings.is_mock():
             return self._fallback_evaluation(vision, files, score)
@@ -269,7 +271,7 @@ class EvaluatorGatekeeper:
         except Exception:
             return self._fallback_evaluation(vision, files, score)
 
-    def _fallback_evaluation(self, vision: str, files: List[str], score: float) -> Dict[str, Any]:
+    def _fallback_evaluation(self, vision: str, files: list[str], score: float) -> dict[str, Any]:
         """Context-aware fallback evaluation based on discovered workspace files."""
         v_lower = vision.lower()
         is_cloud = any(w in v_lower for w in ["aws", "deploy", "cloud", "docker", "cdk", "kubernetes"])

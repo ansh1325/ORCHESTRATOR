@@ -4,18 +4,20 @@ Defines data structures for Intent Analysis, Knowledge Base, DAG Planning,
 Worker Specs, and Real-time SSE Events.
 """
 
-from typing import List, Dict, Any, Optional
+from datetime import UTC, datetime
+from typing import Any
+
 from pydantic import BaseModel, Field
-from datetime import datetime, timezone
+
 
 def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 class ClarificationQuestion(BaseModel):
     id: str
     question: str
     why_needed: str
-    options: List[str]
+    options: list[str]
     default_selection: str
 
 class IntentAnalysis(BaseModel):
@@ -25,30 +27,30 @@ class IntentAnalysis(BaseModel):
     swarm_size_descriptor: str = Field(default="Tactical Squad (3-4 Specialized Agents)")
     response_mode: str = Field(default="swarm_army", description="direct_response | swarm_army")
     raw_vision: str
-    extracted_goals: List[str]
-    identified_constraints: List[str]
-    missing_parameters: List[str]
-    clarifications: List[ClarificationQuestion]
-    recommended_defaults: Dict[str, str]
+    extracted_goals: list[str]
+    identified_constraints: list[str]
+    missing_parameters: list[str]
+    clarifications: list[ClarificationQuestion]
+    recommended_defaults: dict[str, str]
     created_at: str = Field(default_factory=utc_now_iso)
 
 class ClarificationResponse(BaseModel):
     session_id: str
     auto_approve: bool = False
-    answers: Dict[str, str] = Field(default_factory=dict)
+    answers: dict[str, str] = Field(default_factory=dict)
 
 class KnowledgeBase(BaseModel):
     session_id: str
     target_niche: str
-    icp: Dict[str, Any] = Field(description="Ideal Customer Profile: roles, company size, pain points")
-    pricing_tiers: List[Dict[str, Any]]
+    icp: dict[str, Any] = Field(description="Ideal Customer Profile: roles, company size, pain points")
+    pricing_tiers: list[dict[str, Any]]
     milestone_1: str
     milestone_2: str
-    technical_blueprint: Dict[str, Any]
-    scraped_sources: List[Dict[str, str]]
+    technical_blueprint: dict[str, Any]
+    scraped_sources: list[dict[str, str]]
     synthesis_summary: str
-    omnichannel_channels: List[Dict[str, Any]] = Field(default_factory=list, description="Targeted channels: LinkedIn browser automation, Twitter/X DMs, community groups, and cold email")
-    ready_for_permission_actions: List[Dict[str, Any]] = Field(default_factory=list, description="Pre-staged autonomous actions awaiting 1-click user authorization")
+    omnichannel_channels: list[dict[str, Any]] = Field(default_factory=list, description="Targeted channels: LinkedIn browser automation, Twitter/X DMs, community groups, and cold email")
+    ready_for_permission_actions: list[dict[str, Any]] = Field(default_factory=list, description="Pre-staged autonomous actions awaiting 1-click user authorization")
     updated_at: str = Field(default_factory=utc_now_iso)
 
 class TaskNode(BaseModel):
@@ -56,19 +58,19 @@ class TaskNode(BaseModel):
     title: str
     agent_type: str
     description: str
-    dependencies: List[str] = Field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)
     status: str = Field(default="pending", description="pending | running | completed | failed | self_correcting")
-    assigned_tools: List[str] = Field(default_factory=list)
-    output_artifacts: List[str] = Field(default_factory=list)
-    execution_logs: List[str] = Field(default_factory=list)
+    assigned_tools: list[str] = Field(default_factory=list)
+    output_artifacts: list[str] = Field(default_factory=list)
+    execution_logs: list[str] = Field(default_factory=list)
     retry_count: int = 0
-    error_feedback: Optional[str] = None
+    error_feedback: str | None = None
 
 class DAGPlan(BaseModel):
     session_id: str
     title: str
     objective: str
-    nodes: List[TaskNode]
+    nodes: list[TaskNode]
     estimated_duration_sec: int = 30
     is_validated: bool = True
     created_at: str = Field(default_factory=utc_now_iso)
@@ -78,7 +80,7 @@ class SubAgentSpec(BaseModel):
     name: str
     role: str
     system_prompt: str
-    allowed_tools: List[str]
+    allowed_tools: list[str]
     model: str = "llama-3.1-8b-instant"
 
 class ExecutionEvent(BaseModel):
@@ -87,14 +89,14 @@ class ExecutionEvent(BaseModel):
     session_id: str
     stage: int = 0
     stage_name: str = "Central Brain"
-    task_id: Optional[str] = None
-    data: Dict[str, Any] = Field(default_factory=dict)
+    task_id: str | None = None
+    data: dict[str, Any] = Field(default_factory=dict)
     message: str
-    speech_text: Optional[str] = None
+    speech_text: str | None = None
 
 class ChatRequest(BaseModel):
     message: str
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
 class ChatResponse(BaseModel):
     role: str = "assistant"
@@ -110,7 +112,7 @@ class HistoryItem(BaseModel):
     is_pinned: bool = False
     status: str = "completed"
     created_at: str = Field(default_factory=utc_now_iso)
-    artifacts: List[str] = Field(default_factory=list)
+    artifacts: list[str] = Field(default_factory=list)
 
 class SavedWorkflow(BaseModel):
     id: str
@@ -130,8 +132,8 @@ class ScheduledTask(BaseModel):
     minute: int = 0
     is_active: bool = True
     created_at: str = Field(default_factory=utc_now_iso)
-    last_run_at: Optional[str] = None
-    last_run_date: Optional[str] = None
+    last_run_at: str | None = None
+    last_run_date: str | None = None
     run_count: int = 0
 
 class FolderUpdateRequest(BaseModel):
@@ -144,16 +146,16 @@ class PinUpdateRequest(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     vision: str
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
 class LaunchRequest(BaseModel):
     session_id: str
     auto_approve: bool = True
-    answers: Optional[Dict[str, str]] = None
+    answers: dict[str, str] | None = None
 
 class ImportPathRequest(BaseModel):
     source_path: str
-    target_name: Optional[str] = None
+    target_name: str | None = None
 
 class ExportPathRequest(BaseModel):
-    destination_path: Optional[str] = None
+    destination_path: str | None = None

@@ -6,21 +6,21 @@ to the isolated session workspace.
 """
 
 import os
-import sys
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
+from typing import Any
+
 
 class MCPSandboxSecurityError(Exception):
     """Raised when a tool call attempts to breach workspace sandboxing boundaries."""
-    pass
 
 class MCPServer:
     """Standardized MCP JSON-RPC router for safe workspace and subprocess operations."""
     
-    def __init__(self, workspace_path: Union[Path, str]):
+    def __init__(self, workspace_path: Path | str):
         self.workspace_path = Path(workspace_path).resolve()
         self.workspace_path.mkdir(parents=True, exist_ok=True)
 
@@ -41,7 +41,7 @@ class MCPServer:
             
         return target
 
-    def tool_file_write(self, path: str, content: str) -> Dict[str, Any]:
+    def tool_file_write(self, path: str, content: str) -> dict[str, Any]:
         """Writes content to a file inside the sandboxed workspace."""
         safe_path = self._resolve_safe_path(path)
         safe_path.parent.mkdir(parents=True, exist_ok=True)
@@ -53,7 +53,7 @@ class MCPServer:
             "bytes_written": len(content.encode("utf-8"))
         }
 
-    def tool_file_read(self, path: str) -> Dict[str, Any]:
+    def tool_file_read(self, path: str) -> dict[str, Any]:
         """Reads file content from the sandboxed workspace."""
         safe_path = self._resolve_safe_path(path)
         if not safe_path.exists():
@@ -66,7 +66,7 @@ class MCPServer:
             "content": content
         }
 
-    def tool_file_list(self, subpath: str = "") -> Dict[str, Any]:
+    def tool_file_list(self, subpath: str = "") -> dict[str, Any]:
         """Lists files inside the sandboxed workspace."""
         safe_dir = self._resolve_safe_path(subpath) if subpath else self.workspace_path
         if not safe_dir.exists():
@@ -85,7 +85,7 @@ class MCPServer:
                 })
         return {"success": True, "files": files_list}
 
-    def tool_run_command(self, command: str, timeout_sec: int = 15) -> Dict[str, Any]:
+    def tool_run_command(self, command: str, timeout_sec: int = 15) -> dict[str, Any]:
         """Executes a subprocess confined to the session workspace, capturing stderr and stdout."""
         dangerous_tokens = ["format", "del /s", "rmdir /s /q c:", "rm -rf /", "shutdown"]
         for token in dangerous_tokens:
@@ -130,10 +130,10 @@ class MCPServer:
                 "success": False,
                 "returncode": -1,
                 "stdout": "",
-                "stderr": f"Subprocess exception: {str(e)}"
+                "stderr": f"Subprocess exception: {e!s}"
             }
 
-    def tool_web_search(self, query: str) -> Dict[str, Any]:
+    def tool_web_search(self, query: str) -> dict[str, Any]:
         """Domain search simulation providing curated intelligence for business and technical tracks."""
         q = query.lower()
         if "pricing" in q or "client" in q or "agency" in q or "outreach" in q:
@@ -183,7 +183,7 @@ class MCPServer:
                 ]
             }
 
-    def tool_verify_email_syntax(self, email: str) -> Dict[str, Any]:
+    def tool_verify_email_syntax(self, email: str) -> dict[str, Any]:
         """Validates cold outreach lead email formatting."""
         pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
         valid = bool(re.match(pattern, email.strip()))
@@ -193,7 +193,7 @@ class MCPServer:
             "reason": "Valid RFC-5322 structure" if valid else "Malformed email address"
         }
 
-    def tool_send_mock_booking(self, name: str, email: str, company: str, slot: str) -> Dict[str, Any]:
+    def tool_send_mock_booking(self, name: str, email: str, company: str, slot: str) -> dict[str, Any]:
         """Simulates calendar booking webhook trigger when a qualified client lead schedules a call."""
         return {
             "success": True,
@@ -207,7 +207,7 @@ class MCPServer:
             "webhook_status": "200 OK - Dispatched to Builder Calendar & Slack"
         }
 
-    def tool_browser_navigate(self, url: str, timeout_sec: int = 15) -> Dict[str, Any]:
+    def tool_browser_navigate(self, url: str, timeout_sec: int = 15) -> dict[str, Any]:
         """Navigates to a webpage, extracts UI structure, and detects CAPTCHA / anti-bot challenges."""
         import requests
         try:
@@ -251,9 +251,9 @@ class MCPServer:
                 )
             }
         except Exception as e:
-            return {"success": False, "url": url, "error": f"Browser navigation error: {str(e)}"}
+            return {"success": False, "url": url, "error": f"Browser navigation error: {e!s}"}
 
-    def tool_browser_screenshot(self, url: str, output_file: str = "ui_snapshot.html") -> Dict[str, Any]:
+    def tool_browser_screenshot(self, url: str, output_file: str = "ui_snapshot.html") -> dict[str, Any]:
         """Saves a rendered DOM snapshot or artifact of the webpage into the sandboxed workspace."""
         import requests
         try:
@@ -274,9 +274,9 @@ class MCPServer:
                 "bytes": len(resp.text.encode("utf-8"))
             }
         except Exception as e:
-            return {"success": False, "error": f"Snapshot failed: {str(e)}"}
+            return {"success": False, "error": f"Snapshot failed: {e!s}"}
 
-    def tool_browser_interact(self, action: str, target: str = "", value: str = "") -> Dict[str, Any]:
+    def tool_browser_interact(self, action: str, target: str = "", value: str = "") -> dict[str, Any]:
         """Simulates UI interaction (e.g. typing a solution, clicking submit, or selecting problem)."""
         return {
             "success": True,
@@ -286,7 +286,7 @@ class MCPServer:
             "status": f"Executed UI action '{action}' on target '{target}'. State synchronized."
         }
 
-    def tool_browser_click(self, selector: str) -> Dict[str, Any]:
+    def tool_browser_click(self, selector: str) -> dict[str, Any]:
         """Executes a click action on a DOM element identified by CSS selector or text target."""
         return {
             "success": True,
@@ -295,7 +295,7 @@ class MCPServer:
             "status": f"Clicked DOM element matching '{selector}'."
         }
 
-    def tool_browser_type(self, selector: str, text: str, delay_ms: int = 40) -> Dict[str, Any]:
+    def tool_browser_type(self, selector: str, text: str, delay_ms: int = 40) -> dict[str, Any]:
         """Types text into an input or textarea with simulated human keystrokes and jitter."""
         return {
             "success": True,
@@ -306,7 +306,7 @@ class MCPServer:
             "status": f"Typed {len(text)} characters into '{selector}' with human typing emulation."
         }
 
-    def tool_browser_extract_text(self, selector: Optional[str] = None) -> Dict[str, Any]:
+    def tool_browser_extract_text(self, selector: str | None = None) -> dict[str, Any]:
         """Extracts text, links, and input field names from the latest DOM snapshot."""
         safe_snapshot = self.workspace_path / "ui_snapshot.html"
         if safe_snapshot.exists():
@@ -329,7 +329,7 @@ class MCPServer:
             "form_inputs": []
         }
 
-    def tool_browser_execute_script(self, script: str) -> Dict[str, Any]:
+    def tool_browser_execute_script(self, script: str) -> dict[str, Any]:
         """Executes a browser automation script via Python runtime in the workspace."""
         runner_file = self.workspace_path / "browser_runner.py"
         with open(runner_file, "w", encoding="utf-8") as f:
@@ -342,7 +342,7 @@ class MCPServer:
             "stderr": cmd_res.get("stderr", "")
         }
 
-    def tool_import_external_path(self, source_path: str, target_name: Optional[str] = None) -> Dict[str, Any]:
+    def tool_import_external_path(self, source_path: str, target_name: str | None = None) -> dict[str, Any]:
         """
         Safely imports an external file or directory from the host filesystem
         (e.g., from user's Downloads, Desktop, or custom folder) into the session workspace.
@@ -393,7 +393,7 @@ class MCPServer:
             }
         return {"success": False, "error": f"Invalid path type for: '{source_path}'"}
 
-    def tool_export_to_host(self, workspace_path: str = "", destination_path: Optional[str] = None, export_folder_name: Optional[str] = None) -> Dict[str, Any]:
+    def tool_export_to_host(self, workspace_path: str = "", destination_path: str | None = None, export_folder_name: str | None = None) -> dict[str, Any]:
         """
         Exports deliverables or files from the workspace sandbox directly to a user-specified
         host destination (e.g., system Downloads folder or custom directory).
@@ -445,7 +445,7 @@ class MCPServer:
                 "status": f"Successfully exported '{safe_source.name}' to '{dest_file}'"
             }
 
-    def tool_read_external_path(self, path: str) -> Dict[str, Any]:
+    def tool_read_external_path(self, path: str) -> dict[str, Any]:
         """Reads a file or lists files from an external host directory explicitly specified by the user."""
         clean = os.path.expanduser(os.path.expandvars(path.strip().strip("'\"")))
         p = Path(clean).resolve()
@@ -461,7 +461,7 @@ class MCPServer:
                     content = f.read(100000)
                 return {"success": True, "type": "file", "path": str(p), "content": content, "size_bytes": p.stat().st_size}
             except Exception as e:
-                return {"success": False, "error": f"Could not read file: {str(e)}"}
+                return {"success": False, "error": f"Could not read file: {e!s}"}
         elif p.is_dir():
             entries = []
             for item in p.iterdir():
@@ -469,7 +469,7 @@ class MCPServer:
             return {"success": True, "type": "directory", "path": str(p), "entries": entries[:100]}
         return {"success": False, "error": "Unknown path type"}
 
-    def get_tool_definitions(self) -> List[Dict[str, Any]]:
+    def get_tool_definitions(self) -> list[dict[str, Any]]:
         return [
             {"name": "file_write", "description": "Write text content to a sandboxed file inside the workspace."},
             {"name": "file_read", "description": "Read content of a file located within the workspace sandbox."},
@@ -490,7 +490,7 @@ class MCPServer:
             {"name": "read_external_path", "description": "Read content from a user-specified host file or folder."}
         ]
 
-    def handle_jsonrpc(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    def handle_jsonrpc(self, request_data: dict[str, Any]) -> dict[str, Any]:
         req_id = request_data.get("id", 1)
         method = request_data.get("method", "")
         params = request_data.get("params", {})

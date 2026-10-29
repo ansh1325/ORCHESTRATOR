@@ -4,26 +4,27 @@ Executes synthesized worker sub-agents with scoped system prompts and tool acces
 Intercepts nonzero returncodes and stderr to autonomously diagnose, patch, and re-verify.
 """
 
-import re
 import asyncio
 import json
-from typing import Dict, Any, List, Callable, Optional
+import re
+from collections.abc import Callable
+from typing import Any
+
 try:
-    from core.models import TaskNode, SubAgentSpec, ExecutionEvent  # pyright: ignore[reportMissingImports]
-    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
     from core.config import settings  # pyright: ignore[reportMissingImports]
     from core.dispatch_engine import CommunicationDispatchEngine  # pyright: ignore[reportMissingImports]
+    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
+    from core.models import ExecutionEvent, SubAgentSpec, TaskNode  # pyright: ignore[reportMissingImports]
 except ImportError:
-    from .models import TaskNode, SubAgentSpec, ExecutionEvent  # type: ignore # pyright: ignore[reportMissingImports]
-    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
     from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
     from .dispatch_engine import CommunicationDispatchEngine  # type: ignore # pyright: ignore[reportMissingImports]
+    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
+    from .models import ExecutionEvent, SubAgentSpec, TaskNode  # type: ignore # pyright: ignore[reportMissingImports]
 
 class WorkerExecutionError(Exception):
     """Raised when a worker task fails after exhausting self-correction attempts."""
-    pass
 
-def robust_json_loads(raw: Optional[str]) -> dict:
+def robust_json_loads(raw: str | None) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
     if not raw:
         return {}
@@ -61,7 +62,7 @@ class DynamicWorkerEngine:
         task: TaskNode,
         spec: SubAgentSpec,
         track_type: str,
-        emit_event: Optional[Callable[[ExecutionEvent], Any]] = None,
+        emit_event: Callable[[ExecutionEvent], Any] | None = None,
         max_retries: int = 2
     ) -> bool:
         """Executes a single DAG task with real MCP tool execution and closed-loop self-correction."""
@@ -130,8 +131,8 @@ class DynamicWorkerEngine:
                     await asyncio.sleep(0.8)
                     current_attempt += 1
 
-            except Exception as e:
-                task.execution_logs.append(f"[Exception] {str(e)}")
+            except Exception as e:  # noqa: BLE001
+                task.execution_logs.append(f"[Exception] {e!s}")
                 current_attempt += 1
                 await asyncio.sleep(0.5)
 
@@ -147,19 +148,19 @@ class DynamicWorkerEngine:
             ))
         return False
 
-    async def _perform_subagent_work(self, task: TaskNode, spec: SubAgentSpec, track_type: str, attempt: int) -> List[str]:
+    async def _perform_subagent_work(self, task: TaskNode, spec: SubAgentSpec, track_type: str, attempt: int) -> list[str]:
         """Dispatches work based on task ID and writes real artifacts into the workspace."""
         if self.llm_client and not settings.is_mock():
             try:
                 artifacts = await self._llm_perform_work(task, spec, attempt)
                 if artifacts:
                     return artifacts
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 task.execution_logs.append(f"[LLM Worker Notice] Fallback triggered: {e}")
 
         return await self._template_perform_work(task, spec, track_type)
 
-    async def _llm_perform_work(self, task: TaskNode, spec: SubAgentSpec, attempt: int) -> List[str]:
+    async def _llm_perform_work(self, task: TaskNode, spec: SubAgentSpec, attempt: int) -> list[str]:
         flist = self.mcp.tool_file_list()
         existing_files = [f["path"] for f in flist.get("files", [])]
         
@@ -240,7 +241,7 @@ class DynamicWorkerEngine:
                 
         return artifacts
 
-    async def _template_perform_work(self, task: TaskNode, spec: SubAgentSpec, track_type: str) -> List[str]:
+    async def _template_perform_work(self, task: TaskNode, spec: SubAgentSpec, track_type: str) -> list[str]:
         """Fallback template dispatch when running offline or in mock mode."""
         tid = task.id.lower()
         artifacts = []
@@ -1363,7 +1364,7 @@ class DynamicWorkerEngine:
 
         return artifacts
 
-    async def _verify_task_output(self, task: TaskNode, track_type: str, attempt: int) -> Dict[str, Any]:
+    async def _verify_task_output(self, task: TaskNode, track_type: str, attempt: int) -> dict[str, Any]:
         """Runs automated verification dynamically on whatever artifacts were created."""
         # 1. Did the task create any pytest test files?
         test_files = [a for a in task.output_artifacts if a.startswith("test_") or a.endswith("_test.py")]
@@ -1396,11 +1397,11 @@ class DynamicWorkerEngine:
             if content_res.get("success"):
                 try:
                     json.loads(content_res["content"])
-                except Exception as je:
+                except (json.JSONDecodeError, ValueError) as je:
                     return {
                         "success": False,
                         "returncode": 1,
-                        "stderr": f"Invalid JSON in {jf}: {str(je)}"
+                        "stderr": f"Invalid JSON in {jf}: {je!s}"
                     }
 
         # 4. Ensure generated artifacts exist and are not empty

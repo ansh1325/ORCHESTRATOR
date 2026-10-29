@@ -2,10 +2,12 @@
 Unit & Integration Tests for Real Browser Controller & Dispatch Endpoints
 """
 
-from fastapi.testclient import TestClient
 from unittest.mock import patch
-from main import app
+
+from fastapi.testclient import TestClient
+
 from core.browser_controller import BrowserController
+from main import app
 
 client = TestClient(app)
 

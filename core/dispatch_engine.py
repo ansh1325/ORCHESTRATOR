@@ -5,8 +5,9 @@ and interactive personal communication synthesis.
 """
 
 import json
-from typing import List
+
 from core.mcp_server import MCPServer
+
 
 class CommunicationDispatchEngine:
     """Specialized engine for compiling multi-channel outbound email campaigns and browser scripts."""
@@ -14,9 +15,9 @@ class CommunicationDispatchEngine:
     def __init__(self, mcp: MCPServer):
         self.mcp = mcp
 
-    def generate_personal_loyalty_package(self, recipient: str = "anshtiwarisocial@gmail.com") -> List[str]:
+    def generate_personal_loyalty_package(self, recipient: str = "anshtiwarisocial@gmail.com") -> list[str]:
         """Synthesizes 3 personal loyalty letters with subject 'hello i am jarvis', browser runner, and permission manifests."""
-        artifacts: List[str] = []
+        artifacts: list[str] = []
 
         # Mail 1: Co-Architect & Foundation
         mail_1 = (

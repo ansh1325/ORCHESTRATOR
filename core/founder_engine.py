@@ -8,14 +8,15 @@ Inspired by AI Founder Interviewer & Continuous Autonomous Software Creators.
 """
 
 import re
-from typing import List, Dict
-from core.models import TaskNode, DAGPlan, ClarificationQuestion
+
+from core.models import ClarificationQuestion, DAGPlan, TaskNode
+
 
 class FounderInterviewEngine:
     """Interviews the founder to extract requirements and compile unlimited agent swarms."""
 
     @classmethod
-    def generate_founder_interview(cls, vision: str) -> List[ClarificationQuestion]:
+    def generate_founder_interview(cls, vision: str) -> list[ClarificationQuestion]:
         """Formulates sharp architectural interview questions tailored to any software or business vision."""
 
         # Questions tailored to the specific product/business idea
@@ -76,7 +77,7 @@ class FounderInterviewEngine:
         cls,
         session_id: str,
         vision: str,
-        answers: Dict[str, str]
+        answers: dict[str, str]
     ) -> DAGPlan:
         """
         Dynamically synthesizes an UNBOUNDED swarm of specialized agents (N agents).
@@ -87,7 +88,7 @@ class FounderInterviewEngine:
         system_name = "".join(words) or "CustomAutonomousSystem"
 
         # Determine swarm scale based on complexity (6 to 10+ agents)
-        nodes: List[TaskNode] = []
+        nodes: list[TaskNode] = []
 
         # 1. Product & Architecture Architect
         nodes.append(TaskNode(

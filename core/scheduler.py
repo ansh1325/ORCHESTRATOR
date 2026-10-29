@@ -4,18 +4,19 @@ Runs persistently on the host PC to execute recurring missions at designated tim
 Maintains schedules in schedules.json and integrates with MetaOrchestrator for background compilation.
 """
 
-import re
-import json
-import uuid
 import asyncio
+import json
+import re
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
+from typing import Any
+
 from core.config import settings
 
 SCHEDULES_FILE = settings.WORKSPACE_DIR / "schedules.json"
 
-def parse_schedule_directive(text: str) -> Optional[Dict[str, Any]]:
+def parse_schedule_directive(text: str) -> dict[str, Any] | None:
     """
     Detects recurring daily or continuous schedule commands like:
     - 'everyday at 6am'
@@ -105,7 +106,7 @@ def parse_schedule_directive(text: str) -> Optional[Dict[str, Any]]:
 class AutonomousScheduler:
     """Manages persistent recurring tasks and coordinates background execution."""
 
-    def __init__(self, workspace_dir: Optional[Path] = None):
+    def __init__(self, workspace_dir: Path | None = None):
         self.workspace_dir = workspace_dir or settings.WORKSPACE_DIR
         self._ensure_file()
 
@@ -116,7 +117,7 @@ class AutonomousScheduler:
             with open(s_file, "w", encoding="utf-8") as f:
                 json.dump([], f)
 
-    def list_schedules(self) -> List[Dict[str, Any]]:
+    def list_schedules(self) -> list[dict[str, Any]]:
         s_file = self.workspace_dir / "schedules.json"
         try:
             with open(s_file, "r", encoding="utf-8") as f:
@@ -124,7 +125,7 @@ class AutonomousScheduler:
         except Exception:
             return []
 
-    def add_schedule(self, schedule_data: Dict[str, Any]) -> Dict[str, Any]:
+    def add_schedule(self, schedule_data: dict[str, Any]) -> dict[str, Any]:
         schedules = self.list_schedules()
         task_id = schedule_data.get("task_id") or schedule_data.get("id") or f"sched_{uuid.uuid4().hex[:8]}"
         hour = int(schedule_data.get("hour", 6))
@@ -140,7 +141,7 @@ class AutonomousScheduler:
             "hour": hour,
             "minute": minute,
             "is_active": schedule_data.get("is_active", True),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "last_run_at": None,
             "last_run_date": None,
             "run_count": 0
@@ -179,13 +180,13 @@ class AutonomousScheduler:
         schedules = self.list_schedules()
         for s in schedules:
             if s.get("task_id") == task_id or s.get("id") == task_id:
-                s["last_run_at"] = datetime.now(timezone.utc).isoformat()
+                s["last_run_at"] = datetime.now(UTC).isoformat()
                 s["last_run_date"] = run_date_str
                 s["run_count"] = int(s.get("run_count", 0)) + 1
                 self._save_schedules(schedules)
                 break
 
-    def _save_schedules(self, schedules: List[Dict[str, Any]]):
+    def _save_schedules(self, schedules: list[dict[str, Any]]):
         s_file = self.workspace_dir / "schedules.json"
         try:
             with open(s_file, "w", encoding="utf-8") as f:

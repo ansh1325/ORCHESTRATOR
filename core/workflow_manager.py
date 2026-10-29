@@ -5,15 +5,16 @@ and reusable workflow blueprints.
 """
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
+from typing import Any
+
 from core.config import settings
 
 HISTORY_FILE = settings.WORKSPACE_DIR / "history.json"
 WORKFLOWS_FILE = settings.WORKSPACE_DIR / "workflows.json"
 
-DEFAULT_WORKFLOWS: List[Dict[str, Any]] = [
+DEFAULT_WORKFLOWS: list[dict[str, Any]] = [
     {
         "id": "wf_emails",
         "title": "3 Personal Emails from Jarvis",
@@ -40,7 +41,7 @@ DEFAULT_WORKFLOWS: List[Dict[str, Any]] = [
 class WorkflowAndHistoryManager:
     """Manages persistent work history, folders, pins, and saved workflows."""
 
-    def __init__(self, workspace_dir: Optional[Path] = None):
+    def __init__(self, workspace_dir: Path | None = None):
         self.workspace_dir = workspace_dir or settings.WORKSPACE_DIR
         self._ensure_files()
 
@@ -55,7 +56,7 @@ class WorkflowAndHistoryManager:
             with open(w_file, "w", encoding="utf-8") as f:
                 json.dump(DEFAULT_WORKFLOWS, f, indent=2)
 
-    def list_history(self) -> List[Dict[str, Any]]:
+    def list_history(self) -> list[dict[str, Any]]:
         h_file = self.workspace_dir / "history.json"
         try:
             with open(h_file, "r", encoding="utf-8") as f:
@@ -72,7 +73,7 @@ class WorkflowAndHistoryManager:
         title: str,
         prompt: str,
         folder: str = "General",
-        artifacts: Optional[List[str]] = None
+        artifacts: list[str] | None = None
     ):
         history = self.list_history()
         # Update if exists, else prepend
@@ -91,7 +92,7 @@ class WorkflowAndHistoryManager:
             "folder": folder,
             "is_pinned": False,
             "status": "completed",
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "artifacts": artifacts or [],
             "deliverables": artifacts or []
         }
@@ -114,7 +115,7 @@ class WorkflowAndHistoryManager:
                 break
         self._save_history(history)
 
-    def _save_history(self, history: List[Dict[str, Any]]):
+    def _save_history(self, history: list[dict[str, Any]]):
         h_file = self.workspace_dir / "history.json"
         try:
             with open(h_file, "w", encoding="utf-8") as f:
@@ -122,7 +123,7 @@ class WorkflowAndHistoryManager:
         except Exception:
             pass
 
-    def list_workflows(self) -> List[Dict[str, Any]]:
+    def list_workflows(self) -> list[dict[str, Any]]:
         w_file = self.workspace_dir / "workflows.json"
         try:
             with open(w_file, "r", encoding="utf-8") as f:
@@ -130,7 +131,7 @@ class WorkflowAndHistoryManager:
         except Exception:
             return DEFAULT_WORKFLOWS
 
-    def save_workflow(self, workflow_data: Dict[str, Any]):
+    def save_workflow(self, workflow_data: dict[str, Any]):
         wfs = self.list_workflows()
         import uuid
         wf_id = workflow_data.get("id") or f"wf_{uuid.uuid4().hex[:8]}"
@@ -169,11 +170,11 @@ class WorkflowAndHistoryManager:
         return False
 
     # Scheduler Delegators for seamless modular access
-    def list_schedules(self) -> List[Dict[str, Any]]:
+    def list_schedules(self) -> list[dict[str, Any]]:
         from core.scheduler import scheduler  # pyright: ignore[reportMissingImports]
         return scheduler.list_schedules()
 
-    def add_schedule(self, schedule_data: Dict[str, Any]) -> Dict[str, Any]:
+    def add_schedule(self, schedule_data: dict[str, Any]) -> dict[str, Any]:
         from core.scheduler import scheduler  # pyright: ignore[reportMissingImports]
         return scheduler.add_schedule(schedule_data)
 

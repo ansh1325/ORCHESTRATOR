@@ -5,6 +5,7 @@ Unit & Integration Tests for Founder Mode & Unbounded Agent Swarm Engine
 from core.founder_engine import FounderInterviewEngine
 from core.orchestrator import MetaOrchestrator
 
+
 def test_founder_interview_generation():
     vision = "build me an AI lead intelligence tool that finds seed SaaS founders and drafts pull requests"
     questions = FounderInterviewEngine.generate_founder_interview(vision)

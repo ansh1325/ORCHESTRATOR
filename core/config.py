@@ -5,7 +5,7 @@ Handles environment variables, model routing, and creator identity.
 
 import os
 from pathlib import Path
-from typing import Optional
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,11 +20,11 @@ class Settings:
     SYSTEM_TAGLINE: str = "Autonomous Hierarchical Multi-Agent Engine & AI Partner"
     
     # API Keys & Endpoints
-    GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY")
-    FIREWORKS_API_KEY: Optional[str] = os.getenv("FIREWORKS_API_KEY")
-    BASETEN_API_KEY: Optional[str] = os.getenv("BASETEN_API_KEY")
-    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-    OPENAI_BASE_URL: Optional[str] = os.getenv("OPENAI_BASE_URL")
+    GROQ_API_KEY: str | None = os.getenv("GROQ_API_KEY")
+    FIREWORKS_API_KEY: str | None = os.getenv("FIREWORKS_API_KEY")
+    BASETEN_API_KEY: str | None = os.getenv("BASETEN_API_KEY")
+    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
+    OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL")
     
     # Meta Llama & High-Capacity Models
     META_MODEL_ORCHESTRATOR: str = os.getenv("META_MODEL_ORCHESTRATOR", "openai/gpt-oss-120b")

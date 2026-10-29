@@ -4,20 +4,22 @@ Tests all 6 lifecycle stages, MCP sandboxing security, DAG compilation,
 and FastAPI REST & SSE endpoints.
 """
 
-import pytest
 import shutil
 import tempfile
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 from core.creator_memory import CreatorMemory  # pyright: ignore[reportMissingImports]
-from core.mcp_server import MCPServer, MCPSandboxSecurityError  # pyright: ignore[reportMissingImports]
-from core.orchestrator import MetaOrchestrator  # pyright: ignore[reportMissingImports]
-from core.knowledge_agent import KnowledgeAgent  # pyright: ignore[reportMissingImports]
-from core.worker import DynamicWorkerEngine, clean_code_content  # pyright: ignore[reportMissingImports]
 from core.evaluator import EvaluatorGatekeeper  # pyright: ignore[reportMissingImports]
-from core.models import TaskNode, SubAgentSpec  # pyright: ignore[reportMissingImports]
+from core.knowledge_agent import KnowledgeAgent  # pyright: ignore[reportMissingImports]
+from core.mcp_server import MCPSandboxSecurityError, MCPServer  # pyright: ignore[reportMissingImports]
+from core.models import SubAgentSpec, TaskNode  # pyright: ignore[reportMissingImports]
+from core.orchestrator import MetaOrchestrator  # pyright: ignore[reportMissingImports]
+from core.worker import DynamicWorkerEngine, clean_code_content  # pyright: ignore[reportMissingImports]
 from main import app  # pyright: ignore[reportMissingImports]
+
 
 @pytest.fixture
 def temp_workspace():

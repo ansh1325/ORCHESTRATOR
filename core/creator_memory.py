@@ -5,14 +5,15 @@ Functions as Jarvis/Alfred: loyal, highly technical, audible, and proactive.
 """
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, Any
-from datetime import datetime, timezone
+from typing import Any
+
 from core.config import settings
 
 MEMORY_FILE = settings.WORKSPACE_DIR / "creator_memory.json"
 
-DEFAULT_CREATOR_PROFILE: Dict[str, Any] = {
+DEFAULT_CREATOR_PROFILE: dict[str, Any] = {
     "creator_name": "Ansh Tiwari",
     "role": "Creator & Lead Distributed Systems Architect",
     "persona": "Jarvis / Alfred - Autonomous Strategic AI Partner",
@@ -77,7 +78,7 @@ class CreatorMemory:
         except Exception:
             pass
 
-    def introspect_self_codebase(self) -> Dict[str, Any]:
+    def introspect_self_codebase(self) -> dict[str, Any]:
         """Dynamically inspects its own source files, architectures, tools, and lines of code."""
         core_dir = settings.BASE_DIR / "core"
         introspection = {
@@ -163,13 +164,13 @@ class CreatorMemory:
 
     def log_mission(self, mission_title: str, status: str = "Completed"):
         self.data.setdefault("completed_missions", []).append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "mission": mission_title,
             "status": status
         })
         self.save()
 
-    def chat_response(self, user_message: str, is_mock: bool = True, llm_client=None) -> Dict[str, str]:
+    def chat_response(self, user_message: str, is_mock: bool = True, llm_client=None) -> dict[str, str]:
         """Provides direct conversational responses, recognizing Ansh and answering questions with live codebase introspection."""
         cleaned = user_message.lower().strip()
         

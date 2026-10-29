@@ -4,35 +4,37 @@ Exposes REST and Server-Sent Events (SSE) endpoints for multi-agent orchestratio
 voice-driven Jarvis interaction, live DAG monitoring, and workspace downloads.
 """
 
-import json
 import asyncio
+import json
 import re
-from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Body
+from pathlib import Path
+
+from fastapi import BackgroundTasks, Body, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
+from core.browser_controller import BrowserController  # pyright: ignore[reportMissingImports]
 from core.config import settings  # pyright: ignore[reportMissingImports]
+from core.creator_memory import creator_memory  # pyright: ignore[reportMissingImports]
 from core.mcp_server import MCPSandboxSecurityError  # pyright: ignore[reportMissingImports]
 from core.models import (  # pyright: ignore[reportMissingImports]
+    AnalyzeRequest,
     ChatRequest,
     ChatResponse,
-    AnalyzeRequest,
-    LaunchRequest,
     ExecutionEvent,
+    ExportPathRequest,
     FolderUpdateRequest,
-    PinUpdateRequest,
     ImportPathRequest,
-    ExportPathRequest
+    LaunchRequest,
+    PinUpdateRequest,
 )
-from core.creator_memory import creator_memory  # pyright: ignore[reportMissingImports]
 from core.orchestrator import orchestrator  # pyright: ignore[reportMissingImports]
-from core.workflow_manager import history_manager  # pyright: ignore[reportMissingImports]
 from core.scheduler import scheduler  # pyright: ignore[reportMissingImports]
-from core.browser_controller import BrowserController  # pyright: ignore[reportMissingImports]
+from core.workflow_manager import history_manager  # pyright: ignore[reportMissingImports]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -169,7 +171,7 @@ async def sse_events(session_id: str, request: Request):
                 session.event_queue.task_done()
                 if evt.event_type == "done":
                     break
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Send periodic keep-alive comment
                 yield {
                     "event": "ping",

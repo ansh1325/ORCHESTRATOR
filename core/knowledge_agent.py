@@ -5,21 +5,24 @@ Executes domain research via MCP tools and synthesizes structured session Knowle
 Supports full-stack engineering, B2B agencies, Meta ads growth, and custom autonomous domains.
 """
 
+import asyncio
 import json
 import re
-import asyncio
-from typing import Dict, Any, Callable, Optional
-try:
-    from core.models import KnowledgeBase, ExecutionEvent  # pyright: ignore[reportMissingImports]
-    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
-    from core.config import settings  # pyright: ignore[reportMissingImports]
-except ImportError:
-    from .models import KnowledgeBase, ExecutionEvent  # type: ignore # pyright: ignore[reportMissingImports]
-    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
-    from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
-from datetime import datetime, timezone
+from collections.abc import Callable
+from typing import Any
 
-def robust_json_loads(raw: Optional[str]) -> dict:
+try:
+    from core.config import settings  # pyright: ignore[reportMissingImports]
+    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
+    from core.models import ExecutionEvent, KnowledgeBase  # pyright: ignore[reportMissingImports]
+except ImportError:
+    from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
+    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
+    from .models import ExecutionEvent, KnowledgeBase  # type: ignore # pyright: ignore[reportMissingImports]
+from datetime import UTC, datetime
+
+
+def robust_json_loads(raw: str | None) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
     if not raw:
         return {}
@@ -47,9 +50,9 @@ class KnowledgeAgent:
         session_id: str,
         track_type: str,
         vision: str,
-        clarification_answers: Dict[str, str],
+        clarification_answers: dict[str, str],
         mcp: MCPServer,
-        emit_event: Optional[Callable[[ExecutionEvent], Any]] = None
+        emit_event: Callable[[ExecutionEvent], Any] | None = None
     ) -> KnowledgeBase:
         # Check if dynamic LLM synthesis is available
         if self.llm_client and not settings.is_mock():
@@ -464,7 +467,7 @@ class KnowledgeAgent:
 
         return kb
 
-    def _load_master_knowledge_base(self) -> Dict[str, Any]:
+    def _load_master_knowledge_base(self) -> dict[str, Any]:
         if MASTER_KB_FILE.exists():
             try:
                 with open(MASTER_KB_FILE, "r", encoding="utf-8") as f:
@@ -496,7 +499,7 @@ class KnowledgeAgent:
             master["accumulated_sources"].extend([s.get("title", "") for s in kb.scraped_sources if isinstance(s, dict)])
             master["accumulated_sources"] = list(dict.fromkeys(master["accumulated_sources"]))[:50]
             master["total_missions_learned"] = master.get("total_missions_learned", 0) + 1
-            master["last_updated"] = datetime.now(timezone.utc).isoformat()
+            master["last_updated"] = datetime.now(UTC).isoformat()
             
             MASTER_KB_FILE.parent.mkdir(parents=True, exist_ok=True)
             tmp_file = MASTER_KB_FILE.with_suffix(".tmp")
@@ -511,10 +514,10 @@ class KnowledgeAgent:
         session_id: str,
         track_type: str,
         vision: str,
-        clarification_answers: Dict[str, str],
+        clarification_answers: dict[str, str],
         mcp: MCPServer,
-        emit_event: Optional[Callable[[ExecutionEvent], Any]] = None
-    ) -> Optional[KnowledgeBase]:
+        emit_event: Callable[[ExecutionEvent], Any] | None = None
+    ) -> KnowledgeBase | None:
         """Dynamically formulates research queries and synthesizes a structured Knowledge Base using the LLM."""
         search_query = f"{vision[:60]} architecture best practices requirements"
         search_results = mcp.tool_web_search(search_query)

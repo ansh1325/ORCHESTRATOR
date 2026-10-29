@@ -7,7 +7,9 @@ voice-driven Jarvis interaction, live DAG monitoring, and workspace downloads.
 import json
 import asyncio
 import re
+from datetime import datetime
 from pathlib import Path
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Body
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,10 +32,19 @@ from core.models import (  # pyright: ignore[reportMissingImports]
 from core.creator_memory import creator_memory  # pyright: ignore[reportMissingImports]
 from core.orchestrator import orchestrator, history_manager  # pyright: ignore[reportMissingImports]
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Launch 24/7 background scheduler loop
+    scheduler_task = asyncio.create_task(autonomous_scheduler_loop())
+    yield
+    # Shutdown: cancel task cleanly
+    scheduler_task.cancel()
+
 app = FastAPI(
     title="LlamaOrchestrator API",
     description="Autonomous Hierarchical Multi-Agent Engine & AI Partner for Meta Global AI Hackathon",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Enable CORS for cross-origin local testing
@@ -270,6 +281,37 @@ async def update_history_pin(req: PinUpdateRequest):
     history_manager.toggle_pin(req.session_id, req.is_pinned)
     return {"success": True}
 
+async def autonomous_scheduler_loop():
+    """Background daemon running continuously on the PC to execute scheduled missions at their target time."""
+    while True:
+        try:
+            now = datetime.now()
+            current_hour = now.hour
+            current_minute = now.minute
+            today_str = now.strftime("%Y-%m-%d")
+
+            schedules = history_manager.list_schedules()
+            for sched in schedules:
+                if not sched.get("is_active", True):
+                    continue
+                s_hour = int(sched.get("hour", 6))
+                s_minute = int(sched.get("minute", 0))
+
+                if current_hour == s_hour and current_minute == s_minute:
+                    if sched.get("last_run_date") != today_str:
+                        tid = sched.get("task_id") or sched.get("id") or "sched"
+                        print(f"[Scheduler] ⏰ Triggering scheduled daily mission '{sched.get('title')}' at {now.strftime('%H:%M:%S')}...")
+                        history_manager.update_schedule_run_status(tid, today_str)
+                        asyncio.create_task(
+                            orchestrator.run_scheduled_mission(
+                                prompt=sched.get("prompt", ""),
+                                title=sched.get("title", "Daily Autonomous Mission")
+                            )
+                        )
+        except Exception as e:
+            print(f"[Scheduler Loop Error] {e}")
+        await asyncio.sleep(25)
+
 @app.get("/api/workflows")
 async def get_saved_workflows():
     """Returns saved workflow templates."""
@@ -281,6 +323,12 @@ async def save_workflow_template(workflow: dict):
     history_manager.save_workflow(workflow)
     return {"success": True}
 
+@app.delete("/api/workflows/{workflow_id}")
+async def delete_workflow_template(workflow_id: str):
+    """Deletes a saved workflow template."""
+    deleted = history_manager.delete_workflow(workflow_id)
+    return {"success": deleted}
+
 @app.get("/api/schedules")
 async def get_schedules():
     """Returns scheduled and recurring autonomous tasks."""
@@ -289,8 +337,40 @@ async def get_schedules():
 @app.post("/api/schedules")
 async def add_schedule(task: dict):
     """Adds a new scheduled recurring task."""
-    history_manager.add_schedule(task)
-    return {"success": True}
+    entry = history_manager.add_schedule(task)
+    return {"success": True, "schedule": entry}
+
+@app.post("/api/schedules/{task_id}/toggle")
+async def toggle_schedule_active(task_id: str, req: dict = Body(...)):
+    """Toggles active/paused status of a scheduled task."""
+    is_active = bool(req.get("is_active", True))
+    history_manager.toggle_schedule(task_id, is_active)
+    return {"success": True, "is_active": is_active}
+
+@app.post("/api/schedules/{task_id}/run-now")
+async def trigger_schedule_now(task_id: str, background_tasks: BackgroundTasks):
+    """Forces immediate background execution of a scheduled recurring mission."""
+    schedules = history_manager.list_schedules()
+    target = None
+    for s in schedules:
+        if s.get("task_id") == task_id or s.get("id") == task_id:
+            target = s
+            break
+    if not target:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    
+    background_tasks.add_task(
+        orchestrator.run_scheduled_mission,
+        prompt=target.get("prompt", ""),
+        title=target.get("title", "Manual Scheduled Mission Trigger")
+    )
+    return {"success": True, "message": f"Execution initiated for '{target.get('title')}'"}
+
+@app.delete("/api/schedules/{task_id}")
+async def delete_schedule(task_id: str):
+    """Deletes a scheduled task."""
+    deleted = history_manager.delete_schedule(task_id)
+    return {"success": deleted}
 
 if __name__ == "__main__":
     import uvicorn

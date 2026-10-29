@@ -100,7 +100,10 @@ class HistoryManager:
     def list_history(self) -> List[Dict[str, Any]]:
         try:
             with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                items = json.load(f)
+            # Pinned sessions appear at the top, followed by newest created_at
+            items.sort(key=lambda x: (1 if x.get("is_pinned") else 0, x.get("created_at", "")), reverse=True)
+            return items
         except Exception:
             return []
 
@@ -168,6 +171,18 @@ class HistoryManager:
         except Exception:
             pass
 
+    def delete_workflow(self, workflow_id: str) -> bool:
+        wfs = self.list_workflows()
+        filtered = [w for w in wfs if w.get("id") != workflow_id]
+        if len(filtered) != len(wfs):
+            try:
+                with open(WORKFLOWS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(filtered, f, indent=2)
+                return True
+            except Exception:
+                pass
+        return False
+
     def list_schedules(self) -> List[Dict[str, Any]]:
         try:
             with open(SCHEDULES_FILE, "r", encoding="utf-8") as f:
@@ -175,14 +190,83 @@ class HistoryManager:
         except Exception:
             return []
 
-    def add_schedule(self, schedule_data: Dict[str, Any]):
+    def add_schedule(self, schedule_data: Dict[str, Any]) -> Dict[str, Any]:
         schedules = self.list_schedules()
-        schedules.append(schedule_data)
+        task_id = schedule_data.get("task_id") or schedule_data.get("id") or f"sched_{uuid.uuid4().hex[:8]}"
+        hour = int(schedule_data.get("hour", 6))
+        minute = int(schedule_data.get("minute", 0))
+        sched_time = schedule_data.get("schedule_cron") or f"Daily {hour:02d}:{minute:02d}"
+        
+        entry = {
+            "task_id": task_id,
+            "id": task_id,
+            "title": schedule_data.get("title") or "Daily Autonomous Mission",
+            "prompt": schedule_data.get("prompt", ""),
+            "schedule_cron": sched_time,
+            "hour": hour,
+            "minute": minute,
+            "is_active": schedule_data.get("is_active", True),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "last_run_at": None,
+            "last_run_date": None,
+            "run_count": 0
+        }
+        
+        existing = False
+        for i, s in enumerate(schedules):
+            if s.get("task_id") == task_id or s.get("id") == task_id:
+                schedules[i] = entry
+                existing = True
+                break
+        if not existing:
+            schedules.append(entry)
+            
         try:
             with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
                 json.dump(schedules, f, indent=2)
         except Exception:
             pass
+        return entry
+
+    def toggle_schedule(self, task_id: str, is_active: bool) -> bool:
+        schedules = self.list_schedules()
+        for s in schedules:
+            if s.get("task_id") == task_id or s.get("id") == task_id:
+                s["is_active"] = is_active
+                try:
+                    with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
+                        json.dump(schedules, f, indent=2)
+                    return True
+                except Exception:
+                    pass
+                break
+        return False
+
+    def delete_schedule(self, task_id: str) -> bool:
+        schedules = self.list_schedules()
+        filtered = [s for s in schedules if s.get("task_id") != task_id and s.get("id") != task_id]
+        if len(filtered) != len(schedules):
+            try:
+                with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
+                    json.dump(filtered, f, indent=2)
+                return True
+            except Exception:
+                pass
+        return False
+
+    def update_schedule_run_status(self, task_id: str, run_date_str: str):
+        schedules = self.list_schedules()
+        for s in schedules:
+            if s.get("task_id") == task_id or s.get("id") == task_id:
+                s["last_run_at"] = datetime.now(timezone.utc).isoformat()
+                s["last_run_date"] = run_date_str
+                s["run_count"] = int(s.get("run_count", 0)) + 1
+                try:
+                    with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
+                        json.dump(schedules, f, indent=2)
+                except Exception:
+                    pass
+                break
 
 history_manager = HistoryManager()
 from core.creator_memory import creator_memory
@@ -253,6 +337,40 @@ def generate_chat_title(vision: str) -> str:
     if meaningful:
         return " ".join(meaningful[:5])
     return cleaned[:40].title()
+
+def parse_schedule_directive(text: str) -> Optional[Dict[str, Any]]:
+    """Detects recurring daily schedule commands like 'everyday at 6am', 'daily at 06:00', 'every morning at 7:30 am'."""
+    if not text:
+        return None
+    pattern = r"(?:every\s*day|daily|every\s*morning|every\s*night)\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"
+    m = re.search(pattern, text, re.IGNORECASE)
+    if not m:
+        pattern2 = r"schedule\s+(?:this\s+)?(?:for\s+)?(?:every\s*day|daily)?\s*at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"
+        m = re.search(pattern2, text, re.IGNORECASE)
+        if not m:
+            return None
+    
+    hour = int(m.group(1))
+    minute = int(m.group(2)) if m.group(2) else 0
+    meridiem = (m.group(3) or "").lower()
+    if meridiem == "pm" and hour < 12:
+        hour += 12
+    elif meridiem == "am" and hour == 12:
+        hour = 0
+        
+    cleaned_prompt = re.sub(pattern, "", text, flags=re.IGNORECASE)
+    cleaned_prompt = re.sub(r"^(?:do\s+this\s+particular\s+work\s+for|do\s+this\s+for|schedule\s+this\s+for|please\s+run\s+this)\s*", "", cleaned_prompt, flags=re.IGNORECASE).strip(" :,-")
+    if not cleaned_prompt:
+        cleaned_prompt = text
+        
+    title = f"Daily {hour:02d}:{minute:02d} - {generate_chat_title(cleaned_prompt)}"
+    return {
+        "hour": hour,
+        "minute": minute,
+        "schedule_cron": f"Daily {hour:02d}:{minute:02d}",
+        "prompt": cleaned_prompt,
+        "title": title
+    }
 
 class SessionState:
     def __init__(self, session_id: str, vision: str):
@@ -415,6 +533,11 @@ class MetaOrchestrator:
     def analyze_intent(self, vision: str, session_id: Optional[str] = None) -> IntentAnalysis:
         """Stage 1: Intent Analysis & Human Clarification Gate."""
         session = self.get_or_create_session(session_id, vision)
+
+        # Check for natural language recurring scheduling directive (e.g. 'everyday at 6am')
+        sched = parse_schedule_directive(vision)
+        if sched:
+            history_manager.add_schedule(sched)
 
         # Dynamic LLM Analysis first
         if self.llm_client and not settings.is_mock():
@@ -1406,6 +1529,20 @@ class MetaOrchestrator:
                 stage_name="Execution Error",
                 message=f"Lifecycle execution halted with error: {str(e)}"
             ))
+
+    async def run_scheduled_mission(self, prompt: str, title: str) -> str:
+        """Executes a recurring scheduled task in the background autonomously."""
+        session_id = f"sched_run_{uuid.uuid4().hex[:8]}"
+        session = self.get_or_create_session(session_id, prompt)
+        session.title = title
+        
+        # 1. Analyze intent & compile smart defaults
+        analysis = self.analyze_intent(prompt, session_id)
+        defaults = analysis.recommended_defaults or {}
+        
+        # 2. Execute full lifecycle
+        await self.execute_full_lifecycle(session_id, defaults)
+        return session_id
 
     def create_zip_archive(self, session_id: str) -> io.BytesIO:
         """Packages the sandboxed workspace into an in-memory ZIP archive for 1-click export."""

@@ -230,6 +230,12 @@
         <span id="voiceText" class="hidden sm:inline">Audio: ON</span>
       </button>
 
+      <!-- Pin Active Mission Button -->
+      <button id="pinCurrentChatBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-card hover:bg-amber-500/20 border border-brand-border hover:border-amber-500/40 text-xs font-semibold text-slate-300 hover:text-amber-300 transition" title="Pin this mission to top">
+        <i data-lucide="pin" id="pinCurrentChatIcon" class="w-3.5 h-3.5"></i>
+        <span id="pinCurrentChatLabel" class="hidden sm:inline">Pin</span>
+      </button>
+
       <button id="newDirectiveBtn" class="p-2 rounded-xl bg-brand-card hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 border border-brand-border transition" title="Start Fresh Chat">
         <i data-lucide="plus" class="w-4 h-4"></i>
       </button>
@@ -290,6 +296,21 @@
           </button>
         </div>
         <div id="workflowsList" class="space-y-1 text-xs"></div>
+      </div>
+
+      <!-- 24/7 PC Autonomous Scheduler (Runs Forever on PC) -->
+      <div class="p-3 border-t border-brand-border bg-brand-black/80 space-y-2">
+        <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="font-bold uppercase tracking-wider text-[10px] text-amber-300">24/7 PC Scheduler</span>
+          </div>
+          <button id="addScheduleBtn" class="text-amber-400 hover:text-amber-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" title="Schedule Daily Mission">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            <span>Daily 6AM</span>
+          </button>
+        </div>
+        <div id="schedulesList" class="space-y-1 text-xs max-h-48 overflow-y-auto custom-scrollbar"></div>
       </div>
 
     </aside>
@@ -517,6 +538,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20261029_royal_gold"></script>
+  <script src="/static/app.js?v=20261029_v3_schedules_pinning"></script>
 </body>
 </html>

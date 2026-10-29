@@ -489,6 +489,109 @@ async def test_personal_communication_and_browser_dispatch_lifecycle(temp_worksp
     assert report["score_percentage"] == 100.0
 
 
+@pytest.mark.asyncio
+async def test_saved_workflows_persistent_pc_scheduler_and_pinning(temp_workspace):
+    """Verifies saved workflow CRUD, 24/7 background scheduler logic, natural language scheduling, and chat pinning."""
+    from core.orchestrator import HistoryManager, parse_schedule_directive
+    hm = HistoryManager()
+
+    # 1. Test Chat Pinning and Sorting
+    hm.record_session("sess_unpinned", "Unpinned Task", "Prompt 1")
+    hm.record_session("sess_pinned", "Pinned Task", "Prompt 2")
+    hm.toggle_pin("sess_pinned", True)
+
+    history = hm.list_history()
+    assert len(history) >= 2
+    # First item should be the pinned session!
+    assert history[0]["session_id"] == "sess_pinned"
+    assert history[0]["is_pinned"] is True
+
+    # 2. Test Saved Workflows CRUD
+    wf_data = {
+        "id": "wf_test_agency",
+        "title": "B2B SaaS Lead Generator",
+        "prompt": "Find 50 Series A leads and draft cold outreach",
+        "folder": "Business"
+    }
+    hm.save_workflow(wf_data)
+    wfs = hm.list_workflows()
+    assert any(w["id"] == "wf_test_agency" for w in wfs)
+
+    del_ok = hm.delete_workflow("wf_test_agency")
+    assert del_ok is True
+    wfs_after = hm.list_workflows()
+    assert not any(w["id"] == "wf_test_agency" for w in wfs_after)
+
+    # 3. Test Natural Language Schedule Directive Parsing
+    directive = "do this particular work for everyday at 6am: scrape 20 leads and send emails"
+    parsed = parse_schedule_directive(directive)
+    assert parsed is not None
+    assert parsed["hour"] == 6
+    assert parsed["minute"] == 0
+    assert "scrape 20 leads" in parsed["prompt"]
+    assert "Daily 06:00" in parsed["schedule_cron"]
+
+    # Test alternate format "daily at 18:30"
+    parsed_pm = parse_schedule_directive("daily at 6pm check crypto portfolio")
+    assert parsed_pm is not None
+    assert parsed_pm["hour"] == 18
+
+    # 4. Test Scheduled Task Management (CRUD, Toggle, Status)
+    sched_entry = hm.add_schedule(parsed)
+    assert sched_entry["hour"] == 6
+    assert sched_entry["is_active"] is True
+
+    schedules = hm.list_schedules()
+    assert any(s["task_id"] == sched_entry["task_id"] for s in schedules)
+
+    # Toggle active status to paused
+    toggled = hm.toggle_schedule(sched_entry["task_id"], False)
+    assert toggled is True
+    updated = next(s for s in hm.list_schedules() if s["task_id"] == sched_entry["task_id"])
+    assert updated["is_active"] is False
+
+    # Update run status
+    hm.update_schedule_run_status(sched_entry["task_id"], "2026-10-29")
+    ran = next(s for s in hm.list_schedules() if s["task_id"] == sched_entry["task_id"])
+    assert ran["last_run_date"] == "2026-10-29"
+    assert ran["run_count"] == 1
+
+    # Delete schedule
+    del_sched = hm.delete_schedule(sched_entry["task_id"])
+    assert del_sched is True
+    assert not any(s["task_id"] == sched_entry["task_id"] for s in hm.list_schedules())
+
+    # 5. Test REST Endpoints via TestClient
+    client = TestClient(app)
+
+    # Test Pin Endpoint
+    pin_res = client.post("/api/history/pin", json={"session_id": "sess_pinned", "is_pinned": False})
+    assert pin_res.status_code == 200
+
+    # Test Schedules API
+    sched_post = client.post("/api/schedules", json={
+        "title": "Daily 6AM Test Run",
+        "prompt": "Test prompt",
+        "hour": 6,
+        "minute": 0
+    })
+    assert sched_post.status_code == 200
+    task_id = sched_post.json()["schedule"]["task_id"]
+
+    sched_list = client.get("/api/schedules")
+    assert sched_list.status_code == 200
+    assert any(s["task_id"] == task_id for s in sched_list.json())
+
+    # Test Run Now
+    run_now = client.post(f"/api/schedules/{task_id}/run-now")
+    assert run_now.status_code == 200
+
+    # Test Delete Schedule Endpoint
+    del_res = client.delete(f"/api/schedules/{task_id}")
+    assert del_res.status_code == 200
+
+
+
 
 
 

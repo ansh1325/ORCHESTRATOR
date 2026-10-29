@@ -221,6 +221,20 @@ class CreatorMemory:
                 "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
             }
 
+        if any(term in cleaned for term in ["saved workflow", "schedule", "6am", "run forever", "pin", "pinned", "workflow"]):
+            speech = (
+                "Yes, Master Ansh! All three capabilities are fully operational:\n\n"
+                "1. **Saved Reusable Workflows:** You can bookmark any mission or select from your workflow library in the sidebar to re-run complex multi-agent sprints with 1 click.\n"
+                "2. **24/7 PC Scheduler (Runs Forever):** Simply tell me 'do this particular work everyday at 6am' or schedule it in the sidebar. My background scheduler loop runs persistently on your PC and automatically executes your missions every morning at 6:00 AM.\n"
+                "3. **Pin Work Chats:** You can pin high-priority missions using the Gold Pin (📌) button in the top bar or in your missions drawer. Pinned work chats are locked at the very top of your history."
+            )
+            return {
+                "role": "assistant",
+                "text": speech,
+                "speech_audio": "Affirmative, Master Ansh. Saved workflows, 24/7 daily PC scheduling at 6 AM, and work chat pinning are fully active on your system.",
+                "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
+            }
+
         if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
             speech = "At your service, Master Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
             return {

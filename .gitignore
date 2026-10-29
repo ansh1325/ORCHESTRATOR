@@ -68,6 +68,7 @@ Thumbs.db
 
 # Dynamic Session Workspaces & Logs
 workspaces/session_*/
+workspaces/sched_run_*/
 workspaces/test_*/
 workspaces/*.zip
 *.log

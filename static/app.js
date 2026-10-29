@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupVoiceSelector();
   loadWorkHistory();
   loadSavedWorkflows();
+  loadSchedules();
   updateStageUI(0);
 });
 
@@ -124,6 +125,29 @@ function setupEventListeners() {
       renderHistoryList();
     });
   });
+
+  // Pin Active Mission Button
+  const pinCurrentChatBtn = document.getElementById("pinCurrentChatBtn");
+  if (pinCurrentChatBtn) {
+    pinCurrentChatBtn.addEventListener("click", async () => {
+      if (!state.sessionId) {
+        alert("No active mission session to pin. Start or select a mission first.");
+        return;
+      }
+      const current = (state.workHistory || []).find(h => h.session_id === state.sessionId);
+      const newPinned = current ? !current.is_pinned : true;
+      await togglePinTask(state.sessionId, newPinned);
+      updatePinButtonUI(newPinned);
+    });
+  }
+
+  // Add 24/7 Schedule Button
+  const addScheduleBtn = document.getElementById("addScheduleBtn");
+  if (addScheduleBtn) {
+    addScheduleBtn.addEventListener("click", () => {
+      promptAddSchedule();
+    });
+  }
 
   // Add Current Directive to Saved Workflows
   const addWorkflowBtn = document.getElementById("addWorkflowBtn");
@@ -1377,6 +1401,7 @@ function renderHistoryList() {
 // Select a Past History Task
 async function selectHistoryItem(item) {
   state.sessionId = item.session_id;
+  updatePinButtonUI(!!item.is_pinned);
   renderHistoryList();
   appendChatMessage(`Retrieved workspace for: "${item.title || item.prompt}"`, "assistant");
 
@@ -1421,9 +1446,29 @@ async function togglePinTask(sessionId, isPinned) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId, is_pinned: isPinned })
     });
-    loadWorkHistory();
+    await loadWorkHistory();
+    if (state.sessionId === sessionId) {
+      updatePinButtonUI(isPinned);
+    }
   } catch (err) {
     console.error("Could not toggle pin:", err);
+  }
+}
+
+// Update Top Pin Button UI
+function updatePinButtonUI(isPinned) {
+  const icon = document.getElementById("pinCurrentChatIcon");
+  const label = document.getElementById("pinCurrentChatLabel");
+  const btn = document.getElementById("pinCurrentChatBtn");
+  if (!btn) return;
+  if (isPinned) {
+    if (icon) icon.className = "w-3.5 h-3.5 fill-amber-400 text-amber-400";
+    if (label) label.textContent = "Pinned";
+    btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/50 text-xs font-semibold text-amber-300 transition shadow-sm shadow-amber-500/20";
+  } else {
+    if (icon) icon.className = "w-3.5 h-3.5 text-slate-400";
+    if (label) label.textContent = "Pin";
+    btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-card hover:bg-amber-500/20 border border-brand-border hover:border-amber-500/40 text-xs font-semibold text-slate-300 hover:text-amber-300 transition";
   }
 }
 
@@ -1438,34 +1483,198 @@ async function loadSavedWorkflows() {
     state.savedWorkflows = workflows || [];
 
     if (state.savedWorkflows.length === 0) {
-      container.innerHTML = '<div class="text-[11px] text-slate-600">No workflows saved yet.</div>';
+      container.innerHTML = '<div class="text-[11px] text-slate-500 py-1">No workflows saved yet.</div>';
       return;
     }
 
     container.innerHTML = "";
     state.savedWorkflows.forEach(wf => {
-      const btn = document.createElement("button");
-      btn.className = "w-full text-left p-2 rounded-lg bg-brand-card hover:bg-brand-card/80 border border-brand-border hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 text-xs transition flex items-center justify-between";
-      btn.innerHTML = `
-        <span class="truncate font-medium">${escapeHtml(wf.name || wf.title)}</span>
-        <i data-lucide="play" class="w-3 h-3 text-slate-500 shrink-0"></i>
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "w-full p-2 rounded-lg bg-brand-card hover:bg-brand-card/90 border border-brand-border hover:border-amber-500/40 text-xs transition flex items-center justify-between gap-1 group";
+      
+      const title = wf.title || wf.name || "Custom Workflow";
+      const promptVal = wf.prompt || wf.prompt_template || "";
+      const wfId = wf.id || wf.name;
+
+      itemDiv.innerHTML = `
+        <button class="flex-1 text-left truncate flex items-center gap-1.5 text-slate-300 group-hover:text-amber-300">
+          <i data-lucide="play-circle" class="w-3.5 h-3.5 text-amber-400/80 shrink-0"></i>
+          <span class="truncate font-semibold text-[11px]">${escapeHtml(title)}</span>
+        </button>
+        <button class="delete-wf-btn text-slate-500 hover:text-rose-400 p-1 rounded transition opacity-60 hover:opacity-100" title="Delete Workflow">
+          <i data-lucide="trash-2" class="w-3 h-3"></i>
+        </button>
       `;
 
-      btn.addEventListener("click", () => {
+      // Click to load into prompt input
+      itemDiv.querySelector("button.flex-1").addEventListener("click", () => {
         const input = document.getElementById("directiveInput");
         if (input) {
-          input.value = wf.prompt || wf.prompt_template;
+          input.value = promptVal;
           input.focus();
         }
       });
 
-      container.appendChild(btn);
+      // Delete workflow
+      itemDiv.querySelector(".delete-wf-btn").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (!confirm(`Delete saved workflow "${title}"?`)) return;
+        try {
+          await fetch(`/api/workflows/${encodeURIComponent(wfId)}`, { method: "DELETE" });
+          loadSavedWorkflows();
+        } catch (err) {
+          alert("Error deleting workflow: " + err.message);
+        }
+      });
+
+      container.appendChild(itemDiv);
     });
 
     if (window.lucide) lucide.createIcons();
   } catch (err) {
     console.error("Failed to fetch workflows:", err);
   }
+}
+
+// Load 24/7 Autonomous PC Schedules
+async function loadSchedules() {
+  const container = document.getElementById("schedulesList");
+  if (!container) return;
+
+  try {
+    const res = await fetch("/api/schedules");
+    const schedules = await res.json();
+    state.schedules = schedules || [];
+
+    if (state.schedules.length === 0) {
+      container.innerHTML = '<div class="text-[11px] text-slate-500 py-1">No 24/7 schedules yet. Click "+ Daily 6AM" to add one!</div>';
+      return;
+    }
+
+    container.innerHTML = "";
+    state.schedules.forEach(sc => {
+      const card = document.createElement("div");
+      card.className = "p-2 rounded-lg bg-brand-card/90 border border-brand-border hover:border-amber-500/40 transition space-y-1.5";
+      
+      const isActive = sc.is_active !== false;
+      const timeLabel = sc.schedule_cron || `Daily ${String(sc.hour !== undefined ? sc.hour : 6).padStart(2, '0')}:${String(sc.minute !== undefined ? sc.minute : 0).padStart(2, '0')}`;
+      const runCount = sc.run_count || 0;
+      const tid = sc.task_id || sc.id;
+      
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1.5 truncate">
+            <span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}"></span>
+            <span class="font-bold text-[11px] text-amber-200 truncate">${escapeHtml(sc.title || "Scheduled Mission")}</span>
+          </div>
+          <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-950/80 text-amber-300 border border-amber-500/30">${escapeHtml(timeLabel)}</span>
+        </div>
+        <p class="text-[10px] text-slate-400 truncate">${escapeHtml(sc.prompt)}</p>
+        <div class="flex items-center justify-between pt-1 border-t border-brand-border/40 text-[10px]">
+          <span class="text-slate-500 font-mono">Runs: ${runCount}</span>
+          <div class="flex items-center gap-1.5">
+            <button class="sched-run-now px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition" title="Force execute now in background">
+              Run Now
+            </button>
+            <button class="sched-toggle-btn text-slate-400 hover:text-amber-300 transition" title="${isActive ? 'Pause Schedule' : 'Resume Schedule'}">
+              <i data-lucide="${isActive ? 'pause-circle' : 'play-circle'}" class="w-3.5 h-3.5"></i>
+            </button>
+            <button class="sched-delete-btn text-slate-500 hover:text-rose-400 transition" title="Delete Schedule">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Run Now button
+      card.querySelector(".sched-run-now").addEventListener("click", async () => {
+        try {
+          const r = await fetch(`/api/schedules/${encodeURIComponent(tid)}/run-now`, { method: "POST" });
+          const d = await r.json();
+          appendChatMessage(`⏰ **Manual Execution Triggered:** Running scheduled mission "${sc.title}" in background on this PC now...`, "assistant");
+          speakVoice("Triggering scheduled mission in background.");
+          setTimeout(loadWorkHistory, 2000);
+        } catch (err) {
+          alert("Error executing schedule: " + err.message);
+        }
+      });
+
+      // Toggle Pause/Resume
+      card.querySelector(".sched-toggle-btn").addEventListener("click", async () => {
+        try {
+          await fetch(`/api/schedules/${encodeURIComponent(tid)}/toggle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ is_active: !isActive })
+          });
+          loadSchedules();
+        } catch (err) {
+          alert("Error toggling schedule: " + err.message);
+        }
+      });
+
+      // Delete Schedule
+      card.querySelector(".sched-delete-btn").addEventListener("click", async () => {
+        if (!confirm(`Delete recurring schedule "${sc.title}"?`)) return;
+        try {
+          await fetch(`/api/schedules/${encodeURIComponent(tid)}`, { method: "DELETE" });
+          loadSchedules();
+        } catch (err) {
+          alert("Error deleting schedule: " + err.message);
+        }
+      });
+
+      container.appendChild(card);
+    });
+
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    console.error("Failed to load schedules:", err);
+  }
+}
+
+// Prompt Dialog to Add a 24/7 Daily Schedule
+function promptAddSchedule() {
+  const input = document.getElementById("directiveInput");
+  const defaultPrompt = (input && input.value.trim()) ? input.value.trim() : "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line i am jarvis and body with whatever you feel for me";
+  
+  const promptText = window.prompt("Enter the mission directive to run recurringly on your PC:", defaultPrompt);
+  if (!promptText) return;
+
+  const timeText = window.prompt("What time should this run everyday? (e.g. 6:00 AM, 06:00, or 18:30):", "6:00 AM");
+  if (!timeText) return;
+
+  let hour = 6;
+  let minute = 0;
+  const match = timeText.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  if (match) {
+    hour = parseInt(match[1]);
+    minute = match[2] ? parseInt(match[2]) : 0;
+    const meridiem = (match[3] || "").toLowerCase();
+    if (meridiem === "pm" && hour < 12) hour += 12;
+    if (meridiem === "am" && hour === 12) hour = 0;
+  }
+
+  const title = `Daily ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} - ${promptText.slice(0, 25)}`;
+
+  fetch("/api/schedules", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: title,
+      prompt: promptText,
+      hour: hour,
+      minute: minute,
+      schedule_cron: `Daily ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+      is_active: true
+    })
+  }).then(res => res.json()).then(() => {
+    loadSchedules();
+    appendChatMessage(`⏰ **24/7 Autonomous PC Schedule Activated:** "${title}" is registered. LlamaOrchestrator's background scheduler will execute this task every day at ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} on this PC.`, "assistant");
+    speakVoice(`Autonomous 24/7 mission scheduled for Daily ${hour} AM.`);
+  }).catch(err => {
+    alert("Could not create schedule: " + err.message);
+  });
 }
 
 // Helper: Escape HTML

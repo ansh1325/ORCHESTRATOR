@@ -6,7 +6,7 @@
 [![Track](https://img.shields.io/badge/Track-Indie%20Dev%20%24150K%20%2B%20Agentic%20%245K-gold.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 [![Python 3.14+](https://img.shields.io/badge/Python-3.14%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Production%20REST%20%26%20SSE-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Tests Passing](https://img.shields.io/badge/Pytest-14%2F14%20Certified%20(100%25)-brightgreen.svg)](https://github.com/ansh1325/ORCHESTRATOR)
+[![Tests Passing](https://img.shields.io/badge/Pytest-15%2F15%20Certified%20(100%25)-brightgreen.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 [![Sandboxed MCP](https://img.shields.io/badge/Security-Zero--Trust%20MCP%20Sandbox-success.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 
 **Creator & Chief Distributed Systems Architect:** [Ansh Tiwari](https://github.com/ansh1325)  
@@ -217,13 +217,13 @@ META_MODEL_ORCHESTRATOR=openai/gpt-oss-120b
 META_MODEL_WORKER=openai/gpt-oss-120b
 ```
 
-#### 4. Run the Full Automated Test Suite (14/14 Tests)
+#### 4. Run the Full Automated Test Suite (15/15 Tests)
 ```bash
 python -m pytest tests/test_orchestration.py -v
 ```
 You will see 100% green verification:
 ```text
-============================= 14 passed in 25.53s =============================
+============================= 15 passed in 26.12s =============================
 ```
 
 #### 5. Launch the Application
@@ -235,7 +235,7 @@ Open your browser to:
 
 ---
 
-## 🧪 Comprehensive Pytest Test Suite (14/14 Certified)
+## 🧪 Comprehensive Pytest Test Suite (15/15 Certified)
 
 Every architectural stage, tool sandbox, and safety mechanism is verified through unit and integration tests:
 
@@ -255,6 +255,7 @@ Every architectural stage, tool sandbox, and safety mechanism is verified throug
 | `test_host_file_ingestion_and_browser_tools` | Tests local host file ingestion, direct downloads export, and browser click/type/extract tools. |
 | `test_import_export_fastapi_endpoints` | Tests REST endpoints for importing external host files and exporting deliverables to host paths. |
 | `test_personal_communication_and_browser_dispatch_lifecycle` | Tests personal letter creation, browser permission authorization, and Antigravity-style naming. |
+| `test_saved_workflows_persistent_pc_scheduler_and_pinning` | Tests saved reusable workflow templates, 24/7 background scheduler loop, natural language scheduling, and chat pinning. |
 
 ---
 

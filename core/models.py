@@ -115,17 +115,24 @@ class HistoryItem(BaseModel):
 class SavedWorkflow(BaseModel):
     id: str
     title: str
-    description: str
-    prompt_template: str
+    description: str = ""
+    prompt: str = ""
+    prompt_template: str = ""
     folder: str = "Workflows"
+    created_at: str = Field(default_factory=utc_now_iso)
 
 class ScheduledTask(BaseModel):
     task_id: str
     title: str
     prompt: str
     schedule_cron: str = "Daily 6:00 AM"
+    hour: int = 6
+    minute: int = 0
     is_active: bool = True
     created_at: str = Field(default_factory=utc_now_iso)
+    last_run_at: Optional[str] = None
+    last_run_date: Optional[str] = None
+    run_count: int = 0
 
 class FolderUpdateRequest(BaseModel):
     session_id: str

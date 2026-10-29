@@ -3,7 +3,7 @@
 **Dynamic Worker Synthesis • Model Context Protocol (MCP) • Closed-Loop Self-Correction • Full Browser Automation**
 
 [![Meta Global AI Developer Hackathon 2026](https://img.shields.io/badge/Meta%20Hackathon-2026%20Official%20Submission-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Track](https://img.shields.io/badge/Track-Indie%20Dev%20%24150K%20%2B%20Agentic%20%245K-gold.svg)](https://github.com/ansh1325/ORCHESTRATOR)
+
 
 
 **Creator & Chief Distributed Systems Architect:** [Ansh Tiwari](https://github.com/ansh1325)  

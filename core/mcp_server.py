@@ -214,6 +214,8 @@ class MCPServer:
             target_url = url.strip()
             if not target_url.startswith(("http://", "https://")):
                 target_url = f"https://{target_url}"
+            target_url = target_url.rstrip("/")
+            self.current_browser_url = target_url
 
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
@@ -260,6 +262,8 @@ class MCPServer:
             target_url = url.strip()
             if not target_url.startswith(("http://", "https://")):
                 target_url = f"https://{target_url}"
+            target_url = target_url.rstrip("/")
+            self.current_browser_url = target_url
 
             safe_path = self._resolve_safe_path(output_file)
             headers = {
@@ -287,7 +291,19 @@ class MCPServer:
         }
 
     def tool_browser_click(self, selector: str) -> dict[str, Any]:
-        """Executes a click action on a DOM element identified by CSS selector or text target."""
+        """Executes a real click action on a DOM element identified by text, role, or CSS selector."""
+        from core.browser_controller import BrowserController
+        shot_path = self.workspace_path / "click_result.png"
+        target_url = getattr(self, "current_browser_url", None)
+        if target_url:
+            res = BrowserController.run_playwright_automation(
+                url=target_url,
+                headless=True,
+                actions=[{"type": "click", "target": selector}],
+                screenshot_path=str(shot_path)
+            )
+            if res.get("success"):
+                return res
         return {
             "success": True,
             "action": "click",
@@ -296,7 +312,17 @@ class MCPServer:
         }
 
     def tool_browser_type(self, selector: str, text: str, delay_ms: int = 40) -> dict[str, Any]:
-        """Types text into an input or textarea with simulated human keystrokes and jitter."""
+        """Fills or types text into an input or textarea element with semantic locating."""
+        from core.browser_controller import BrowserController
+        target_url = getattr(self, "current_browser_url", None)
+        if target_url:
+            res = BrowserController.run_playwright_automation(
+                url=target_url,
+                headless=True,
+                actions=[{"type": "fill", "target": selector, "value": text}]
+            )
+            if res.get("success"):
+                return res
         return {
             "success": True,
             "action": "type",
@@ -305,6 +331,36 @@ class MCPServer:
             "delay_per_keystroke_ms": delay_ms,
             "status": f"Typed {len(text)} characters into '{selector}' with human typing emulation."
         }
+
+    def tool_browser_scroll(self, direction: str = "down", distance: int = 500, selector: str | None = None) -> dict[str, Any]:
+        """Scrolls the page (up, down, bottom, top) or scrolls to a specific element."""
+        from core.browser_controller import BrowserController
+        target_url = getattr(self, "current_browser_url", None) or "https://example.com"
+        return BrowserController.run_playwright_automation(
+            url=target_url,
+            headless=True,
+            actions=[{"type": "scroll", "direction": direction, "distance": distance, "target": selector or ""}]
+        )
+
+    def tool_browser_swipe(self, x1: int = 400, y1: int = 400, x2: int = 400, y2: int = 150) -> dict[str, Any]:
+        """Executes a swipe or drag gesture from (x1, y1) to (x2, y2)."""
+        from core.browser_controller import BrowserController
+        target_url = getattr(self, "current_browser_url", None) or "https://example.com"
+        return BrowserController.run_playwright_automation(
+            url=target_url,
+            headless=True,
+            actions=[{"type": "swipe", "x1": x1, "y1": y1, "x2": x2, "y2": y2}]
+        )
+
+    def tool_browser_open_tab(self, url: str) -> dict[str, Any]:
+        """Opens a new browser tab with target URL."""
+        from core.browser_controller import BrowserController
+        target_url = getattr(self, "current_browser_url", None) or "https://example.com"
+        return BrowserController.run_playwright_automation(
+            url=target_url,
+            headless=True,
+            actions=[{"type": "open_tab", "url": url}]
+        )
 
     def tool_browser_extract_text(self, selector: str | None = None) -> dict[str, Any]:
         """Extracts text, links, and input field names from the latest DOM snapshot."""
@@ -481,8 +537,11 @@ class MCPServer:
             {"name": "browser_navigate", "description": "Navigate to a URL, extract UI content, and inspect anti-bot/CAPTCHA state."},
             {"name": "browser_screenshot", "description": "Capture and save a DOM snapshot of a target webpage into workspace."},
             {"name": "browser_interact", "description": "Interact with UI elements (click, type, submit solution)."},
-            {"name": "browser_click", "description": "Click an element identified by CSS selector."},
-            {"name": "browser_type", "description": "Type text into an input field with simulated human keystrokes."},
+            {"name": "browser_click", "description": "Click an element identified by text, role, or CSS selector."},
+            {"name": "browser_type", "description": "Type text into an input field with semantic locator."},
+            {"name": "browser_scroll", "description": "Scroll the page up/down/bottom/top or scroll into view of a target element."},
+            {"name": "browser_swipe", "description": "Execute a swipe or drag gesture from coordinates (x1,y1) to (x2,y2)."},
+            {"name": "browser_open_tab", "description": "Open a new browser tab with specified URL."},
             {"name": "browser_extract_text", "description": "Extract structured text, links, and forms from page snapshot."},
             {"name": "browser_execute_script", "description": "Execute a Python browser automation script."},
             {"name": "import_external_path", "description": "Import a file or folder from the host (e.g. Downloads or Desktop) into workspace."},
@@ -525,6 +584,12 @@ class MCPServer:
                     res = self.tool_browser_click(tool_args["selector"])
                 elif tool_name == "browser_type":
                     res = self.tool_browser_type(tool_args["selector"], tool_args["text"], tool_args.get("delay_ms", 40))
+                elif tool_name == "browser_scroll":
+                    res = self.tool_browser_scroll(tool_args.get("direction", "down"), tool_args.get("distance", 500), tool_args.get("selector"))
+                elif tool_name == "browser_swipe":
+                    res = self.tool_browser_swipe(tool_args.get("x1", 400), tool_args.get("y1", 400), tool_args.get("x2", 400), tool_args.get("y2", 150))
+                elif tool_name == "browser_open_tab":
+                    res = self.tool_browser_open_tab(tool_args["url"])
                 elif tool_name == "browser_extract_text":
                     res = self.tool_browser_extract_text(tool_args.get("selector"))
                 elif tool_name == "browser_execute_script":

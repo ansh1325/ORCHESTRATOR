@@ -77,6 +77,50 @@ class BrowserController:
         }
 
     @classmethod
+    def _smart_locate(cls, page: Any, target: str) -> Any:
+        """
+        Locates an element using smart semantic resolution:
+        1. Explicit CSS/XPath selector if selector syntax detected
+        2. Role-based matching (button, link, textbox)
+        3. Text matching (case-insensitive) via Playwright text locator
+        """
+        target = target.strip()
+        # Direct CSS/XPath selector if syntax indicates CSS or XPath
+        if any(target.startswith(p) for p in ["#", ".", "/", "[", "xpath=", "css=", "//"]):
+            return page.locator(target).first
+
+        # Check if caller specified "text=..."
+        if target.startswith("text="):
+            return page.locator(target).first
+
+        # Try button role first
+        try:
+            b_loc = page.get_by_role("button", name=target).first
+            if b_loc.count() > 0:
+                return b_loc
+        except Exception:
+            pass
+
+        # Try link role
+        try:
+            l_loc = page.get_by_role("link", name=target).first
+            if l_loc.count() > 0:
+                return l_loc
+        except Exception:
+            pass
+
+        # Try placeholder
+        try:
+            p_loc = page.get_by_placeholder(target).first
+            if p_loc.count() > 0:
+                return p_loc
+        except Exception:
+            pass
+
+        # Universal semantic text locator: waits for text to appear in DOM
+        return page.locator(f"text={target}").first
+
+    @classmethod
     def run_playwright_automation(
         cls,
         url: str,
@@ -85,8 +129,13 @@ class BrowserController:
         screenshot_path: str | None = None
     ) -> dict[str, Any]:
         """
-        Launches real Playwright browser (Edge or Chrome) on Windows.
-        When headless=False, the browser window physically appears on the user's screen.
+        Autonomous Multi-Tab Browser Automation Engine (like n8n / Stagehand).
+        Capable of:
+        - Opening multiple tabs and switching between them
+        - Understanding and resolving semantic UI elements (text, roles, labels, placeholders)
+        - Full interactions: Click, Double Click, Hover, Type, Fill, Press Key
+        - Real gestures: Scroll (up, down, to bottom, to element), Swipe / Drag & Drop
+        - Screenshot captures and live DOM telemetry
         """
         try:
             from playwright.sync_api import sync_playwright
@@ -97,7 +146,11 @@ class BrowserController:
             }
 
         actions = actions or []
-        captured_data: dict[str, Any] = {"title": "", "url": "", "executed_actions": []}
+        target_url = url.strip()
+        if not target_url.startswith(("http://", "https://", "about:", "data:", "file:")):
+            target_url = f"https://{target_url}"
+
+        captured_data: dict[str, Any] = {"title": "", "url": target_url, "executed_actions": [], "tabs_opened": 1}
 
         try:
             with sync_playwright() as p:
@@ -112,33 +165,120 @@ class BrowserController:
                 if not browser:
                     browser = p.chromium.launch(headless=headless)
 
-                page = browser.new_page()
-                page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                context = browser.new_context(viewport={"width": 1280, "height": 800})
+                page = context.new_page()
+                page.goto(target_url, wait_until="domcontentloaded", timeout=30000)
                 captured_data["title"] = page.title()
                 captured_data["url"] = page.url
 
+                pages = [page]
+                current_page = page
+
                 for act in actions:
-                    act_type = act.get("type", "")
-                    selector = act.get("selector", "")
+                    act_type = act.get("type", "").lower()
+                    target = act.get("selector") or act.get("target") or ""
                     val = act.get("value", "")
 
-                    if act_type == "click" and selector:
-                        page.wait_for_selector(selector, timeout=8000)
-                        page.click(selector)
-                        captured_data["executed_actions"].append(f"Clicked {selector}")
-                    elif act_type == "type" and selector:
-                        page.wait_for_selector(selector, timeout=8000)
-                        page.type(selector, str(val), delay=50)
-                        captured_data["executed_actions"].append(f"Typed into {selector}")
+                    if act_type in ["open_tab", "new_tab"]:
+                        tab_url = act.get("url") or val or "about:blank"
+                        new_p = context.new_page()
+                        new_p.goto(tab_url, wait_until="domcontentloaded", timeout=30000)
+                        pages.append(new_p)
+                        current_page = new_p
+                        captured_data["tabs_opened"] = len(pages)
+                        captured_data["executed_actions"].append(f"Opened new tab with URL: {tab_url}")
+
+                    elif act_type == "switch_tab":
+                        tab_idx = int(act.get("index", 0))
+                        if 0 <= tab_idx < len(pages):
+                            current_page = pages[tab_idx]
+                            current_page.bring_to_front()
+                            captured_data["executed_actions"].append(f"Switched active view to tab index {tab_idx}")
+
+                    elif act_type == "close_tab":
+                        if len(pages) > 1:
+                            current_page.close()
+                            pages.remove(current_page)
+                            current_page = pages[-1]
+                            current_page.bring_to_front()
+                            captured_data["tabs_opened"] = len(pages)
+                            captured_data["executed_actions"].append("Closed active tab and returned to previous")
+
+                    elif act_type == "click":
+                        loc = cls._smart_locate(current_page, target)
+                        try:
+                            loc.scroll_into_view_if_needed(timeout=5000)
+                        except Exception:
+                            pass
+                        loc.click(timeout=8000)
+                        captured_data["executed_actions"].append(f"Clicked UI element '{target}'")
+
+                    elif act_type == "double_click":
+                        loc = cls._smart_locate(current_page, target)
+                        try:
+                            loc.scroll_into_view_if_needed(timeout=5000)
+                        except Exception:
+                            pass
+                        loc.dblclick(timeout=8000)
+                        captured_data["executed_actions"].append(f"Double-clicked UI element '{target}'")
+
+                    elif act_type in ["type", "fill"]:
+                        loc = cls._smart_locate(current_page, target)
+                        try:
+                            loc.scroll_into_view_if_needed(timeout=5000)
+                        except Exception:
+                            pass
+                        loc.fill(str(val), timeout=8000)
+                        captured_data["executed_actions"].append(f"Filled '{val}' into '{target}'")
+
+                    elif act_type == "hover":
+                        loc = cls._smart_locate(current_page, target)
+                        loc.hover(timeout=5000)
+                        captured_data["executed_actions"].append(f"Hovered over '{target}'")
+
+                    elif act_type in ["scroll", "scroll_down", "scroll_up"]:
+                        direction = act.get("direction", "down").lower()
+                        distance = int(act.get("distance", 500))
+                        if target:
+                            loc = cls._smart_locate(current_page, target)
+                            loc.scroll_into_view_if_needed(timeout=5000)
+                            captured_data["executed_actions"].append(f"Scrolled to element '{target}'")
+                        else:
+                            if direction == "up" or act_type == "scroll_up":
+                                current_page.mouse.wheel(0, -distance)
+                            elif direction == "bottom":
+                                current_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                            elif direction == "top":
+                                current_page.evaluate("window.scrollTo(0, 0)")
+                            else:
+                                current_page.mouse.wheel(0, distance)
+                            captured_data["executed_actions"].append(f"Scrolled {direction} by {distance}px")
+
+                    elif act_type in ["swipe", "drag"]:
+                        x1 = int(act.get("x1", 400))
+                        y1 = int(act.get("y1", 400))
+                        x2 = int(act.get("x2", 400))
+                        y2 = int(act.get("y2", 150))
+                        current_page.mouse.move(x1, y1)
+                        current_page.mouse.down()
+                        current_page.mouse.move(x2, y2, steps=10)
+                        current_page.mouse.up()
+                        captured_data["executed_actions"].append(f"Executed swipe gesture from ({x1},{y1}) to ({x2},{y2})")
+
+                    elif act_type == "press":
+                        key = str(val or act.get("key", "Enter"))
+                        current_page.keyboard.press(key)
+                        captured_data["executed_actions"].append(f"Pressed keyboard key '{key}'")
+
                     elif act_type == "wait":
                         wait_ms = int(act.get("ms", 1000))
-                        page.wait_for_timeout(wait_ms)
+                        current_page.wait_for_timeout(wait_ms)
                         captured_data["executed_actions"].append(f"Waited {wait_ms}ms")
 
                 if screenshot_path:
                     out = Path(screenshot_path)
                     out.parent.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=str(out), full_page=True)
+                    current_page.screenshot(path=str(out), full_page=True)
                     captured_data["screenshot"] = str(out)
 
                 browser.close()

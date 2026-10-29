@@ -494,10 +494,10 @@
           <!-- Mode Switcher Pill -->
           <div class="flex items-center justify-between px-1 text-[11px]">
             <div class="flex items-center gap-1.5 bg-brand-navy p-1 rounded-xl border border-brand-border">
-              <button id="chatModeBtn" class="mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active">
+              <button type="button" id="chatModeBtn" onclick="setMode('chat')" class="mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active cursor-pointer">
                 💬 Direct Jarvis Chat
               </button>
-              <button id="swarmModeBtn" class="mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition">
+              <button type="button" id="swarmModeBtn" onclick="setMode('swarm')" class="mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 border border-transparent transition cursor-pointer">
                 ⚡ Multi-Agent Swarm Builder
               </button>
             </div>
@@ -557,6 +557,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20261029_v5_pure_gold_blue"></script>
+  <script src="/static/app.js?v=20261029_v6_swarm_click_fixed"></script>
 </body>
 </html>

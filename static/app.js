@@ -328,71 +328,62 @@ function setupEventListeners() {
     });
   }
 
-  // Speech Recognition (Mic Button)
+  // Speech Recognition (Mic Button) - Safely isolated in try/catch
   const micBtn = document.getElementById("micBtn");
   if (micBtn) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US";
 
-      micBtn.addEventListener("click", () => {
-        micBtn.classList.add("text-emerald-400", "animate-pulse");
-        setJarvisVoiceExpression(true, "LISTENING // VOICE CAPTURE ACTIVE");
-        const statusDot = document.getElementById("jarvisStatusDot");
-        if (statusDot) statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping";
-        recognition.start();
-      });
+        micBtn.addEventListener("click", () => {
+          micBtn.classList.add("text-emerald-400", "animate-pulse");
+          setJarvisVoiceExpression(true, "LISTENING // VOICE CAPTURE ACTIVE");
+          const statusDot = document.getElementById("jarvisStatusDot");
+          if (statusDot) statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping";
+          try { recognition.start(); } catch (e) { console.warn("Recognition start error:", e); }
+        });
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        const input = document.getElementById("directiveInput");
-        if (input) input.value = transcript;
-        micBtn.classList.remove("text-emerald-400", "animate-pulse");
-        setJarvisVoiceExpression(false);
-        // Automatically submit voice directive
-        handleDirectiveSubmit(new Event("submit"));
-      };
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          const input = document.getElementById("directiveInput");
+          if (input) input.value = transcript;
+          micBtn.classList.remove("text-emerald-400", "animate-pulse");
+          setJarvisVoiceExpression(false);
+          // Automatically submit voice directive
+          handleDirectiveSubmit(new Event("submit"));
+        };
 
-      recognition.onerror = () => {
-        micBtn.classList.remove("text-emerald-400", "animate-pulse");
-        setJarvisVoiceExpression(false);
-      };
+        recognition.onerror = () => {
+          micBtn.classList.remove("text-emerald-400", "animate-pulse");
+          setJarvisVoiceExpression(false);
+        };
 
-      recognition.onend = () => {
-        micBtn.classList.remove("text-emerald-400", "animate-pulse");
-        setJarvisVoiceExpression(false);
-      };
-    } else {
-      micBtn.title = "Web Speech Recognition not supported in this browser.";
-      micBtn.style.opacity = "0.5";
+        recognition.onend = () => {
+          micBtn.classList.remove("text-emerald-400", "animate-pulse");
+          setJarvisVoiceExpression(false);
+        };
+      } else {
+        micBtn.title = "Web Speech Recognition not supported in this browser.";
+        micBtn.style.opacity = "0.5";
+      }
+    } catch (speechErr) {
+      console.warn("Speech recognition initialization caught safely:", speechErr);
     }
   }
 
   // Mode Switcher Buttons (Direct Jarvis Chat vs Swarm Builder)
   const chatModeBtn = document.getElementById("chatModeBtn");
   const swarmModeBtn = document.getElementById("swarmModeBtn");
-  const modeDescription = document.getElementById("modeDescription");
-  const directiveInput = document.getElementById("directiveInput");
 
-  if (chatModeBtn && swarmModeBtn) {
-    chatModeBtn.addEventListener("click", () => {
-      state.activeMode = "chat";
-      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active";
-      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
-      if (modeDescription) modeDescription.textContent = "Asking questions & direct conversation (No sub-agents spawned)";
-      if (directiveInput) directiveInput.placeholder = "Ask Jarvis anything (code, system architecture, capabilities)...";
-    });
-
-    swarmModeBtn.addEventListener("click", () => {
-      state.activeMode = "swarm";
-      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active";
-      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
-      if (modeDescription) modeDescription.textContent = "Autonomous Multi-Agent compiler (deploys agent army, generates files)";
-      if (directiveInput) directiveInput.placeholder = "Enter directive to build (e.g. Build AWS telemetry microservice)...";
-    });
+  if (chatModeBtn) {
+    chatModeBtn.addEventListener("click", () => window.setMode("chat"));
+  }
+  if (swarmModeBtn) {
+    swarmModeBtn.addEventListener("click", () => window.setMode("swarm"));
   }
 
   // Quick Action Chips in Chat
@@ -413,6 +404,49 @@ function setupEventListeners() {
     directiveForm.addEventListener("submit", handleDirectiveSubmit);
   }
 }
+
+// Global Mode Setter (Guaranteed 1-Click Toggle for Direct Chat vs Swarm Builder)
+window.setMode = function(mode) {
+  state.activeMode = mode;
+  const chatModeBtn = document.getElementById("chatModeBtn");
+  const swarmModeBtn = document.getElementById("swarmModeBtn");
+  const modeDescription = document.getElementById("modeDescription");
+  const directiveInput = document.getElementById("directiveInput");
+  const swarmDeck = document.getElementById("swarmDeckContainer");
+
+  if (mode === "swarm") {
+    if (swarmModeBtn) {
+      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active cursor-pointer shadow-sm shadow-amber-500/10";
+    }
+    if (chatModeBtn) {
+      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 border border-transparent transition cursor-pointer";
+    }
+    if (modeDescription) {
+      modeDescription.textContent = "Autonomous Multi-Agent compiler (deploys agent army, generates files)";
+    }
+    if (directiveInput) {
+      directiveInput.placeholder = "Enter directive to build (e.g. Build quantitative trading desk or full-stack agency)...";
+      directiveInput.focus();
+    }
+    if (swarmDeck && swarmDeck.classList.contains("hidden")) {
+      swarmDeck.classList.remove("hidden");
+    }
+  } else {
+    if (chatModeBtn) {
+      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active cursor-pointer shadow-sm shadow-amber-500/10";
+    }
+    if (swarmModeBtn) {
+      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 border border-transparent transition cursor-pointer";
+    }
+    if (modeDescription) {
+      modeDescription.textContent = "Asking questions & direct conversation (Solo Jarvis responses)";
+    }
+    if (directiveInput) {
+      directiveInput.placeholder = "Ask Jarvis anything (code, system architecture, capabilities)...";
+      directiveInput.focus();
+    }
+  }
+};
 
 // Reset Current Session & UI
 function resetSession() {
@@ -435,15 +469,7 @@ function resetSession() {
   const swarmDeck = document.getElementById("swarmDeckContainer");
   if (swarmDeck) swarmDeck.classList.add("hidden");
 
-  const chatModeBtn = document.getElementById("chatModeBtn");
-  const swarmModeBtn = document.getElementById("swarmModeBtn");
-  const modeDescription = document.getElementById("modeDescription");
-  if (chatModeBtn && swarmModeBtn) {
-    state.activeMode = "chat";
-    chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active";
-    swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
-    if (modeDescription) modeDescription.textContent = "Asking questions & direct conversation (No sub-agents spawned)";
-  }
+  window.setMode("chat");
 
   const dagContainer = document.getElementById("dagContainer");
   if (dagContainer) {

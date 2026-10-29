@@ -698,6 +698,8 @@ function speakText(text) {
 
   window.speechSynthesis.speak(utterance);
 }
+window.speakText = speakText;
+window.speakVoice = speakText;
 
 // Toggle Live Soundwave Visualizer Pill
 function setVoiceVisualizer(active) {
@@ -1182,13 +1184,6 @@ function updateTaskNodeStatus(taskId, status) {
     if (badge) {
       badge.textContent = "Self-Correcting";
       badge.className = "status-badge text-[10px] px-2 py-0.5 rounded font-mono bg-yellow-500/20 text-yellow-300 border border-yellow-500/40";
-    }
-  }
-}
-    nodeDiv.classList.add("border-amber-500");
-    if (badge) {
-      badge.textContent = "Self-Correcting";
-      badge.className = "status-badge text-[10px] px-2 py-0.5 rounded font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40";
     }
   }
 }
@@ -1994,11 +1989,12 @@ function promptAddSchedule() {
   }).then(res => res.json()).then(() => {
     loadSchedules();
     appendChatMessage(`⏰ **24/7 Autonomous PC Schedule Activated:** "${title}" is registered. LlamaOrchestrator's background scheduler will execute this task every day at ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} on this PC.`, "assistant");
-    speakVoice(`Autonomous 24/7 mission scheduled for Daily ${hour} AM.`);
+    speakText(`Autonomous 24/7 mission scheduled for Daily ${hour} AM.`);
   }).catch(err => {
     alert("Could not create schedule: " + err.message);
   });
 }
+window.promptAddSchedule = promptAddSchedule;
 
 // Helper: Escape HTML
 function escapeHtml(str) {

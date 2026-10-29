@@ -67,8 +67,11 @@ coverage.xml
 Thumbs.db
 
 # Dynamic Session Workspaces & Logs
-workspaces/session_*/
-workspaces/sched_run_*/
-workspaces/test_*/
+workspaces/*/
+!workspaces/.gitkeep
+workspaces/*.png
+workspaces/*.jpg
+workspaces/*.jpeg
 workspaces/*.zip
+workspaces/verify_ui.py
 *.log

@@ -1,9 +1,0 @@
-{
-  "permission_type": "browser_session_inbox_dispatch",
-  "granted_by": "Ansh Tiwari",
-  "recipient": "anshtiwarisocial@gmail.com",
-  "subject_line": "hello i am jarvis",
-  "batch_size": 3,
-  "status": "Authorized & Staged in Workspace",
-  "execution_method": "browser_send_emails.py"
-}

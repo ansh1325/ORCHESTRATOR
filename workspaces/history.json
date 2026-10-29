@@ -1,14 +1,109 @@
 [
   {
-    "session_id": "sess_pinned",
-    "title": "Pinned Task",
-    "prompt": "Prompt 2",
-    "folder": "General",
+    "session_id": "telemetry_microservice_jwt_5b7b",
+    "title": "Authenticated Telemetry Microservice",
+    "prompt": "Build an authenticated telemetry microservice with JWT auth and SQLite metrics storage",
+    "folder": "Engineering",
     "is_pinned": false,
     "status": "completed",
-    "created_at": "2026-10-29T13:35:04.894934+00:00",
-    "artifacts": [],
-    "deliverables": []
+    "created_at": "2026-10-29T18:38:31.460396+00:00",
+    "artifacts": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "models.py",
+      "telemetry_service.py",
+      "test_telemetry.py"
+    ],
+    "deliverables": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "models.py",
+      "telemetry_service.py",
+      "test_telemetry.py"
+    ]
+  },
+  {
+    "session_id": "telemetry_microservice_jwt_b67d",
+    "title": "Authenticated Telemetry Microservice",
+    "prompt": "Build an authenticated telemetry microservice with JWT auth and SQLite metrics storage",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T18:36:16.558624+00:00",
+    "artifacts": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "models.py",
+      "telemetry_service.py",
+      "test_telemetry.py"
+    ],
+    "deliverables": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "models.py",
+      "telemetry_service.py",
+      "test_telemetry.py"
+    ]
+  },
+  {
+    "session_id": "test_measure",
+    "title": "Authenticated Telemetry Microservice",
+    "prompt": "Build an authenticated telemetry microservice with JWT auth and SQLite metrics storage",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T18:35:29.325402+00:00",
+    "artifacts": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "telemetry_service.py",
+      "test_telemetry.py",
+      "telemetry/db.py",
+      "telemetry/models.py",
+      "telemetry/status.py"
+    ],
+    "deliverables": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "telemetry_service.py",
+      "test_telemetry.py",
+      "telemetry/db.py",
+      "telemetry/models.py",
+      "telemetry/status.py"
+    ]
+  },
+  {
+    "session_id": "send_me_just_3_b0d9",
+    "title": "Send Me Just 3 Emails",
+    "prompt": "i want you to send me just 3 emails with subject i am jarvis with body whatever you feel about me and send those mails to anshtiwarif17@gmail.com and do that via browser automation and no other way access my browser and just send those mails by composing it",
+    "folder": "Personal",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T17:29:13.063466+00:00",
+    "artifacts": [
+      "browser_permission_granted.json",
+      "browser_send_emails.py",
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md",
+      "send_emails_smtp.py"
+    ],
+    "deliverables": [
+      "browser_permission_granted.json",
+      "browser_send_emails.py",
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md",
+      "send_emails_smtp.py"
+    ]
   },
   {
     "session_id": "i_want_you_send_ebf1",
@@ -305,6 +400,17 @@
       "telemetry_service.py",
       "test_telemetry.py"
     ]
+  },
+  {
+    "session_id": "sess_pinned",
+    "title": "Pinned Task",
+    "prompt": "Prompt 2",
+    "folder": "General",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T13:35:04.894934+00:00",
+    "artifacts": [],
+    "deliverables": []
   },
   {
     "session_id": "sess_unpinned",

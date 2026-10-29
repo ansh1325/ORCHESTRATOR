@@ -794,7 +794,7 @@ class MetaOrchestrator:
         return None
 
     def compile_dag_plan(self, session_id: str) -> DAGPlan:
-        """Convenience accessor to compile or fetch DAG plan by session ID."""
+        """Convenience method to compile DAG plan for a session ID."""
         session = self.sessions[session_id]
         return self.compile_dag_and_synthesize_workers(session)
 

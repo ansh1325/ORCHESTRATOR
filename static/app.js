@@ -943,26 +943,26 @@ function renderClarificationModal(analysis) {
   // 1. Render in Modal
   analysis.clarifications.forEach((q, idx) => {
     const qDiv = document.createElement("div");
-    qDiv.className = "p-4 rounded-xl bg-brand-surface/90 border border-brand-border space-y-2";
+    qDiv.className = "p-3.5 rounded-xl bg-gemini-bg/80 border border-gemini-border/70 space-y-2";
 
     let optionsHtml = "";
     q.options.forEach(opt => {
       const isDefault = (opt === q.default_selection);
       optionsHtml += `
-        <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-brand-card cursor-pointer border border-transparent transition">
-          <input type="radio" name="${q.id}" value="${escapeHtml(opt)}" ${isDefault ? "checked" : ""} class="accent-amber-400" onchange="state.selectedAnswers['${q.id}'] = this.value">
-          <span class="text-xs text-slate-200 font-medium">${escapeHtml(opt)}</span>
-          ${isDefault ? '<span class="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold">Recommended</span>' : ""}
+        <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gemini-cardHover cursor-pointer border border-transparent transition">
+          <input type="radio" name="${q.id}" value="${escapeHtml(opt)}" ${isDefault ? "checked" : ""} class="accent-[#8ab4f8]" onchange="state.selectedAnswers['${q.id}'] = this.value">
+          <span class="text-xs text-gemini-text font-medium">${escapeHtml(opt)}</span>
+          ${isDefault ? '<span class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-gemini-blue/15 text-gemini-blue border border-gemini-blue/30 font-mono font-semibold">Recommended</span>' : ""}
         </label>
       `;
     });
 
     qDiv.innerHTML = `
       <div class="flex items-start gap-2">
-        <span class="w-5 h-5 rounded-full bg-brand-card text-amber-400 flex items-center justify-center font-mono font-bold text-[10px] shrink-0 border border-amber-500/40">${idx + 1}</span>
+        <span class="w-5 h-5 rounded-full bg-gemini-card text-gemini-blue flex items-center justify-center font-mono font-bold text-[10px] shrink-0 border border-gemini-blue/40">${idx + 1}</span>
         <div>
-          <h4 class="text-xs font-bold text-slate-100">${escapeHtml(q.question)}</h4>
-          <p class="text-[11px] text-amber-200/70 mt-0.5">${escapeHtml(q.why_needed)}</p>
+          <h4 class="text-xs font-semibold text-white">${escapeHtml(q.question)}</h4>
+          <p class="text-[11px] text-gemini-muted mt-0.5">${escapeHtml(q.why_needed)}</p>
         </div>
       </div>
       <div class="space-y-1 pt-1">${optionsHtml}</div>
@@ -977,23 +977,23 @@ function renderClarificationModal(analysis) {
   if (analysis.clarifications && analysis.clarifications.length > 0) {
     let dialogHtml = `
       <div class="space-y-3">
-        <div class="flex items-center gap-2 text-amber-300 font-extrabold text-xs">
-          <i data-lucide="help-circle" class="w-4 h-4 text-amber-400"></i>
-          <span>Master Ansh, I need your authorization on ${analysis.clarifications.length} architectural parameters:</span>
+        <div class="flex items-center gap-2 text-gemini-blue font-semibold text-xs">
+          <i data-lucide="help-circle" class="w-4 h-4 text-gemini-blue"></i>
+          <span>Founder Requirements Confirmation (${analysis.clarifications.length} architectural choices):</span>
         </div>
     `;
 
     analysis.clarifications.forEach((q, idx) => {
       dialogHtml += `
-        <div class="p-3 rounded-xl bg-brand-surface border border-brand-border space-y-1.5 shadow-sm">
-          <div class="font-bold text-slate-100 text-xs">${idx + 1}. ${escapeHtml(q.question)}</div>
-          <div class="text-[11px] text-amber-200/70">${escapeHtml(q.why_needed)}</div>
+        <div class="p-3 rounded-xl bg-gemini-bg/80 border border-gemini-border/70 space-y-1.5 shadow-sm">
+          <div class="font-semibold text-gemini-text text-xs">${idx + 1}. ${escapeHtml(q.question)}</div>
+          <div class="text-[11px] text-gemini-muted">${escapeHtml(q.why_needed)}</div>
           <div class="space-y-1 pt-1">
             ${q.options.map(opt => `
-              <div class="flex items-center gap-2 text-[11px] p-1.5 rounded-lg bg-brand-card/70 border border-brand-border/60 text-slate-300 hover:border-amber-400/50 cursor-pointer" onclick="state.selectedAnswers['${q.id}'] = '${escapeHtml(opt)}'; launchLifecycle(false);">
-                <span class="w-1.5 h-1.5 rounded-full ${opt === q.default_selection ? 'bg-amber-400' : 'bg-slate-500'}"></span>
-                <span class="${opt === q.default_selection ? 'text-amber-300 font-semibold' : ''}">${escapeHtml(opt)}</span>
-                ${opt === q.default_selection ? '<span class="ml-auto text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Default</span>' : ''}
+              <div class="flex items-center gap-2 text-[11px] p-1.5 rounded-lg bg-gemini-card/70 border border-gemini-border/50 text-gemini-muted hover:text-white hover:border-gemini-blue/40 cursor-pointer transition" onclick="state.selectedAnswers['${q.id}'] = '${escapeHtml(opt)}'; launchLifecycle(false);">
+                <span class="w-1.5 h-1.5 rounded-full ${opt === q.default_selection ? 'bg-gemini-blue' : 'bg-gemini-subtle'}"></span>
+                <span class="${opt === q.default_selection ? 'text-white font-medium' : ''}">${escapeHtml(opt)}</span>
+                ${opt === q.default_selection ? '<span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-gemini-blue/15 text-gemini-blue border border-gemini-blue/30 font-mono">Default</span>' : ''}
               </div>
             `).join("")}
           </div>
@@ -1003,18 +1003,18 @@ function renderClarificationModal(analysis) {
 
     dialogHtml += `
         <div class="flex items-center gap-2 pt-1">
-          <button onclick="launchLifecycle(true)" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/25 transition cursor-pointer">
+          <button onclick="launchLifecycle(true)" class="px-4 py-2 rounded-full bg-gemini-blue hover:bg-gemini-blueHover text-slate-950 font-semibold text-xs flex items-center gap-1.5 shadow-md transition cursor-pointer">
             <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
-            <span>⚡ Grant Permission & Launch Swarm</span>
+            <span>Deploy Autonomous Swarm</span>
           </button>
-          <button onclick="document.getElementById('clarificationModal').classList.remove('hidden')" class="px-3.5 py-2 rounded-xl bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-400/40 text-xs font-semibold transition cursor-pointer">
-            Adjust Selections
+          <button onclick="document.getElementById('clarificationModal').classList.remove('hidden')" class="px-3.5 py-2 rounded-full bg-gemini-cardHover hover:bg-gemini-border text-gemini-text border border-gemini-border text-xs font-medium transition cursor-pointer">
+            Customize Selections
           </button>
         </div>
       </div>
     `;
     appendChatMessage(dialogHtml, "assistant");
-    speakText("Master Ansh, I require your confirmation on our dispatch parameters before compiling sub-agents.");
+    speakText("Founder requirements analyzed. Please confirm the architectural parameters to synthesize your autonomous agent swarm.");
   }
 
   if (window.lucide) lucide.createIcons();

@@ -45,3 +45,4 @@ def test_orchestrator_founder_mode_routing():
     
     plan = orch.compile_dag_plan(session_id="test_founder_routing")
     assert len(plan.nodes) == 8
+

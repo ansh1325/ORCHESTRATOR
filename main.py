@@ -32,6 +32,7 @@ from core.creator_memory import creator_memory  # pyright: ignore[reportMissingI
 from core.orchestrator import orchestrator  # pyright: ignore[reportMissingImports]
 from core.workflow_manager import history_manager  # pyright: ignore[reportMissingImports]
 from core.scheduler import scheduler  # pyright: ignore[reportMissingImports]
+from core.browser_controller import BrowserController  # pyright: ignore[reportMissingImports]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -341,6 +342,98 @@ async def delete_schedule(task_id: str):
     """Deletes a scheduled task."""
     deleted = history_manager.delete_schedule(task_id)
     return {"success": deleted}
+
+# ==========================================
+# REAL BROWSER CONTROLLER & EMAIL DISPATCH
+# ==========================================
+
+@app.post("/api/browser/open")
+async def browser_open_url(req: dict = Body(...)):
+    """Opens a target URL in the user's host browser with their active logged-in sessions."""
+    url = req.get("url", "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="Missing 'url' parameter")
+    if not url.startswith(("http://", "https://")):
+        url = f"https://{url}"
+    success = BrowserController.open_in_system_browser(url)
+    return {"success": success, "url": url}
+
+@app.post("/api/browser/compose-email")
+async def browser_compose_email(req: dict = Body(...)):
+    """
+    Opens the user's active host browser directly into Gmail Compose.
+    If session_id is provided, extracts generated letters (mail_1.md, mail_2.md, mail_3.md).
+    """
+    recipient = req.get("recipient", "anshtiwarisocial@gmail.com")
+    subject = req.get("subject", "hello i am jarvis")
+    body = req.get("body")
+    session_id = req.get("session_id")
+    open_all = req.get("open_all", True)
+
+    emails_to_open = []
+
+    if session_id:
+        ws_path = (settings.WORKSPACE_DIR / session_id).resolve()
+        letters = ["mail_1.md", "mail_2.md", "mail_3.md"]
+        found_any = False
+        for l in letters:
+            fpath = ws_path / l
+            if fpath.exists():
+                found_any = True
+                content = fpath.read_text(encoding="utf-8", errors="replace")
+                emails_to_open.append({
+                    "to": recipient,
+                    "subject": subject,
+                    "body": content
+                })
+        if not found_any and body:
+            emails_to_open.append({"to": recipient, "subject": subject, "body": body})
+    elif body:
+        emails_to_open.append({"to": recipient, "subject": subject, "body": body})
+    else:
+        # Default 3 letters if empty
+        emails_to_open = [
+            {"to": recipient, "subject": subject, "body": "Dear Ansh,\n\nI am your technical co-architect and loyal AI partner. All systems online.\n\n- Jarvis"},
+            {"to": recipient, "subject": subject, "body": "Dear Ansh,\n\nStanding by for multi-agent autonomous execution whenever you command.\n\n- Jarvis"},
+            {"to": recipient, "subject": subject, "body": "Dear Ansh,\n\nReady to conquer the Meta Global AI Hackathon with production-grade autonomous swarms.\n\n- Jarvis"}
+        ]
+
+    if not open_all and len(emails_to_open) > 1:
+        emails_to_open = emails_to_open[:1]
+
+    res = BrowserController.compose_batch_in_gmail(emails_to_open)
+    return res
+
+@app.post("/api/browser/playwright-run")
+async def browser_playwright_run(req: dict = Body(...)):
+    """Executes a real Playwright browser session (Edge/Chrome) on the user's desktop."""
+    url = req.get("url", "https://mail.google.com")
+    headless = bool(req.get("headless", False))
+    actions = req.get("actions", [])
+    res = BrowserController.run_playwright_automation(url=url, headless=headless, actions=actions)
+    return res
+
+@app.post("/api/email/smtp-send")
+async def email_smtp_send(req: dict = Body(...)):
+    """Direct RFC-5322 SMTP transmission if credentials are provided in request or environment."""
+    recipient = req.get("recipient", "anshtiwarisocial@gmail.com")
+    subject = req.get("subject", "hello i am jarvis")
+    body = req.get("body", "Hello from Jarvis.")
+    sender = req.get("sender_email")
+    pwd = req.get("password")
+    smtp_server = req.get("smtp_server", "smtp.gmail.com")
+    smtp_port = int(req.get("smtp_port", 587))
+
+    res = BrowserController.send_smtp_email(
+        recipient=recipient,
+        subject=subject,
+        body=body,
+        sender_email=sender,
+        password=pwd,
+        smtp_server=smtp_server,
+        smtp_port=smtp_port
+    )
+    return res
 
 if __name__ == "__main__":
     import uvicorn

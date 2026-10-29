@@ -1,5 +1,61 @@
 [
   {
+    "session_id": "sched_run_aff03672",
+    "title": "Daily 6AM Test Run",
+    "prompt": "Test prompt",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T16:20:12.198655+00:00",
+    "artifacts": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "models.py",
+      "telemetry_service.py",
+      "test_telemetry.py"
+    ],
+    "deliverables": [
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "models.py",
+      "telemetry_service.py",
+      "test_telemetry.py"
+    ]
+  },
+  {
+    "session_id": "3_personal_emails_ansh_tiwari_d87a",
+    "title": "3 Personal Emails to Ansh Tiwari",
+    "prompt": "hey i want you to send 3 mails to anshtiwarisocial@gmail.com with subject hello i am jarvis and body whatever you feel about me",
+    "folder": "Personal",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T15:54:05.106423+00:00",
+    "artifacts": [
+      "collect_credentials.py",
+      "deployment.yaml",
+      "deploy_pipeline_to_aws_lambda.md",
+      "email_bodies.json",
+      "email_service.py",
+      "evaluator_report.json",
+      "execute_campaign___produce_rep.md",
+      "knowledge_base.json",
+      "main.py",
+      "requirements.txt"
+    ],
+    "deliverables": [
+      "collect_credentials.py",
+      "deployment.yaml",
+      "deploy_pipeline_to_aws_lambda.md",
+      "email_bodies.json",
+      "email_service.py",
+      "evaluator_report.json",
+      "execute_campaign___produce_rep.md",
+      "knowledge_base.json",
+      "main.py",
+      "requirements.txt"
+    ]
+  },
+  {
     "session_id": "sched_run_895169aa",
     "title": "Daily 6AM Test Run",
     "prompt": "Test prompt",

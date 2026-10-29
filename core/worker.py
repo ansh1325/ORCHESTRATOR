@@ -4,6 +4,7 @@ Executes synthesized worker sub-agents with scoped system prompts and tool acces
 Intercepts nonzero returncodes and stderr to autonomously diagnose, patch, and re-verify.
 """
 
+import re
 import asyncio
 import json
 from typing import Dict, Any, List, Callable, Optional
@@ -14,6 +15,19 @@ from core.config import settings
 class WorkerExecutionError(Exception):
     """Raised when a worker task fails after exhausting self-correction attempts."""
     pass
+
+def robust_json_loads(raw: str) -> dict:
+    """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    clean = str(raw).strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
+    if match:
+        clean = match.group(1).strip()
+    else:
+        first_brace = clean.find("{")
+        last_brace = clean.rfind("}")
+        if first_brace != -1 and last_brace > first_brace:
+            clean = clean[first_brace:last_brace + 1]
+    return json.loads(clean)
 
 def clean_code_content(path_str: str, content_str: str) -> str:
     """Strips markdown code fences (```lang ... ```) from synthesized source code."""
@@ -185,13 +199,7 @@ class DynamicWorkerEngine:
             
         resp = await asyncio.to_thread(_call_model)
         raw_content = resp.choices[0].message.content.strip()
-        if raw_content.startswith("```json"):
-            raw_content = raw_content[7:]
-        if raw_content.startswith("```"):
-            raw_content = raw_content[3:]
-        if raw_content.endswith("```"):
-            raw_content = raw_content[:-3]
-        data = json.loads(raw_content.strip())
+        data = robust_json_loads(raw_content)
         
         artifacts = []
         raw_files = data.get("files") or data.get("artifacts") or data.get("deliverables") or []

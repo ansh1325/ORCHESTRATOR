@@ -94,7 +94,14 @@ class CreatorMemory:
                 "tool_send_mock_booking",
                 "tool_browser_navigate",
                 "tool_browser_screenshot",
-                "tool_browser_interact"
+                "tool_browser_interact",
+                "tool_browser_click",
+                "tool_browser_type",
+                "tool_browser_extract_text",
+                "tool_browser_execute_script",
+                "tool_import_external_path",
+                "tool_export_to_host",
+                "tool_read_external_path"
             ],
             "architecture_stages": [
                 "Stage 0: Jarvis Central Brain & Voice Synthesis (Meta Llama 3.1 70B)",

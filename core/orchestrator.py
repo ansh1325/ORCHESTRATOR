@@ -27,6 +27,20 @@ from core.models import (
     ScheduledTask
 )
 import json
+import re
+
+def robust_json_loads(raw: str) -> dict:
+    """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    clean = str(raw).strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
+    if match:
+        clean = match.group(1).strip()
+    else:
+        first_brace = clean.find("{")
+        last_brace = clean.rfind("}")
+        if first_brace != -1 and last_brace > first_brace:
+            clean = clean[first_brace:last_brace + 1]
+    return json.loads(clean)
 
 HISTORY_FILE = settings.WORKSPACE_DIR / "history.json"
 WORKFLOWS_FILE = settings.WORKSPACE_DIR / "workflows.json"
@@ -245,7 +259,7 @@ class MetaOrchestrator:
                 temperature=0.2
             )
             raw = resp.choices[0].message.content
-            data = json.loads(raw)
+            data = robust_json_loads(raw)
 
             v_low = vision.lower()
             t_type = data.get("track_type", "general").lower()
@@ -713,7 +727,7 @@ class MetaOrchestrator:
                 temperature=0.2
             )
             raw = resp.choices[0].message.content
-            data = json.loads(raw)
+            data = robust_json_loads(raw)
 
             nodes = []
             for n in data.get("nodes", []):

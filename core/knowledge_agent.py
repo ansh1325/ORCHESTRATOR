@@ -6,12 +6,26 @@ Supports full-stack engineering, B2B agencies, Meta ads growth, and custom auton
 """
 
 import json
+import re
 import asyncio
 from typing import Dict, Any, Callable, Optional
 from core.models import KnowledgeBase, ExecutionEvent
 from core.mcp_server import MCPServer
 from core.config import settings
 from datetime import datetime, timezone
+
+def robust_json_loads(raw: str) -> dict:
+    """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    clean = str(raw).strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
+    if match:
+        clean = match.group(1).strip()
+    else:
+        first_brace = clean.find("{")
+        last_brace = clean.rfind("}")
+        if first_brace != -1 and last_brace > first_brace:
+            clean = clean[first_brace:last_brace + 1]
+    return json.loads(clean)
 
 MASTER_KB_FILE = settings.WORKSPACE_DIR / "master_knowledge_base.json"
 
@@ -555,7 +569,7 @@ class KnowledgeAgent:
             )
 
         resp = await asyncio.to_thread(_call_model)
-        data = json.loads(resp.choices[0].message.content)
+        data = robust_json_loads(resp.choices[0].message.content)
 
         return KnowledgeBase(
             session_id=session_id,

@@ -8,10 +8,24 @@ sales closing call, or zero-intervention autonomous execution) powered by Meta L
 import json
 import re
 import asyncio
+from pathlib import Path
 from typing import Dict, Any, List, Callable, Optional
 from core.models import ExecutionEvent
 from core.mcp_server import MCPServer
 from core.config import settings
+
+def robust_json_loads(raw: str) -> dict:
+    """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    clean = str(raw).strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
+    if match:
+        clean = match.group(1).strip()
+    else:
+        first_brace = clean.find("{")
+        last_brace = clean.rfind("}")
+        if first_brace != -1 and last_brace > first_brace:
+            clean = clean[first_brace:last_brace + 1]
+    return json.loads(clean)
 
 class EvaluatorGatekeeper:
     """Rigorous gatekeeper ensuring all deliverables meet production criteria before mission completion."""
@@ -40,7 +54,10 @@ class EvaluatorGatekeeper:
             await asyncio.sleep(0.4)
 
         flist = self.mcp.tool_file_list()
-        files = [f["path"] for f in flist.get("files", [])]
+        files = [
+            f["path"] for f in flist.get("files", [])
+            if not any(skip in f["path"] for skip in ["__pycache__", ".pytest_cache", ".git", ".venv", ".coverage"])
+        ]
         checks: List[Dict[str, Any]] = []
         overall_passed = True
         score = 100.0
@@ -57,7 +74,10 @@ class EvaluatorGatekeeper:
             score -= 40.0
 
         # Check 2: Pytest Test Suite Validation (if any test files exist)
-        test_files = [f for f in files if f.startswith("test_") or f.endswith("_test.py")]
+        test_files = [
+            f for f in files
+            if f.endswith(".py") and (Path(f).name.startswith("test_") or f.endswith("_test.py"))
+        ]
         for tf in test_files:
             py_res = self.mcp.tool_run_command(f"python -m pytest {tf} -q", timeout_sec=15)
             t_pass = (py_res.get("returncode") == 0)
@@ -234,7 +254,7 @@ class EvaluatorGatekeeper:
                 )
 
             resp = await asyncio.to_thread(_call_model)
-            return json.loads(resp.choices[0].message.content)
+            return robust_json_loads(resp.choices[0].message.content)
         except Exception:
             return self._fallback_evaluation(vision, files, score)
 

@@ -50,7 +50,7 @@ class MCPServer:
             f.write(content)
         return {
             "success": True,
-            "path": str(safe_path.relative_to(self.workspace_path)),
+            "path": str(safe_path.relative_to(self.workspace_path)).replace("\\", "/"),
             "bytes_written": len(content.encode("utf-8"))
         }
 
@@ -63,7 +63,7 @@ class MCPServer:
             content = f.read()
         return {
             "success": True,
-            "path": str(safe_path.relative_to(self.workspace_path)),
+            "path": str(safe_path.relative_to(self.workspace_path)).replace("\\", "/"),
             "content": content
         }
 
@@ -77,8 +77,11 @@ class MCPServer:
         for p in safe_dir.rglob("*"):
             if p.is_file():
                 rel = p.relative_to(self.workspace_path)
+                rel_str = str(rel).replace("\\", "/")
+                if any(skip in rel_str for skip in ["__pycache__", ".pytest_cache", ".git", ".venv", ".coverage"]):
+                    continue
                 files_list.append({
-                    "path": str(rel).replace("\\", "/"),
+                    "path": rel_str,
                     "size_bytes": p.stat().st_size
                 })
         return {"success": True, "files": files_list}

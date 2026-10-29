@@ -439,7 +439,8 @@ window.setMode = function(mode) {
       directiveInput.placeholder = "Enter directive to build (e.g. Build quantitative trading desk or creator software tool)...";
       directiveInput.focus();
     }
-    if (swarmDeck && swarmDeck.classList.contains("hidden")) {
+    // Only reveal swarm deck if active nodes exist
+    if (swarmDeck && Object.keys(state.dagNodes || {}).length > 0) {
       swarmDeck.classList.remove("hidden");
     }
   } else {
@@ -455,6 +456,10 @@ window.setMode = function(mode) {
     if (directiveInput) {
       directiveInput.placeholder = "Ask Jarvis anything (code, system architecture, capabilities)...";
       directiveInput.focus();
+    }
+    // In chat mode, hide swarm deck if empty
+    if (swarmDeck && Object.keys(state.dagNodes || {}).length === 0) {
+      swarmDeck.classList.add("hidden");
     }
   }
 };

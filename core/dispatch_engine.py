@@ -85,7 +85,7 @@ class CommunicationDispatchEngine:
             '"""\n\n'
             'import time\n'
             'import json\n'
-            'from typing import List\n\n'
+            'from typing import List, Dict, Any\n\n'
             'class BrowserEmailDispatcher:\n'
             '    def __init__(self, recipient: str = "' + recipient + '"):\n'
             '        self.recipient = recipient\n'

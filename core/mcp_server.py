@@ -11,7 +11,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 
 class MCPSandboxSecurityError(Exception):
     """Raised when a tool call attempts to breach workspace sandboxing boundaries."""
@@ -20,8 +20,8 @@ class MCPSandboxSecurityError(Exception):
 class MCPServer:
     """Standardized MCP JSON-RPC router for safe workspace and subprocess operations."""
     
-    def __init__(self, workspace_path: Path):
-        self.workspace_path = workspace_path.resolve()
+    def __init__(self, workspace_path: Union[Path, str]):
+        self.workspace_path = Path(workspace_path).resolve()
         self.workspace_path.mkdir(parents=True, exist_ok=True)
 
     def _resolve_safe_path(self, relative_path: str) -> Path:

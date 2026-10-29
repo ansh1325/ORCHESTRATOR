@@ -873,7 +873,7 @@ async function handleDirectiveSubmit(e) {
       } else if (analysis.combat_tier === "solo") {
         tierBadge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-semibold";
       } else {
-        tierBadge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-semibold";
+        tierBadge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/40 font-mono font-semibold";
       }
     }
 
@@ -1083,11 +1083,11 @@ function handleExecutionEvent(evt) {
       break;
 
     case "evaluation_passed":
-      appendLog(`★ [QUALITY GATEKEEPER] ${evt.message}`, "text-emerald-400 font-bold");
+      appendLog(`★ [QUALITY GATEKEEPER] ${evt.message}`, "text-amber-400 font-bold");
       break;
 
     case "done":
-      appendLog(`🎉 [MISSION ACCOMPLISHED] ${evt.message}`, "text-emerald-300 font-extrabold");
+      appendLog(`🎉 [MISSION ACCOMPLISHED] ${evt.message}`, "text-amber-300 font-extrabold");
       updateStageUI(5);
       showWorkDoneBanner(evt.data ? evt.data.deliverables : []);
       loadWorkHistory(); // Refresh work history list

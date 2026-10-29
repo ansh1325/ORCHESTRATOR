@@ -132,7 +132,22 @@ class WorkflowAndHistoryManager:
 
     def save_workflow(self, workflow_data: Dict[str, Any]):
         wfs = self.list_workflows()
-        wfs.append(workflow_data)
+        import uuid
+        wf_id = workflow_data.get("id") or f"wf_{uuid.uuid4().hex[:8]}"
+        workflow_data["id"] = wf_id
+        if "title" not in workflow_data and "name" in workflow_data:
+            workflow_data["title"] = workflow_data["name"]
+        if "prompt_template" not in workflow_data and "prompt" in workflow_data:
+            workflow_data["prompt_template"] = workflow_data["prompt"]
+        if "folder" not in workflow_data and "category" in workflow_data:
+            workflow_data["folder"] = workflow_data["category"]
+
+        existing_idx = next((i for i, w in enumerate(wfs) if w.get("id") == wf_id or (w.get("title") and w.get("title") == workflow_data.get("title"))), -1)
+        if existing_idx >= 0:
+            wfs[existing_idx] = workflow_data
+        else:
+            wfs.append(workflow_data)
+
         w_file = self.workspace_dir / "workflows.json"
         try:
             with open(w_file, "w", encoding="utf-8") as f:

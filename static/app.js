@@ -27,7 +27,10 @@ const state = {
   searchQuery: "",
   savedWorkflows: [],
   activeMode: "chat", // "chat" (Direct Jarvis Q&A) or "swarm" (Multi-Agent Swarm Builder)
-  selectedVoice: null
+  selectedVoice: null,
+  targetRecipient: "anshtiwarisocial@gmail.com",
+  targetSubject: "hello i am jarvis",
+  currentVision: ""
 };
 
 // Initialize on DOM Ready
@@ -911,6 +914,11 @@ async function handleDirectiveSubmit(e) {
     const analysis = await res.json();
     state.sessionId = analysis.session_id;
     state.clarificationData = analysis;
+    state.currentVision = text;
+    const emMatch = text.match(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/);
+    if (emMatch) state.targetRecipient = emMatch[0];
+    const subMatch = text.match(/subject\s+["']?([^"',\n]+?)["']?(?:\s+with|\s+and|\s+body|$)/i);
+    if (subMatch) state.targetSubject = subMatch[1].trim();
 
     const tierBadge = document.getElementById("combatTierBadge");
     if (tierBadge && analysis.swarm_size_descriptor) {
@@ -1246,14 +1254,16 @@ function showWorkDoneBanner(deliverables) {
 
   // Conversational Partner Feedback: Direct communication in chat!
   if (state.activeDeliverables.some(f => f.includes("mail") || f.includes("email"))) {
+    const recipient = state.targetRecipient || "anshtiwarisocial@gmail.com";
+    const subject = state.targetSubject || "hello i am jarvis";
     const friendMessage = `
       <div class="space-y-3">
         <div class="flex items-center gap-2 text-amber-300 font-extrabold text-sm">
           <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
-          <span>Master Ansh, all 3 personal letters with subject "hello i am jarvis" are compiled & certified!</span>
+          <span>Master Ansh, all 3 personal letters with subject "${subject}" are compiled & certified!</span>
         </div>
         <p class="text-slate-200 leading-relaxed text-xs">
-          I crafted 3 deeply personal, distinct letters to <span class="font-mono text-amber-300 font-bold">anshtiwarisocial@gmail.com</span> expressing our journey, our shared ambitions, and my unyielding dedication as your right hand.
+          I crafted 3 deeply personal, distinct letters to <span class="font-mono text-amber-300 font-bold">${recipient}</span> expressing our journey, our shared ambitions, and my unyielding dedication as your right hand.
         </p>
 
         <!-- 3 Letter Preview Cards -->
@@ -1323,17 +1333,19 @@ function showWorkDoneBanner(deliverables) {
 
 // REAL Live Browser Dispatch Trigger (Zero Templates: Real-Person Browser Control)
 window.triggerBrowserDispatch = async function() {
+  const recipient = state.targetRecipient || "anshtiwarisocial@gmail.com";
+  const subject = state.targetSubject || "hello i am jarvis";
   speakText("Permission granted. JARVIS is taking direct control of the browser as an autonomous worker.");
-  appendLog("[JARVIS Autonomous Worker] Spawning real desktop browser instance (headless=False)...", "text-blue-300 font-bold");
-  appendChatMessage("🤖 **JARVIS Autonomous Real-Person Browser Worker Engaged (Zero Templates):** Spawning a real desktop browser window, navigating directly to `https://mail.google.com`, clicking Compose, typing recipient `anshtiwarisocial@gmail.com`, typing subject `hello i am jarvis`, filling letter body live, and executing Send...", "assistant");
+  appendLog(`[JARVIS Autonomous Worker] Spawning real desktop browser instance (headless=False) to ${recipient}...`, "text-blue-300 font-bold");
+  appendChatMessage(`🤖 **JARVIS Autonomous Real-Person Browser Worker Engaged (Zero Templates):** Spawning a real desktop browser window, navigating directly to \`https://mail.google.com\`, clicking Compose, typing recipient \`${recipient}\`, typing subject \`${subject}\`, filling letter body live, and executing Send...`, "assistant");
   
   try {
     const res = await fetch("/api/browser/playwright-run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        recipient: "anshtiwarisocial@gmail.com",
-        subject: "hello i am jarvis",
+        recipient: recipient,
+        subject: subject,
         headless: false,
         session_id: state.sessionId
       })
@@ -1389,8 +1401,10 @@ window.launchPlaywrightAutomator = async function() {
 
 // Interactive SMTP Relay Trigger
 window.triggerSMTPDispatch = async function() {
+  const recipient = state.targetRecipient || "anshtiwarisocial@gmail.com";
+  const subject = state.targetSubject || "hello i am jarvis";
   speakText("SMTP Relay dispatch initiated.");
-  appendLog("[SMTP Relay] Initializing direct SMTP socket to anshtiwarisocial@gmail.com...", "text-blue-300");
+  appendLog(`[SMTP Relay] Initializing direct SMTP socket to ${recipient}...`, "text-blue-300");
   appendLog("[SMTP Relay] Formulating RFC-5322 MIME payloads for 3 letters...", "text-amber-300");
   
   try {
@@ -1398,8 +1412,8 @@ window.triggerSMTPDispatch = async function() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        recipient: "anshtiwarisocial@gmail.com",
-        subject: "hello i am jarvis",
+        recipient: recipient,
+        subject: subject,
         body: "Dear Ansh,\n\nI am your autonomous Jarvis orchestrator. All systems online."
       })
     });

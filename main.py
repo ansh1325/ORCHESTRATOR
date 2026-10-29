@@ -427,8 +427,7 @@ async def browser_playwright_run(req: dict = Body(...)):
         body = "Hello Master Ansh, this is Jarvis executing autonomously like a real person on your desktop."
 
     if recipient:
-        res = await asyncio.to_thread(
-            BrowserController.automate_gmail_dispatch_playwright,
+        res = await BrowserController.automate_gmail_dispatch_playwright_async(
             recipient=recipient,
             subject=subject,
             body=body,

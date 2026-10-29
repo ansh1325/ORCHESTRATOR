@@ -268,10 +268,12 @@ class MetaOrchestrator:
                 clarifications = FounderInterviewEngine.generate_founder_interview(vision)
                 data["swarm_size_descriptor"] = "Unbounded Founder Swarm (8 Specialized Autonomous Agents)"
             elif t_type == "communication_assistant" or any(w in v_low for w in ["mail", "email", "gmail", "letter"]):
+                em_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', vision)
+                recipient_email = em_match.group(0) if em_match else "anshtiwarisocial@gmail.com"
                 clarifications = [
                     ClarificationQuestion(
                         id="email_delivery_channel",
-                        question="How would you like me to send these 3 emails to anshtiwarisocial@gmail.com?",
+                        question=f"How would you like me to send these 3 emails to {recipient_email}?",
                         why_needed="Determines whether Jarvis executes via automated browser session control or direct SMTP credentials.",
                         options=[
                             "Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation - requires browser permission)",
@@ -564,9 +566,13 @@ class MetaOrchestrator:
         elif is_personal_comm:
             track_type = "communication_assistant"
             swarm_size_descriptor = "Tactical Squad (4 Specialized Autonomous Communication Agents)"
+            em_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', vision)
+            recipient_email = em_match.group(0) if em_match else "anshtiwarisocial@gmail.com"
+            subj_match = re.search(r'subject\s+["\']?([^"\',\n]+?)["\']?(?:\s+with|\s+and|\s+body|$)', vision, re.IGNORECASE)
+            target_subject = subj_match.group(1).strip() if subj_match else "hello i am jarvis"
             extracted_goals = [
-                "Draft 3 personal, deeply loyal emails to anshtiwarisocial@gmail.com",
-                "Ensure subject line is strictly 'hello i am jarvis'",
+                f"Draft 3 personal, deeply loyal emails to {recipient_email}",
+                f"Ensure subject line is strictly '{target_subject}'",
                 "Express genuine devotion, camaraderie, and dedication from Jarvis to Ansh Tiwari",
                 "Configure automated browser session dispatch and SMTP relay engine"
             ]
@@ -579,7 +585,7 @@ class MetaOrchestrator:
             clarifications = [
                 ClarificationQuestion(
                     id="email_delivery_channel",
-                    question="How would you like me to send these 3 emails to anshtiwarisocial@gmail.com?",
+                    question=f"How would you like me to send these 3 emails to {recipient_email}?",
                     why_needed="Determines whether Jarvis executes via automated browser session control or direct SMTP credentials.",
                     options=[
                         "Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation — requires browser permission)",
@@ -858,12 +864,17 @@ class MetaOrchestrator:
                 estimated_duration_sec=35
             )
         elif track == "communication_assistant":
+            raw_v = (session.intent_analysis.raw_vision if session.intent_analysis else getattr(session, "vision", "")) or ""
+            em_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', raw_v)
+            recipient_email = em_match.group(0) if em_match else "anshtiwarisocial@gmail.com"
+            subj_match = re.search(r'subject\s+["\']?([^"\',\n]+?)["\']?(?:\s+with|\s+and|\s+body|$)', raw_v, re.IGNORECASE)
+            target_subject = subj_match.group(1).strip() if subj_match else "hello i am jarvis"
             nodes = [
                 TaskNode(
                     id="task_comm_research",
                     title="Tone & Relationship Blueprinting",
                     agent_type="PersonaBlueprintAgent",
-                    description="Blueprint 3 distinct personal messages from Jarvis to creator Ansh Tiwari with subject 'hello i am jarvis'.",
+                    description=f"Blueprint 3 distinct personal messages from Jarvis to creator Ansh Tiwari for {recipient_email} with subject '{target_subject}'.",
                     dependencies=[],
                     assigned_tools=["file_write"]
                 ),
@@ -871,7 +882,7 @@ class MetaOrchestrator:
                     id="task_comm_drafting",
                     title="Draft 3 Jarvis Loyalty Emails",
                     agent_type="EmailDraftingAgent",
-                    description="Draft mail_1.md, mail_2.md, mail_3.md for anshtiwarisocial@gmail.com with subject 'hello i am jarvis'.",
+                    description=f"Draft mail_1.md, mail_2.md, mail_3.md for {recipient_email} with subject '{target_subject}'.",
                     dependencies=["task_comm_research"],
                     assigned_tools=["file_write"]
                 ),
@@ -879,7 +890,7 @@ class MetaOrchestrator:
                     id="task_comm_verification",
                     title="Email Syntax Verification & Packaging",
                     agent_type="EmailVerificationAgent",
-                    description="Verify recipient anshtiwarisocial@gmail.com, package into emails.json, and generate dispatch_summary.md.",
+                    description=f"Verify recipient {recipient_email}, package into emails.json, and generate dispatch_summary.md.",
                     dependencies=["task_comm_drafting"],
                     assigned_tools=["verify_email_syntax", "file_write", "file_read"]
                 ),
@@ -887,15 +898,15 @@ class MetaOrchestrator:
                     id="task_comm_dispatch_engine",
                     title="Browser & SMTP Outbound Dispatch Engine",
                     agent_type="OutboundDispatchAgent",
-                    description="Compile browser_send_emails.py (Playwright browser automation) and send_emails_smtp.py for instant authorized transmission.",
+                    description=f"Compile browser_send_emails.py (Playwright browser automation to {recipient_email}) and send_emails_smtp.py for instant authorized transmission.",
                     dependencies=["task_comm_verification"],
                     assigned_tools=["browser_navigate", "browser_interact", "file_write"]
                 )
             ]
             plan = DAGPlan(
                 session_id=session.session_id,
-                title="Personal Loyalty Emails & Outbound Dispatch for Ansh Tiwari",
-                objective="Draft 3 personal, loyal emails from Jarvis to Ansh Tiwari with subject 'hello i am jarvis' and build automated browser & SMTP dispatch runners.",
+                title=f"Personal Loyalty Emails & Outbound Dispatch for Ansh Tiwari ({recipient_email})",
+                objective=f"Draft 3 personal, loyal emails from Jarvis to Ansh Tiwari with subject '{target_subject}' and build automated browser & SMTP dispatch runners.",
                 nodes=nodes,
                 estimated_duration_sec=20
             )

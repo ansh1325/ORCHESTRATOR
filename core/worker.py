@@ -248,7 +248,12 @@ class DynamicWorkerEngine:
 
         if "comm" in tid or "draft" in tid or "mail" in tid or "dispatch" in tid:
             dispatch_engine = CommunicationDispatchEngine(self.mcp)
-            artifacts.extend(dispatch_engine.generate_personal_loyalty_package("anshtiwarisocial@gmail.com"))
+            combined_text = f"{task.description} {spec.system_prompt}"
+            em_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', combined_text)
+            recipient = em_match.group(0) if em_match else "anshtiwarisocial@gmail.com"
+            subj_match = re.search(r'subject\s+["\']?([^"\',\n]+?)["\']?(?:\s+with|\s+and|\s+body|$|\.)', combined_text, re.IGNORECASE)
+            subject = subj_match.group(1).strip() if subj_match else "hello i am jarvis"
+            artifacts.extend(dispatch_engine.generate_personal_loyalty_package(recipient=recipient, subject=subject))
 
         elif "kinematics" in tid:
             content = (

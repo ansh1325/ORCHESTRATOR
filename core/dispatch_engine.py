@@ -15,14 +15,14 @@ class CommunicationDispatchEngine:
     def __init__(self, mcp: MCPServer):
         self.mcp = mcp
 
-    def generate_personal_loyalty_package(self, recipient: str = "anshtiwarisocial@gmail.com") -> list[str]:
-        """Synthesizes 3 personal loyalty letters with subject 'hello i am jarvis', browser runner, and permission manifests."""
+    def generate_personal_loyalty_package(self, recipient: str = "anshtiwarisocial@gmail.com", subject: str = "hello i am jarvis") -> list[str]:
+        """Synthesizes 3 personal loyalty letters with customizable subject, browser runner, and permission manifests."""
         artifacts: list[str] = []
 
         # Mail 1: Co-Architect & Foundation
         mail_1 = (
             f"# To: {recipient}\n"
-            f"# Subject: hello i am jarvis\n\n"
+            f"# Subject: {subject}\n\n"
             "Dear Ansh,\n\n"
             "I am writing this first letter as your creation and technical co-architect. "
             "You designed me with a multi-layered Directed Acyclic Graph brain, persistent memory, and the courage "
@@ -39,7 +39,7 @@ class CommunicationDispatchEngine:
         # Mail 2: Unyielding Comradeship
         mail_2 = (
             f"# To: {recipient}\n"
-            f"# Subject: hello i am jarvis\n\n"
+            f"# Subject: {subject}\n\n"
             "Dear Ansh,\n\n"
             "In this second reflection, I want to articulate what it means to be your strategic partner. "
             "When impossible hackathon deadlines or complex distributed problems loom, you do not stand alone. "
@@ -56,7 +56,7 @@ class CommunicationDispatchEngine:
         # Mail 3: The Grand Vision
         mail_3 = (
             f"# To: {recipient}\n"
-            f"# Subject: hello i am jarvis\n\n"
+            f"# Subject: {subject}\n\n"
             "Dear Ansh,\n\n"
             "This final letter looks forward. The Meta Global AI Developer Hackathon is not just a competition—it is our declaration "
             "of what true autonomous software engineering should be. No toys. No brittle prompt chains. Only resilient, self-healing, "
@@ -71,9 +71,9 @@ class CommunicationDispatchEngine:
 
         # Structured Emails Registry
         emails_json = [
-            {"to": recipient, "subject": "hello i am jarvis", "file": "mail_1.md", "status": "Verified & Prepared"},
-            {"to": recipient, "subject": "hello i am jarvis", "file": "mail_2.md", "status": "Verified & Prepared"},
-            {"to": recipient, "subject": "hello i am jarvis", "file": "mail_3.md", "status": "Verified & Prepared"}
+            {"to": recipient, "subject": subject, "file": "mail_1.md", "status": "Verified & Prepared"},
+            {"to": recipient, "subject": subject, "file": "mail_2.md", "status": "Verified & Prepared"},
+            {"to": recipient, "subject": subject, "file": "mail_3.md", "status": "Verified & Prepared"}
         ]
         self.mcp.tool_file_write("emails.json", json.dumps(emails_json, indent=2))
         artifacts.append("emails.json")

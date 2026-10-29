@@ -2,7 +2,7 @@
 Unit & Integration Tests for Real Browser Controller & Dispatch Endpoints
 """
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -56,7 +56,7 @@ def test_api_email_smtp_send_without_creds():
     assert "No SMTP credentials configured" in data["error"]
 
 def test_api_playwright_mocked_run():
-    with patch.object(BrowserController, "automate_gmail_dispatch_playwright", return_value={"success": True, "action": "test_playwright"}) as mock_pw:
+    with patch.object(BrowserController, "automate_gmail_dispatch_playwright_async", new_callable=AsyncMock, return_value={"success": True, "action": "test_playwright"}) as mock_pw:
         res = client.post("/api/browser/playwright-run", json={
             "recipient": "anshtiwarisocial@gmail.com",
             "subject": "hello i am jarvis",
@@ -66,5 +66,6 @@ def test_api_playwright_mocked_run():
         data = res.json()
         assert data["success"] is True
         assert data["action"] == "test_playwright"
+        mock_pw.assert_called_once()
         mock_pw.assert_called_once()
 

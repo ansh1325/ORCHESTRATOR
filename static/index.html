@@ -241,13 +241,25 @@
         <span id="voiceText" class="hidden sm:inline">Audio: ON</span>
       </button>
 
+      <!-- Quick Access: 24/7 Scheduler -->
+      <button type="button" id="openSchedulerBtn" onclick="openSchedulerModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-950/80 hover:bg-blue-900 border border-blue-400/40 text-xs font-semibold text-amber-300 transition cursor-pointer" title="24/7 Background Scheduler">
+        <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span class="hidden md:inline">24/7 Scheduler</span>
+      </button>
+
+      <!-- Quick Access: Saved Workflows -->
+      <button type="button" id="openWorkflowsBtn" onclick="openWorkflowsModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-950/80 hover:bg-blue-900 border border-blue-400/40 text-xs font-semibold text-blue-200 hover:text-amber-300 transition cursor-pointer" title="Saved Reusable Workflows">
+        <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span class="hidden md:inline">Workflows</span>
+      </button>
+
       <!-- Pin Active Mission Button -->
-      <button id="pinCurrentChatBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-card hover:bg-amber-500/20 border border-brand-border hover:border-amber-500/40 text-xs font-semibold text-slate-300 hover:text-amber-300 transition" title="Pin this mission to top">
+      <button type="button" id="pinCurrentChatBtn" onclick="togglePinCurrentMission()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-card hover:bg-amber-500/20 border border-brand-border hover:border-amber-500/40 text-xs font-semibold text-slate-300 hover:text-amber-300 transition cursor-pointer" title="Pin this mission to top">
         <i data-lucide="pin" id="pinCurrentChatIcon" class="w-3.5 h-3.5"></i>
         <span id="pinCurrentChatLabel" class="hidden sm:inline">Pin</span>
       </button>
 
-      <button id="newDirectiveBtn" class="p-2 rounded-xl bg-brand-card hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 border border-brand-border transition" title="Start Fresh Chat">
+      <button type="button" id="newDirectiveBtn" class="p-2 rounded-xl bg-brand-card hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 border border-brand-border transition cursor-pointer" title="Start Fresh Chat">
         <i data-lucide="plus" class="w-4 h-4"></i>
       </button>
     </div>
@@ -504,6 +516,24 @@
             <span id="modeDescription" class="text-slate-400 font-mono text-[10px]">Asking questions & direct conversation</span>
           </div>
 
+          <!-- Quick Blueprint Shortcuts (1-Click Launch) -->
+          <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 text-[11px] px-1 select-none">
+            <span class="text-slate-500 font-mono text-[10px] shrink-0">Quick Blueprints:</span>
+            <button type="button" onclick="loadQuickBlueprint('emails')" class="quick-pill shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-950/60 hover:bg-blue-900 border border-blue-500/30 text-amber-300 font-medium transition cursor-pointer">
+              <span>💌 3 Personal Emails</span>
+            </button>
+            <button type="button" onclick="loadQuickBlueprint('schedule_6am')" class="quick-pill shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-950/60 hover:bg-blue-900 border border-amber-500/30 text-amber-300 font-medium transition cursor-pointer">
+              <i data-lucide="clock" class="w-3 h-3 text-amber-400"></i>
+              <span>Daily 6 AM Schedule</span>
+            </button>
+            <button type="button" onclick="loadQuickBlueprint('agency')" class="quick-pill shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-950/60 hover:bg-blue-900 border border-blue-500/30 text-slate-300 hover:text-white transition cursor-pointer">
+              <span>🚀 B2B Agency Swarm</span>
+            </button>
+            <button type="button" onclick="loadQuickBlueprint('telemetry')" class="quick-pill shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-950/60 hover:bg-blue-900 border border-blue-500/30 text-slate-300 hover:text-white transition cursor-pointer">
+              <span>🛡️ Telemetry Microservice</span>
+            </button>
+          </div>
+
           <!-- Input Bar -->
           <form id="directiveForm" class="relative flex items-center bg-brand-black border border-brand-border focus-within:border-amber-400 rounded-2xl shadow-2xl transition">
             <input type="text" id="directiveInput" class="w-full bg-transparent px-5 py-3.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none" placeholder="Ask Jarvis anything, or enter an engineering/business vision to compile...">
@@ -557,6 +587,88 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20261029_v6_swarm_click_fixed"></script>
+  <!-- 24/7 PERSISTENT SCHEDULER MODAL -->
+  <div id="schedulerModal" class="fixed inset-0 bg-brand-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeSchedulerModal()">
+    <div class="glass-card border border-amber-400/40 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-brand-border">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-400 flex items-center justify-center border border-amber-400/50 shadow-md">
+            <i data-lucide="clock" class="w-5 h-5 text-amber-400"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">24/7 Autonomous PC Scheduler</h3>
+            <p class="text-xs text-amber-200/80">Runs persistently on your PC in the background. Missions trigger automatically on time.</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeSchedulerModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Quick Add Schedule Buttons -->
+      <div class="p-3 rounded-xl bg-brand-black/70 border border-brand-border space-y-2">
+        <div class="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>1-Click Preset Schedules:</span>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <button type="button" onclick="addPresetSchedule(6, 0, 'Everyday at 6:00 AM: Scrape 20 leads and draft personalized emails')" class="px-3 py-1.5 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-amber-300 border border-amber-400/30 font-semibold transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3 h-3"></i>
+            <span>Daily at 6:00 AM (Lead Outreach)</span>
+          </button>
+          <button type="button" onclick="addPresetSchedule(9, 0, 'Every morning at 9:00 AM: Compile quantitative market momentum and backtest metrics')" class="px-3 py-1.5 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-400/30 font-semibold transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3 h-3"></i>
+            <span>Daily at 9:00 AM (Quant Alpha)</span>
+          </button>
+          <button type="button" onclick="promptAddSchedule()" class="px-3 py-1.5 rounded-lg bg-brand-surface hover:bg-brand-card text-slate-300 border border-brand-border font-semibold transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-3 h-3"></i>
+            <span>+ Custom Directive</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Schedules List -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+          <span>Active Scheduled Daemons:</span>
+          <span class="text-amber-300" id="schedulerModalCount">0 Schedules</span>
+        </div>
+        <div id="modalSchedulesList" class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1 text-xs"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REUSABLE WORKFLOWS MODAL -->
+  <div id="workflowsModal" class="fixed inset-0 bg-brand-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeWorkflowsModal()">
+    <div class="glass-card border border-amber-400/40 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-brand-border">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/50 shadow-md">
+            <i data-lucide="layers" class="w-5 h-5 text-amber-400"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Reusable Workflow Blueprints</h3>
+            <p class="text-xs text-blue-200/80">Pre-compiled multi-agent execution blueprints. 1-click to load and execute.</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeWorkflowsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
+        <span class="text-xs text-slate-400 font-mono">Select a blueprint to load:</span>
+        <button type="button" onclick="saveActivePromptAsWorkflow()" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px] hover:bg-amber-500/30 transition cursor-pointer flex items-center gap-1">
+          <i data-lucide="bookmark-plus" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Save Current Directive</span>
+        </button>
+      </div>
+
+      <!-- Live Workflows Grid -->
+      <div id="modalWorkflowsList" class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar pr-1 text-xs"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=20261029_v7_hub_and_modals"></script>
 </body>
 </html>

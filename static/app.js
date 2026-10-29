@@ -1524,6 +1524,24 @@ async function togglePinTask(sessionId, isPinned) {
   }
 }
 
+// 1-Click Pin Current Mission Toggle (Works from Header)
+window.togglePinCurrentMission = async function() {
+  let sid = state.sessionId;
+  if (!sid && state.historyItems && state.historyItems.length > 0) {
+    sid = state.historyItems[0].session_id;
+    state.sessionId = sid;
+  }
+  if (!sid) {
+    appendChatMessage("📌 **Pin Chat:** No active mission session yet. Run or click a mission to lock it to the top of your workspace.", "assistant");
+    return;
+  }
+  const current = (state.historyItems || []).find(h => h.session_id === sid);
+  const newPinned = current ? !current.is_pinned : true;
+  await togglePinTask(sid, newPinned);
+  updatePinButtonUI(newPinned);
+  appendChatMessage(newPinned ? "📌 **Mission Pinned to Top:** This mission is now permanently locked at the top of your history." : "📌 **Mission Unpinned:** Standard history chronological sorting restored.", "assistant");
+};
+
 // Update Top Pin Button UI
 function updatePinButtonUI(isPinned) {
   const icon = document.getElementById("pinCurrentChatIcon");
@@ -1533,71 +1551,227 @@ function updatePinButtonUI(isPinned) {
   if (isPinned) {
     if (icon) icon.className = "w-3.5 h-3.5 fill-amber-400 text-amber-400";
     if (label) label.textContent = "Pinned";
-    btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/50 text-xs font-semibold text-amber-300 transition shadow-sm shadow-amber-500/20";
+    btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/50 text-xs font-semibold text-amber-300 transition shadow-sm shadow-amber-500/20 cursor-pointer";
   } else {
     if (icon) icon.className = "w-3.5 h-3.5 text-slate-400";
     if (label) label.textContent = "Pin";
-    btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-card hover:bg-amber-500/20 border border-brand-border hover:border-amber-500/40 text-xs font-semibold text-slate-300 hover:text-amber-300 transition";
+    btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-card hover:bg-amber-500/20 border border-brand-border hover:border-amber-500/40 text-xs font-semibold text-slate-300 hover:text-amber-300 transition cursor-pointer";
   }
 }
 
-// Load Saved Reusable Workflows
+// Quick Access Modal Openers & Closers
+window.openSchedulerModal = function() {
+  const m = document.getElementById("schedulerModal");
+  if (m) m.classList.remove("hidden");
+  loadSchedules();
+};
+window.closeSchedulerModal = function() {
+  const m = document.getElementById("schedulerModal");
+  if (m) m.classList.add("hidden");
+};
+
+window.openWorkflowsModal = function() {
+  const m = document.getElementById("workflowsModal");
+  if (m) m.classList.remove("hidden");
+  loadSavedWorkflows();
+};
+window.closeWorkflowsModal = function() {
+  const m = document.getElementById("workflowsModal");
+  if (m) m.classList.add("hidden");
+};
+
+// Quick Blueprint Shortcuts
+window.loadQuickBlueprint = function(key) {
+  const input = document.getElementById("directiveInput");
+  if (!input) return;
+
+  if (key === 'emails') {
+    input.value = "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line hello i am jarvis and body with whatever you feel for me";
+    window.setMode('swarm');
+  } else if (key === 'schedule_6am') {
+    input.value = "do this particular work for everyday at 6am: scrape 20 SaaS CTO leads, craft RFC-5322 outreach sequences, and stage browser automation scripts";
+    window.setMode('swarm');
+  } else if (key === 'agency') {
+    input.value = "I know full-stack dev, build me a business and find me clients";
+    window.setMode('swarm');
+  } else if (key === 'telemetry') {
+    input.value = "Build an authenticated telemetry microservice with JWT & tests";
+    window.setMode('swarm');
+  }
+  input.focus();
+  appendChatMessage(`⚡ **Blueprint Loaded:** "${input.value}". Press Enter or click Send to launch the sub-agent army.`, "assistant");
+};
+
+// 1-Click Preset Schedule Generator
+window.addPresetSchedule = async function(hour, minute, promptText) {
+  const title = `Daily ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} - ${promptText.slice(0, 25)}`;
+  try {
+    const res = await fetch("/api/schedules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: title,
+        prompt: promptText,
+        hour: hour,
+        minute: minute,
+        schedule_cron: `Daily ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+        is_active: true
+      })
+    });
+    await res.json();
+    await loadSchedules();
+    appendChatMessage(`⏰ **24/7 Autonomous PC Schedule Added:** "${title}". LlamaOrchestrator will run this daily on your PC at ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}.`, "assistant");
+    speakText(`Autonomous 24/7 mission scheduled for Daily at ${hour} AM.`);
+    window.closeSchedulerModal();
+  } catch (err) {
+    alert("Could not register schedule: " + err.message);
+  }
+};
+
+// 1-Click Save Active Prompt as Reusable Workflow
+window.saveActivePromptAsWorkflow = async function() {
+  const input = document.getElementById("directiveInput");
+  const promptVal = (input && input.value.trim()) ? input.value.trim() : (state.sessionId ? "Active Mission Blueprint" : "");
+  if (!promptVal) {
+    alert("Please enter a directive in the input box first, or run a mission to save it.");
+    return;
+  }
+  const name = window.prompt("Name this reusable workflow blueprint:", promptVal.slice(0, 30));
+  if (!name) return;
+
+  try {
+    await fetch("/api/workflows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: name,
+        name: name,
+        folder: "Custom",
+        prompt: promptVal,
+        prompt_template: promptVal
+      })
+    });
+    await loadSavedWorkflows();
+    appendChatMessage(`Saved workflow blueprint "${name}" to your catalog.`, "assistant");
+  } catch (err) {
+    alert("Could not save workflow: " + err.message);
+  }
+};
+
+// Load Saved Reusable Workflows (Populates Sidebar and Modal)
 async function loadSavedWorkflows() {
   const container = document.getElementById("workflowsList");
-  if (!container) return;
+  const modalContainer = document.getElementById("modalWorkflowsList");
 
   try {
     const res = await fetch("/api/workflows");
     const workflows = await res.json();
     state.savedWorkflows = workflows || [];
 
-    if (state.savedWorkflows.length === 0) {
-      container.innerHTML = '<div class="text-[11px] text-slate-500 py-1">No workflows saved yet.</div>';
-      return;
+    if (container) {
+      if (state.savedWorkflows.length === 0) {
+        container.innerHTML = '<div class="text-[11px] text-slate-500 py-1">No workflows saved yet.</div>';
+      } else {
+        container.innerHTML = "";
+        state.savedWorkflows.forEach(wf => {
+          const itemDiv = document.createElement("div");
+          itemDiv.className = "w-full p-2 rounded-lg bg-brand-card hover:bg-brand-card/90 border border-brand-border hover:border-amber-500/40 text-xs transition flex items-center justify-between gap-1 group";
+          const title = wf.title || wf.name || "Custom Workflow";
+          const promptVal = wf.prompt || wf.prompt_template || "";
+          const wfId = wf.id || wf.name;
+
+          itemDiv.innerHTML = `
+            <button class="flex-1 text-left truncate flex items-center gap-1.5 text-slate-300 group-hover:text-amber-300 cursor-pointer">
+              <i data-lucide="play-circle" class="w-3.5 h-3.5 text-amber-400/80 shrink-0"></i>
+              <span class="truncate font-semibold text-[11px]">${escapeHtml(title)}</span>
+            </button>
+            <button class="delete-wf-btn text-slate-500 hover:text-rose-400 p-1 rounded transition opacity-60 hover:opacity-100 cursor-pointer" title="Delete Workflow">
+              <i data-lucide="trash-2" class="w-3 h-3"></i>
+            </button>
+          `;
+
+          itemDiv.querySelector("button.flex-1").addEventListener("click", () => {
+            const input = document.getElementById("directiveInput");
+            if (input) {
+              input.value = promptVal;
+              window.setMode('swarm');
+              input.focus();
+            }
+          });
+
+          itemDiv.querySelector(".delete-wf-btn").addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!confirm(`Delete saved workflow "${title}"?`)) return;
+            try {
+              await fetch(`/api/workflows/${encodeURIComponent(wfId)}`, { method: "DELETE" });
+              loadSavedWorkflows();
+            } catch (err) {
+              alert("Error deleting workflow: " + err.message);
+            }
+          });
+          container.appendChild(itemDiv);
+        });
+      }
     }
 
-    container.innerHTML = "";
-    state.savedWorkflows.forEach(wf => {
-      const itemDiv = document.createElement("div");
-      itemDiv.className = "w-full p-2 rounded-lg bg-brand-card hover:bg-brand-card/90 border border-brand-border hover:border-amber-500/40 text-xs transition flex items-center justify-between gap-1 group";
-      
-      const title = wf.title || wf.name || "Custom Workflow";
-      const promptVal = wf.prompt || wf.prompt_template || "";
-      const wfId = wf.id || wf.name;
+    // Also populate Modal Workflows List
+    if (modalContainer) {
+      modalContainer.innerHTML = "";
+      state.savedWorkflows.forEach(wf => {
+        const title = wf.title || wf.name || "Custom Workflow";
+        const promptVal = wf.prompt || wf.prompt_template || "";
+        const desc = wf.description || promptVal.slice(0, 80);
+        const wfId = wf.id || wf.name;
 
-      itemDiv.innerHTML = `
-        <button class="flex-1 text-left truncate flex items-center gap-1.5 text-slate-300 group-hover:text-amber-300">
-          <i data-lucide="play-circle" class="w-3.5 h-3.5 text-amber-400/80 shrink-0"></i>
-          <span class="truncate font-semibold text-[11px]">${escapeHtml(title)}</span>
-        </button>
-        <button class="delete-wf-btn text-slate-500 hover:text-rose-400 p-1 rounded transition opacity-60 hover:opacity-100" title="Delete Workflow">
-          <i data-lucide="trash-2" class="w-3 h-3"></i>
-        </button>
-      `;
+        const card = document.createElement("div");
+        card.className = "p-3 rounded-xl bg-brand-surface/90 border border-brand-border hover:border-amber-400/50 transition space-y-2";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-lg bg-blue-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="font-bold text-xs text-white">${escapeHtml(title)}</span>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-amber-300 border border-blue-500/30">${escapeHtml(wf.folder || "Blueprint")}</span>
+          </div>
+          <p class="text-[11px] text-slate-300 line-clamp-2">${escapeHtml(desc)}</p>
+          <div class="flex items-center justify-between pt-1 border-t border-brand-border/40">
+            <button class="launch-modal-wf-btn px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md">
+              <i data-lucide="play" class="w-3 h-3 fill-current"></i>
+              <span>Load & Run</span>
+            </button>
+            <button class="delete-modal-wf-btn text-slate-500 hover:text-rose-400 p-1 rounded transition cursor-pointer" title="Delete Workflow">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
 
-      // Click to load into prompt input
-      itemDiv.querySelector("button.flex-1").addEventListener("click", () => {
-        const input = document.getElementById("directiveInput");
-        if (input) {
-          input.value = promptVal;
-          input.focus();
-        }
+        card.querySelector(".launch-modal-wf-btn").addEventListener("click", () => {
+          const input = document.getElementById("directiveInput");
+          if (input) {
+            input.value = promptVal;
+            window.setMode('swarm');
+            input.focus();
+          }
+          window.closeWorkflowsModal();
+          appendChatMessage(`Loaded workflow blueprint "${title}". Ready to launch.`, "assistant");
+        });
+
+        card.querySelector(".delete-modal-wf-btn").addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (!confirm(`Delete workflow blueprint "${title}"?`)) return;
+          try {
+            await fetch(`/api/workflows/${encodeURIComponent(wfId)}`, { method: "DELETE" });
+            loadSavedWorkflows();
+          } catch (err) {
+            alert("Error: " + err.message);
+          }
+        });
+
+        modalContainer.appendChild(card);
       });
-
-      // Delete workflow
-      itemDiv.querySelector(".delete-wf-btn").addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (!confirm(`Delete saved workflow "${title}"?`)) return;
-        try {
-          await fetch(`/api/workflows/${encodeURIComponent(wfId)}`, { method: "DELETE" });
-          loadSavedWorkflows();
-        } catch (err) {
-          alert("Error deleting workflow: " + err.message);
-        }
-      });
-
-      container.appendChild(itemDiv);
-    });
+    }
 
     if (window.lucide) lucide.createIcons();
   } catch (err) {
@@ -1605,96 +1779,176 @@ async function loadSavedWorkflows() {
   }
 }
 
-// Load 24/7 Autonomous PC Schedules
+// Load 24/7 Autonomous PC Schedules (Populates Sidebar and Modal)
 async function loadSchedules() {
   const container = document.getElementById("schedulesList");
-  if (!container) return;
+  const modalContainer = document.getElementById("modalSchedulesList");
+  const modalCount = document.getElementById("schedulerModalCount");
 
   try {
     const res = await fetch("/api/schedules");
     const schedules = await res.json();
     state.schedules = schedules || [];
 
-    if (state.schedules.length === 0) {
-      container.innerHTML = '<div class="text-[11px] text-slate-500 py-1">No 24/7 schedules yet. Click "+ Daily 6AM" to add one!</div>';
-      return;
+    if (modalCount) {
+      modalCount.textContent = `${state.schedules.length} Active Daemons`;
     }
 
-    container.innerHTML = "";
-    state.schedules.forEach(sc => {
-      const card = document.createElement("div");
-      card.className = "p-2 rounded-lg bg-brand-card/90 border border-brand-border hover:border-amber-500/40 transition space-y-1.5";
-      
-      const isActive = sc.is_active !== false;
-      const timeLabel = sc.schedule_cron || `Daily ${String(sc.hour !== undefined ? sc.hour : 6).padStart(2, '0')}:${String(sc.minute !== undefined ? sc.minute : 0).padStart(2, '0')}`;
-      const runCount = sc.run_count || 0;
-      const tid = sc.task_id || sc.id;
-      
-      card.innerHTML = `
-        <div class="flex items-center justify-between gap-1">
-          <div class="flex items-center gap-1.5 truncate">
-            <span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}"></span>
-            <span class="font-bold text-[11px] text-amber-200 truncate">${escapeHtml(sc.title || "Scheduled Mission")}</span>
-          </div>
-          <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-950/80 text-amber-300 border border-amber-500/30">${escapeHtml(timeLabel)}</span>
-        </div>
-        <p class="text-[10px] text-slate-400 truncate">${escapeHtml(sc.prompt)}</p>
-        <div class="flex items-center justify-between pt-1 border-t border-brand-border/40 text-[10px]">
-          <span class="text-slate-500 font-mono">Runs: ${runCount}</span>
-          <div class="flex items-center gap-1.5">
-            <button class="sched-run-now px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition" title="Force execute now in background">
-              Run Now
-            </button>
-            <button class="sched-toggle-btn text-slate-400 hover:text-amber-300 transition" title="${isActive ? 'Pause Schedule' : 'Resume Schedule'}">
-              <i data-lucide="${isActive ? 'pause-circle' : 'play-circle'}" class="w-3.5 h-3.5"></i>
-            </button>
-            <button class="sched-delete-btn text-slate-500 hover:text-rose-400 transition" title="Delete Schedule">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
-      `;
+    // Populate Sidebar schedules
+    if (container) {
+      if (state.schedules.length === 0) {
+        container.innerHTML = '<div class="text-[11px] text-slate-500 py-1">No 24/7 schedules yet. Click "+ Daily 6AM" to add one!</div>';
+      } else {
+        container.innerHTML = "";
+        state.schedules.forEach(sc => {
+          const card = document.createElement("div");
+          card.className = "p-2 rounded-lg bg-brand-card/90 border border-brand-border hover:border-amber-500/40 transition space-y-1.5";
+          const isActive = sc.is_active !== false;
+          const timeLabel = sc.schedule_cron || `Daily ${String(sc.hour !== undefined ? sc.hour : 6).padStart(2, '0')}:${String(sc.minute !== undefined ? sc.minute : 0).padStart(2, '0')}`;
+          const runCount = sc.run_count || 0;
+          const tid = sc.task_id || sc.id;
 
-      // Run Now button
-      card.querySelector(".sched-run-now").addEventListener("click", async () => {
-        try {
-          const r = await fetch(`/api/schedules/${encodeURIComponent(tid)}/run-now`, { method: "POST" });
-          const d = await r.json();
-          appendChatMessage(`⏰ **Manual Execution Triggered:** Running scheduled mission "${sc.title}" in background on this PC now...`, "assistant");
-          speakVoice("Triggering scheduled mission in background.");
-          setTimeout(loadWorkHistory, 2000);
-        } catch (err) {
-          alert("Error executing schedule: " + err.message);
-        }
-      });
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-1">
+              <div class="flex items-center gap-1.5 truncate">
+                <span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-amber-400 animate-pulse' : 'bg-slate-500'}"></span>
+                <span class="font-bold text-[11px] text-amber-200 truncate">${escapeHtml(sc.title || "Scheduled Mission")}</span>
+              </div>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-950/80 text-amber-300 border border-amber-500/30">${escapeHtml(timeLabel)}</span>
+            </div>
+            <p class="text-[10px] text-slate-400 truncate">${escapeHtml(sc.prompt)}</p>
+            <div class="flex items-center justify-between pt-1 border-t border-brand-border/40 text-[10px]">
+              <span class="text-slate-500 font-mono">Runs: ${runCount}</span>
+              <div class="flex items-center gap-1.5">
+                <button class="sched-run-now px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition cursor-pointer" title="Force execute now in background">
+                  Run Now
+                </button>
+                <button class="sched-toggle-btn text-slate-400 hover:text-amber-300 transition cursor-pointer" title="${isActive ? 'Pause Schedule' : 'Resume Schedule'}">
+                  <i data-lucide="${isActive ? 'pause-circle' : 'play-circle'}" class="w-3.5 h-3.5"></i>
+                </button>
+                <button class="sched-delete-btn text-slate-500 hover:text-rose-400 transition cursor-pointer" title="Delete Schedule">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          `;
 
-      // Toggle Pause/Resume
-      card.querySelector(".sched-toggle-btn").addEventListener("click", async () => {
-        try {
-          await fetch(`/api/schedules/${encodeURIComponent(tid)}/toggle`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ is_active: !isActive })
+          card.querySelector(".sched-run-now").addEventListener("click", async () => {
+            try {
+              await fetch(`/api/schedules/${encodeURIComponent(tid)}/run-now`, { method: "POST" });
+              appendChatMessage(`⏰ **Manual Execution Triggered:** Running scheduled mission "${sc.title}" in background on this PC now...`, "assistant");
+              speakText("Triggering scheduled mission in background.");
+              setTimeout(loadWorkHistory, 2000);
+            } catch (err) {
+              alert("Error executing schedule: " + err.message);
+            }
           });
-          loadSchedules();
-        } catch (err) {
-          alert("Error toggling schedule: " + err.message);
-        }
-      });
 
-      // Delete Schedule
-      card.querySelector(".sched-delete-btn").addEventListener("click", async () => {
-        if (!confirm(`Delete recurring schedule "${sc.title}"?`)) return;
-        try {
-          await fetch(`/api/schedules/${encodeURIComponent(tid)}`, { method: "DELETE" });
-          loadSchedules();
-        } catch (err) {
-          alert("Error deleting schedule: " + err.message);
-        }
-      });
+          card.querySelector(".sched-toggle-btn").addEventListener("click", async () => {
+            try {
+              await fetch(`/api/schedules/${encodeURIComponent(tid)}/toggle`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ is_active: !isActive })
+              });
+              loadSchedules();
+            } catch (err) {
+              alert("Error toggling schedule: " + err.message);
+            }
+          });
 
-      container.appendChild(card);
-    });
+          card.querySelector(".sched-delete-btn").addEventListener("click", async () => {
+            if (!confirm(`Delete recurring schedule "${sc.title}"?`)) return;
+            try {
+              await fetch(`/api/schedules/${encodeURIComponent(tid)}`, { method: "DELETE" });
+              loadSchedules();
+            } catch (err) {
+              alert("Error deleting schedule: " + err.message);
+            }
+          });
+          container.appendChild(card);
+        });
+      }
+    }
+
+    // Populate Modal schedules
+    if (modalContainer) {
+      if (state.schedules.length === 0) {
+        modalContainer.innerHTML = '<div class="text-xs text-slate-400 py-3 text-center">No persistent schedules active. Click a preset above to activate daily runs.</div>';
+      } else {
+        modalContainer.innerHTML = "";
+        state.schedules.forEach(sc => {
+          const isActive = sc.is_active !== false;
+          const timeLabel = sc.schedule_cron || `Daily ${String(sc.hour !== undefined ? sc.hour : 6).padStart(2, '0')}:${String(sc.minute !== undefined ? sc.minute : 0).padStart(2, '0')}`;
+          const tid = sc.task_id || sc.id;
+
+          const card = document.createElement("div");
+          card.className = "p-3 rounded-xl bg-brand-surface/90 border border-brand-border hover:border-amber-400/40 transition space-y-2";
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full ${isActive ? 'bg-amber-400 animate-pulse' : 'bg-slate-500'}"></span>
+                <span class="font-bold text-xs text-white">${escapeHtml(sc.title || "Daily Mission")}</span>
+              </div>
+              <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-950 text-amber-300 border border-amber-400/40">${escapeHtml(timeLabel)}</span>
+            </div>
+            <p class="text-[11px] text-slate-300 line-clamp-2">${escapeHtml(sc.prompt)}</p>
+            <div class="flex items-center justify-between pt-1 border-t border-brand-border/40 text-[11px]">
+              <span class="text-slate-400 font-mono">Status: <strong class="${isActive ? 'text-amber-300' : 'text-slate-500'}">${isActive ? 'Active (Daemon Running)' : 'Paused'}</strong></span>
+              <div class="flex items-center gap-2">
+                <button class="modal-run-now-btn px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold transition cursor-pointer flex items-center gap-1">
+                  <i data-lucide="play" class="w-3 h-3 fill-current"></i>
+                  <span>Run Now</span>
+                </button>
+                <button class="modal-toggle-btn px-2.5 py-1 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-400/40 font-semibold transition cursor-pointer">
+                  ${isActive ? 'Pause' : 'Resume'}
+                </button>
+                <button class="modal-delete-btn text-slate-500 hover:text-rose-400 p-1 transition cursor-pointer" title="Delete">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          `;
+
+          card.querySelector(".modal-run-now-btn").addEventListener("click", async () => {
+            try {
+              await fetch(`/api/schedules/${encodeURIComponent(tid)}/run-now`, { method: "POST" });
+              appendChatMessage(`⏰ **Executing Scheduled Mission:** Running "${sc.title}" in background on host PC...`, "assistant");
+              speakText("Executing scheduled mission in background.");
+              window.closeSchedulerModal();
+              setTimeout(loadWorkHistory, 2000);
+            } catch (err) {
+              alert("Error: " + err.message);
+            }
+          });
+
+          card.querySelector(".modal-toggle-btn").addEventListener("click", async () => {
+            try {
+              await fetch(`/api/schedules/${encodeURIComponent(tid)}/toggle`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ is_active: !isActive })
+              });
+              loadSchedules();
+            } catch (err) {
+              alert("Error: " + err.message);
+            }
+          });
+
+          card.querySelector(".modal-delete-btn").addEventListener("click", async () => {
+            if (!confirm(`Delete recurring schedule "${sc.title}"?`)) return;
+            try {
+              await fetch(`/api/schedules/${encodeURIComponent(tid)}`, { method: "DELETE" });
+              loadSchedules();
+            } catch (err) {
+              alert("Error: " + err.message);
+            }
+          });
+
+          modalContainer.appendChild(card);
+        });
+      }
+    }
 
     if (window.lucide) lucide.createIcons();
   } catch (err) {

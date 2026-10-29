@@ -13,7 +13,7 @@ try:
     from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
     from core.config import settings  # pyright: ignore[reportMissingImports]
     from core.dispatch_engine import CommunicationDispatchEngine  # pyright: ignore[reportMissingImports]
-except (ImportError, ModuleNotFoundError):
+except ImportError:
     from .models import TaskNode, SubAgentSpec, ExecutionEvent  # type: ignore # pyright: ignore[reportMissingImports]
     from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
     from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
@@ -27,7 +27,7 @@ def robust_json_loads(raw: Optional[str]) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
     if not raw:
         return {}
-    clean = str(raw).strip()
+    clean = raw.strip()
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
     if match:
         clean = match.group(1).strip()

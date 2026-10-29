@@ -23,7 +23,7 @@ try:
         ExecutionEvent,
         KnowledgeBase
     )
-except (ImportError, ModuleNotFoundError):
+except ImportError:
     from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
     from .models import (  # type: ignore # pyright: ignore[reportMissingImports]
         IntentAnalysis,
@@ -41,7 +41,7 @@ def robust_json_loads(raw: Optional[str]) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
     if not raw:
         return {}
-    clean = str(raw).strip()
+    clean = raw.strip()
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
     if match:
         clean = match.group(1).strip()

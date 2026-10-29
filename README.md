@@ -4,13 +4,9 @@
 
 [![Meta Global AI Developer Hackathon 2026](https://img.shields.io/badge/Meta%20Hackathon-2026%20Official%20Submission-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 [![Track](https://img.shields.io/badge/Track-Indie%20Dev%20%24150K%20%2B%20Agentic%20%245K-gold.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Python 3.14+](https://img.shields.io/badge/Python-3.14%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Production%20REST%20%26%20SSE-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Tests Passing](https://img.shields.io/badge/Pytest-15%2F15%20Certified%20(100%25)-brightgreen.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Sandboxed MCP](https://img.shields.io/badge/Security-Zero--Trust%20MCP%20Sandbox-success.svg)](https://github.com/ansh1325/ORCHESTRATOR)
+
 
 **Creator & Chief Distributed Systems Architect:** [Ansh Tiwari](https://github.com/ansh1325)  
-**Submission Category:** 1st Place Target — Indie Developer Track ($150,000) & Best Agentic Use-Case ($5,000)
 
 ---
 

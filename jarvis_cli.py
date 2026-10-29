@@ -92,6 +92,31 @@ class JarvisCLI:
 
         threading.Thread(target=_do_speak, daemon=True).start()
 
+    def listen_for_voice(self, timeout_sec: int = 8) -> Optional[str]:
+        """Listens to PC microphone via Windows Native Speech Recognition."""
+        print(f"\n{C.YELLOW}{C.BOLD}🎙️ [Microphone Active]{C.RESET} Speak your command clearly into the microphone...")
+        ps_cmd = (
+            "Add-Type -AssemblyName System.Speech; "
+            "$r = New-Object System.Speech.Recognition.SpeechRecognitionEngine; "
+            "$r.SetInputToDefaultAudioDevice(); "
+            "$grammar = New-Object System.Speech.Recognition.DictationGrammar; "
+            "$r.LoadGrammar($grammar); "
+            f"$res = $r.Recognize([TimeSpan]::FromSeconds({timeout_sec})); "
+            "if ($res) { Write-Output $res.Text } else { Write-Output '' }"
+        )
+        try:
+            p = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", ps_cmd],
+                capture_output=True,
+                text=True,
+                timeout=timeout_sec + 5
+            )
+            heard = p.stdout.strip()
+            return heard if heard else None
+        except Exception as e:
+            print(f"{C.RED}[Voice Input Note] {e}{C.RESET}")
+            return None
+
     def print_banner(self):
         print(f"\n{C.CYAN}{C.BOLD}{'='*75}")
         print("   JARVIS // COGNITIVE MULTI-AGENT OS — TERMINAL INTERFACE")
@@ -102,8 +127,11 @@ class JarvisCLI:
     def print_help(self):
         print(f"\n{C.BOLD}Available CLI Directives & Commands:{C.RESET}")
         print(f"  {C.CYAN}<any natural directive>{C.RESET}  Deploy autonomous multi-agent swarm (code, SaaS, microservices, business)")
+        print(f"  {C.CYAN}listen / mic{C.RESET}             Activate microphone and speak your command using Windows voice recognition")
         print(f"  {C.CYAN}browse <goal or query>{C.RESET}   Autonomous web discovery & DOM interaction (Zero templates; figures out links on its own)")
-        print(f"  {C.CYAN}chat <message>{C.RESET}           Direct conversational dialogue with Jarvis Central Brain")
+        print(f"  {C.CYAN}chat <message>{C.RESET}           Direct conversational dialogue with Jarvis Central Brain (with voice narration)")
+        print(f"  {C.CYAN}browser inbox [idx]{C.RESET}      Open active Gmail inbox (https://mail.google.com/mail/u/0/#inbox) in host browser")
+        print(f"  {C.CYAN}browser compose <to> <subj> <body>{C.RESET} Open Gmail Compose tab pre-filled in host browser session")
         print(f"  {C.CYAN}browser open <url>{C.RESET}       Open any URL in user's active host browser")
         print(f"  {C.CYAN}browser run <url>{C.RESET}        Launch Playwright engine with smart locator, scrolling, and gestures")
         print(f"  {C.CYAN}history{C.RESET}                  List recent missions, sessions, and generated deliverables")
@@ -414,6 +442,16 @@ class JarvisCLI:
                     if self.voice_enabled:
                         self.speak("Voice output activated.")
                     continue
+
+                if line.lower() in ["listen", "mic", "voice in", "speak"]:
+                    self.speak("Listening for your voice command.")
+                    heard = self.listen_for_voice(timeout_sec=8)
+                    if heard:
+                        print(f"{C.GREEN}{C.BOLD}🎙️ [Heard]:{C.RESET} '{heard}'\n")
+                        line = heard
+                    else:
+                        print(f"{C.DIM}[No voice command detected or microphone timed out]{C.RESET}\n")
+                        continue
 
                 if line.lower().startswith("browse "):
                     goal = line[7:].strip()

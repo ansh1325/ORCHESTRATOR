@@ -1282,16 +1282,12 @@ function showWorkDoneBanner(deliverables) {
             <span>Real Outbound Dispatch (Host Browser & Gmail):</span>
           </div>
           <p class="text-xs text-gemini-muted leading-relaxed">
-            Jarvis connects directly to your active browser session so you can dispatch all 3 letters immediately from your own logged-in Gmail account without pasting or manual setup:
+            JARVIS operates directly as your autonomous real-person worker: controlling the desktop browser, opening Gmail, clicking Compose, typing your message, and triggering dispatch:
           </p>
           <div class="flex flex-wrap gap-2 pt-1">
             <button onclick="triggerBrowserDispatch()" class="px-4 py-2 rounded-xl bg-gemini-blue hover:bg-gemini-blueHover text-slate-950 font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer">
-              <i data-lucide="external-link" class="w-4 h-4"></i>
-              <span>Launch Browser & Open All 3 in Gmail</span>
-            </button>
-            <button onclick="launchPlaywrightAutomator()" class="px-3.5 py-2 rounded-xl bg-gemini-cardHover hover:bg-gemini-border text-gemini-text text-xs font-semibold flex items-center gap-2 transition cursor-pointer border border-gemini-border">
-              <i data-lucide="play" class="w-4 h-4 text-gemini-blue"></i>
-              <span>Run Playwright Desktop Automator</span>
+              <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+              <span>⚡ Execute Real JARVIS Browser Worker</span>
             </button>
             <button onclick="triggerSMTPDispatch()" class="px-3.5 py-2 rounded-xl bg-gemini-cardHover hover:bg-gemini-border text-gemini-text text-xs font-semibold flex items-center gap-2 transition cursor-pointer border border-gemini-border">
               <i data-lucide="mail" class="w-4 h-4 text-gemini-blue"></i>
@@ -1319,33 +1315,38 @@ function showWorkDoneBanner(deliverables) {
   }, 150);
 }
 
-// REAL Live Browser Dispatch Trigger (Opens Host Browser into Gmail Compose)
+// REAL Live Browser Dispatch Trigger (Zero Templates: Real-Person Browser Control)
 window.triggerBrowserDispatch = async function() {
-  speakText("Permission granted. Opening your default browser directly into Gmail Compose.");
-  appendLog("[Browser Session] Connecting to host browser via system controller...", "text-blue-300 font-bold");
-  appendChatMessage("🌐 **Real Browser Dispatch Initiated:** Launching your default browser (Chrome/Edge) with your active Google account into Gmail Web Compose. Formatting recipient `anshtiwarisocial@gmail.com`, subject `hello i am jarvis`, and pre-populating your 3 letters...", "assistant");
+  speakText("Permission granted. JARVIS is taking direct control of the browser as an autonomous worker.");
+  appendLog("[JARVIS Autonomous Worker] Spawning real desktop browser instance (headless=False)...", "text-blue-300 font-bold");
+  appendChatMessage("🤖 **JARVIS Autonomous Real-Person Browser Worker Engaged (Zero Templates):** Spawning a real desktop browser window, navigating directly to `https://mail.google.com`, clicking Compose, typing recipient `anshtiwarisocial@gmail.com`, typing subject `hello i am jarvis`, filling letter body live, and executing Send...", "assistant");
   
   try {
-    const res = await fetch("/api/browser/compose-email", {
+    const res = await fetch("/api/browser/playwright-run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         recipient: "anshtiwarisocial@gmail.com",
         subject: "hello i am jarvis",
-        session_id: state.sessionId,
-        open_all: true
+        headless: false,
+        session_id: state.sessionId
       })
     });
     const data = await res.json();
     if (data.success) {
-      appendLog(`[Browser Session] Success! Opened ${data.total_staged} Gmail compose tab(s) in your host browser.`, "text-emerald-400 font-bold");
-      appendChatMessage(`🎉 **Browser Tabs Opened:** Jarvis has opened your browser tabs with the 3 letters ready for review and 1-click send in your Gmail account. Check your browser window!`, "assistant");
-      speakText("Your browser tabs have opened in Gmail with all letters ready.");
+      appendLog(`[JARVIS Browser Worker] Success! ${data.message}`, "text-emerald-400 font-bold");
+      const actionsList = (data.actions || []).map(a => `• ${a}`).join("\n");
+      appendChatMessage(`🎉 **JARVIS Autonomous Action Completed:** ${data.message}\n\n**Actions executed like a real person:**\n${actionsList}`, "assistant");
+      speakText("JARVIS real person browser actions executed successfully.");
     } else {
-      appendLog(`[Browser Session] Notice: ${data.error || "Could not launch browser automatically."}`, "text-amber-400 font-bold");
+      appendLog(`[JARVIS Browser Worker] Notice: ${data.message || data.error}`, "text-amber-400 font-bold");
+      appendChatMessage(`⚠️ **JARVIS Notice:** ${data.message || data.error}`, "assistant");
+      if (data.status === "auth_required") {
+        speakText("Please sign in to Google in the opened browser window; JARVIS will remember your session.");
+      }
     }
   } catch (err) {
-    appendLog(`[Browser Session] Dispatch error: ${err.message}`, "text-rose-400 font-bold");
+    appendLog(`[JARVIS Browser Worker] Dispatch error: ${err.message}`, "text-rose-400 font-bold");
   }
 };
 

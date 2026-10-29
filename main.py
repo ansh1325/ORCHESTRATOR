@@ -409,8 +409,20 @@ async def browser_playwright_run(req: dict = Body(...)):
     """Executes a real Playwright browser session (Edge/Chrome) on the user's desktop."""
     recipient = req.get("recipient")
     subject = req.get("subject", "hello i am jarvis")
-    body = req.get("body", "Hello Master Ansh, this is Jarvis executing autonomously via Playwright.")
+    body = req.get("body")
+    session_id = req.get("session_id")
     headless = bool(req.get("headless", False))
+
+    if session_id:
+        ws_path = (settings.WORKSPACE_DIR / session_id).resolve()
+        for candidate in ["mail_1.md", "letter_1.md", "email_1.md"]:
+            f = ws_path / candidate
+            if f.exists():
+                body = f.read_text(encoding="utf-8", errors="replace")
+                break
+
+    if not body:
+        body = "Hello Master Ansh, this is Jarvis executing autonomously like a real person on your desktop."
 
     if recipient:
         res = BrowserController.automate_gmail_dispatch_playwright(

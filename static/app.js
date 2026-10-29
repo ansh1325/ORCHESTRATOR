@@ -984,8 +984,9 @@ function renderClarificationModal(analysis) {
     list.appendChild(qDiv);
   });
 
+  // Modal remains hidden by default and opens only if user clicks "Customize Selections"
   const modal = document.getElementById("clarificationModal");
-  if (modal) modal.classList.remove("hidden");
+  if (modal) modal.classList.add("hidden");
 
   // 2. Also present dialogue directly in chat stream like a true partner & friend!
   if (analysis.clarifications && analysis.clarifications.length > 0) {

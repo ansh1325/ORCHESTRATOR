@@ -443,6 +443,62 @@ function resetSession() {
   appendChatMessage("Ready for your next objective, Ansh.", "assistant");
 }
 
+// Helper: Finds the highest-fidelity natural AI voice available for free in the browser
+function getBestNaturalVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return null;
+
+  // Tier 1: True Neural/Natural online voices (Edge & Chrome ultra-realistic human voices)
+  const tier1Patterns = [
+    /Microsoft Guy Online \(Natural\)/i,
+    /Microsoft Christopher Online \(Natural\)/i,
+    /Microsoft Ryan Online \(Natural\)/i,
+    /Microsoft Eric Online \(Natural\)/i,
+    /Google UK English Male/i,
+    /Google US English/i,
+    /Natural/i,
+    /Neural/i
+  ];
+  for (const pat of tier1Patterns) {
+    const match = voices.find(v => pat.test(v.name) && v.lang.startsWith("en"));
+    if (match) return match;
+  }
+
+  // Tier 2: Non-robotic modern English voices (filters out legacy SAPI5 Desktop David/Zira)
+  const tier2 = voices.find(v => v.lang.startsWith("en") && !/(desktop|david|zira|mark|eva|hazel)/i.test(v.name));
+  if (tier2) return tier2;
+
+  // Tier 3: Any English voice
+  return voices.find(v => v.lang.startsWith("en")) || voices[0];
+}
+
+// Helper: Cleans text into natural executive speech, avoiding code fences, raw syntax, and URLs
+function cleanSpeechForExecutiveVoice(text) {
+  if (!text) return "";
+  let clean = text;
+  // Replace code blocks and inline code with conversational cues
+  clean = clean.replace(/```[\s\S]*?```/g, "Code and architecture verified.");
+  clean = clean.replace(/`([^`]+)`/g, "$1");
+  // Replace URLs and paths with natural phrasing
+  clean = clean.replace(/https?:\/\/[^\s]+/g, "portal link");
+  clean = clean.replace(/[a-zA-Z]:[\\/][^\s,]+/g, "local directory");
+  // Strip raw markdown formatting tokens
+  clean = clean.replace(/[*#~_>[\]{}]/g, " ");
+  clean = clean.replace(/^[\s*-]+/gm, "");
+  clean = clean.replace(/\s+/g, " ").trim();
+
+  // Natural pacing: split at sentence boundaries if too long
+  if (clean.length > 280) {
+    const periodIdx = clean.indexOf(".", 180);
+    if (periodIdx !== -1 && periodIdx < 280) {
+      clean = clean.substring(0, periodIdx + 1);
+    } else {
+      clean = clean.substring(0, 260) + ".";
+    }
+  }
+  return clean;
+}
+
 // Setup Voice Selector with Natural Neural Voices
 function setupVoiceSelector() {
   const voiceSelect = document.getElementById("voiceSelect");
@@ -457,8 +513,11 @@ function setupVoiceSelector() {
     // Auto recommended option
     const autoOpt = document.createElement("option");
     autoOpt.value = "auto";
-    autoOpt.textContent = "🎙️ Natural Voice (Auto)";
+    const bestVoice = getBestNaturalVoice();
+    autoOpt.textContent = `🎙️ Natural AI Voice (${bestVoice ? bestVoice.name : "Auto"})`;
     voiceSelect.appendChild(autoOpt);
+
+    const savedVoiceName = localStorage.getItem("jarvis_selected_voice");
 
     voices.forEach((v, idx) => {
       if (v.lang.startsWith("en") || v.lang.startsWith("en-")) {
@@ -466,6 +525,10 @@ function setupVoiceSelector() {
         opt.value = idx;
         const isNatural = v.name.includes("Natural") || v.name.includes("Online") || v.name.includes("Neural");
         opt.textContent = `${isNatural ? "✨ " : ""}${v.name} (${v.lang})`;
+        if (savedVoiceName && v.name === savedVoiceName) {
+          opt.selected = true;
+          state.selectedVoice = v;
+        }
         voiceSelect.appendChild(opt);
       }
     });
@@ -473,11 +536,13 @@ function setupVoiceSelector() {
     voiceSelect.addEventListener("change", (e) => {
       if (e.target.value === "auto") {
         state.selectedVoice = null;
-        speakText("Default natural voice selected.");
+        localStorage.removeItem("jarvis_selected_voice");
+        speakText("Natural executive voice activated.");
       } else {
         const vIndex = parseInt(e.target.value, 10);
         state.selectedVoice = voices[vIndex] || null;
         if (state.selectedVoice) {
+          localStorage.setItem("jarvis_selected_voice", state.selectedVoice.name);
           speakText("Voice configuration updated.");
         }
       }
@@ -538,26 +603,20 @@ function speakText(text) {
     window.speechSynthesis.resume();
   }
 
-  const clean = text.replace(/[*_#`~]/g, "").replace(/\n+/g, " ").trim();
-  if (!clean) return;
-
-  // Keep spoken response punchy and conversational
-  const speechText = clean.length > 250 ? clean.substring(0, 250) + "..." : clean;
+  const speechText = cleanSpeechForExecutiveVoice(text);
+  if (!speechText) return;
 
   const utterance = new SpeechSynthesisUtterance(speechText);
   
-  // Expression tuning: dynamic rate & natural pitch inflection
+  // Natural pacing & realistic inflection
   const isQuestion = speechText.trim().endsWith("?");
-  utterance.rate = 1.02;
-  utterance.pitch = isQuestion ? 1.06 : 0.98;
+  utterance.rate = 1.0;
+  utterance.pitch = isQuestion ? 1.05 : 1.0;
+  utterance.volume = 1.0;
 
-  if (state.selectedVoice) {
-    utterance.voice = state.selectedVoice;
-  } else {
-    // Prefer natural English voices (Edge Natural, Google Natural, Microsoft Natural)
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(v => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Google") || v.name.includes("David") || v.name.includes("Daniel")) && v.lang.startsWith("en"));
-    if (preferred) utterance.voice = preferred;
+  const chosenVoice = state.selectedVoice || getBestNaturalVoice();
+  if (chosenVoice) {
+    utterance.voice = chosenVoice;
   }
 
   // Word boundary event: animate equalizer bars live on spoken word boundaries!

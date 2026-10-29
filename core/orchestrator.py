@@ -690,11 +690,14 @@ class MetaOrchestrator:
             answers_str = json.dumps(session.clarification_answers, indent=2) if session.clarification_answers else "{}"
             kb_str = json.dumps(session.knowledge_base.model_dump(), indent=2) if session.knowledge_base else "{}"
 
+            combat_tier = session.intent_analysis.combat_tier if session.intent_analysis else "tactical_squad"
+            target_scale = "an unbounded army of specialized autonomous tasks (scale dynamically to 5-15+ nodes as required by mission complexity)" if combat_tier == "swarm_army" else "3 to 6 discrete, executable engineering, marketing, or business tasks"
             system_msg = (
-                "You are LlamaOrchestrator Central Brain. Decompose the user's vision into a Directed Acyclic Graph (DAG) "
-                "of 3 to 5 discrete, executable engineering, marketing, or business tasks.\n"
-                "For EACH task, synthesize a specialized sub-agent with its dedicated system directives and assigned tools.\n"
-                "Return JSON format:\n"
+                f"You are LlamaOrchestrator Central Brain. Decompose the user's vision into a Directed Acyclic Graph (DAG) "
+                f"of {target_scale}.\n"
+                f"There is NO arbitrary limit to how many agents you can spawn: synthesize as many specialized worker sub-agents as the architecture and domain demand.\n"
+                f"For EACH task, synthesize a dedicated sub-agent with its specific role, system directives, and assigned tools.\n"
+                f"Return JSON format:\n"
                 "{\n"
                 '  "title": "Clear Mission Title",\n'
                 '  "objective": "High-level objective",\n'

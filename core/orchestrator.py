@@ -183,10 +183,74 @@ from core.knowledge_agent import KnowledgeAgent
 from core.worker import DynamicWorkerEngine
 from core.evaluator import EvaluatorGatekeeper
 
+def generate_readable_session_slug(vision: str) -> str:
+    """Generates an Antigravity/Gemini-style human-readable slug for session IDs and export folders."""
+    if not vision:
+        return f"session_{uuid.uuid4().hex[:8]}"
+    
+    cleaned = re.sub(
+        r'^(hey|hi|hello|please|can you|could you|i want you to|i want you|i want|build me|create me|create|build|make me|make)\b',
+        '',
+        vision.strip(),
+        flags=re.IGNORECASE
+    ).strip()
+    
+    v_low = cleaned.lower()
+    if "mail" in v_low and "anshtiwarisocial" in v_low:
+        base = "3_personal_emails_ansh_tiwari"
+    elif "trading" in v_low or "quant" in v_low:
+        base = "algorithmic_trading_engine"
+    elif "robot" in v_low or "humanoid" in v_low or "optimus" in v_low:
+        base = "tesla_optimus_humanoid"
+    elif "omnichannel" in v_low or "acquisition" in v_low or "agency" in v_low:
+        base = "omnichannel_agency_campaign"
+    elif "telemetry" in v_low or "microservice" in v_low:
+        base = "telemetry_microservice_jwt"
+    else:
+        words = re.findall(r'[a-zA-Z0-9]+', cleaned)
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'for', 'to', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'as', 'is', 'it', 'all', 'be', 'will', 'that', 'this'}
+        sig = [w.lower() for w in words if w.lower() not in stop_words]
+        base = "_".join(sig[:4]) if sig else "mission"
+    
+    short_hash = uuid.uuid4().hex[:4]
+    return f"{base}_{short_hash}"
+
+def generate_chat_title(vision: str) -> str:
+    """Generates an Antigravity/Gemini-style descriptive title for sessions, exports, and history."""
+    if not vision:
+        return "Autonomous Mission"
+    
+    cleaned = re.sub(
+        r'^(hey|hi|hello|please|can you|could you|i want you to|i want you|i want|build me|create me|create|build|make me|make)\b',
+        '',
+        vision.strip(),
+        flags=re.IGNORECASE
+    ).strip()
+    
+    v_low = cleaned.lower()
+    if "mail" in v_low and "anshtiwarisocial" in v_low:
+        return "3 Personal Emails to Ansh Tiwari"
+    elif "trading" in v_low or "quant" in v_low:
+        return "Algorithmic Trading & Risk Engine"
+    elif "robot" in v_low or "humanoid" in v_low or "optimus" in v_low:
+        return "Tesla Optimus Humanoid Architecture"
+    elif "omnichannel" in v_low or "acquisition" in v_low or "agency" in v_low:
+        return "Omnichannel Client Acquisition Agency"
+    elif "telemetry" in v_low or "microservice" in v_low:
+        return "Authenticated Telemetry Microservice"
+    
+    words = re.findall(r'[a-zA-Z0-9@.-]+', cleaned)
+    stop_words = {'the', 'a', 'an', 'and', 'or', 'for', 'to', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'as', 'is', 'it', 'all', 'be', 'will', 'that', 'this'}
+    meaningful = [w.capitalize() for w in words if w.lower() not in stop_words]
+    if meaningful:
+        return " ".join(meaningful[:5])
+    return cleaned[:40].title()
+
 class SessionState:
     def __init__(self, session_id: str, vision: str):
         self.session_id = session_id
         self.vision = vision
+        self.title: str = generate_chat_title(vision) if vision else "Autonomous Mission"
         self.workspace_path = (settings.WORKSPACE_DIR / session_id).resolve()
         self.mcp = MCPServer(self.workspace_path)
         self.event_queue: asyncio.Queue = asyncio.Queue()
@@ -210,9 +274,14 @@ class MetaOrchestrator:
 
     def get_or_create_session(self, session_id: Optional[str] = None, vision: str = "") -> SessionState:
         if not session_id:
-            session_id = f"session_{uuid.uuid4().hex[:8]}"
+            session_id = generate_readable_session_slug(vision)
         if session_id not in self.sessions:
-            self.sessions[session_id] = SessionState(session_id, vision)
+            session = SessionState(session_id, vision)
+            if vision:
+                session.title = generate_chat_title(vision)
+            self.sessions[session_id] = session
+        elif vision and (not getattr(self.sessions[session_id], "title", None) or self.sessions[session_id].title == "Autonomous Mission"):
+            self.sessions[session_id].title = generate_chat_title(vision)
         return self.sessions[session_id]
 
     async def emit_event(self, session: SessionState, event: ExecutionEvent):
@@ -1284,20 +1353,21 @@ class MetaOrchestrator:
             session.is_running = False
             creator_memory.log_mission(f"Mission {session_id}: {dag_plan.title}", status="100% Certified")
             
-            # Record in persistent work history
+            # Record in persistent work history with clean Antigravity/Gemini title
             flist_names = [f["path"] for f in session.mcp.tool_file_list().get("files", [])]
             folder_category = "Personal" if track_type == "communication_assistant" else ("Business" if track_type == "business_acquisition" else "Engineering")
+            session_title = getattr(session, "title", None) or (dag_plan.title if dag_plan else generate_chat_title(session.vision))
             history_manager.record_session(
                 session_id=session_id,
-                title=dag_plan.title,
+                title=session_title,
                 prompt=session.vision,
                 folder=folder_category,
                 artifacts=flist_names
             )
             
-            # Auto-export to Downloads if user requested it in directive
+            # Auto-export to Downloads with clean human-readable folder naming
             if any(w in session.vision.lower() for w in ["download", "downloads", "export to downloads", "save in downloads"]):
-                exp_res = session.mcp.tool_export_to_host()
+                exp_res = session.mcp.tool_export_to_host(export_folder_name=session_title)
                 if exp_res.get("success"):
                     await self.emit_event(session, ExecutionEvent(
                         event_type="log",

@@ -394,7 +394,7 @@ class MCPServer:
             }
         return {"success": False, "error": f"Invalid path type for: '{source_path}'"}
 
-    def tool_export_to_host(self, workspace_path: str = "", destination_path: Optional[str] = None) -> Dict[str, Any]:
+    def tool_export_to_host(self, workspace_path: str = "", destination_path: Optional[str] = None, export_folder_name: Optional[str] = None) -> Dict[str, Any]:
         """
         Exports deliverables or files from the workspace sandbox directly to a user-specified
         host destination (e.g., system Downloads folder or custom directory).
@@ -407,8 +407,16 @@ class MCPServer:
         dest_dir.mkdir(parents=True, exist_ok=True)
 
         if not workspace_path or workspace_path.strip() in ("", ".", "/"):
-            # Export entire workspace bundle into destination directory
-            target_export_folder = dest_dir / f"llama_export_{self.workspace_path.name}"
+            # Export entire workspace bundle into destination directory using clean Antigravity/Gemini human-readable naming
+            if export_folder_name and export_folder_name.strip():
+                clean_name = re.sub(r'[^a-zA-Z0-9_-]', '_', export_folder_name.strip()).strip('_')
+                clean_name = re.sub(r'_+', '_', clean_name)
+                folder_title = clean_name
+            else:
+                raw_name = self.workspace_path.name
+                clean_name = re.sub(r'^session_', 'mission_', raw_name)
+                folder_title = clean_name
+            target_export_folder = dest_dir / folder_title
             target_export_folder.mkdir(parents=True, exist_ok=True)
             copied_count = 0
             for p in self.workspace_path.rglob("*"):

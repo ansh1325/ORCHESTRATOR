@@ -6,6 +6,7 @@ voice-driven Jarvis interaction, live DAG monitoring, and workspace downloads.
 
 import json
 import asyncio
+import re
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Body
@@ -177,14 +178,21 @@ async def get_session_details(session_id: str):
 
 @app.get("/api/workspace/{session_id}/download")
 async def download_workspace(session_id: str):
-    """1-Click ZIP export for all generated workspace artifacts."""
+    """1-Click ZIP export with Antigravity/Gemini human-readable session naming."""
     session = orchestrator.get_or_create_session(session_id)
     zip_bytes = orchestrator.create_zip_archive(session_id)
     
+    # Antigravity/Gemini-style descriptive naming
+    export_title = (session.dag_plan.title if (session.dag_plan and session.dag_plan.title) else getattr(session, "title", None)) or session_id
+    clean_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', export_title).strip('_')
+    clean_filename = re.sub(r'_+', '_', clean_filename)
+    if not clean_filename:
+        clean_filename = f"workspace_{session_id}"
+        
     return StreamingResponse(
         zip_bytes,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=llama_orchestrator_{session_id}.zip"}
+        headers={"Content-Disposition": f"attachment; filename={clean_filename}.zip"}
     )
 
 @app.post("/api/workspace/{session_id}/import-path")
@@ -198,10 +206,11 @@ async def import_path_to_workspace(session_id: str, req: ImportPathRequest):
 
 @app.post("/api/workspace/{session_id}/export-to-path")
 async def export_workspace_to_host(session_id: str, req: ExportPathRequest = Body(default_factory=ExportPathRequest)):
-    """Exports session workspace deliverables directly to user's host Downloads or custom directory."""
+    """Exports session workspace deliverables directly to user's host Downloads with Antigravity/Gemini-style naming."""
     session = orchestrator.get_or_create_session(session_id)
     dest = req.destination_path if req and req.destination_path else None
-    res = session.mcp.tool_export_to_host(destination_path=dest)
+    export_title = getattr(session, "title", None) or (session.dag_plan.title if session.dag_plan else None)
+    res = session.mcp.tool_export_to_host(destination_path=dest, export_folder_name=export_title)
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error", "Failed to export workspace"))
     return res

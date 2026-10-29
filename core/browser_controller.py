@@ -24,12 +24,12 @@ class BrowserController:
     """Unified controller for system browser interaction and Playwright automation."""
 
     @staticmethod
-    def build_gmail_compose_url(recipient: str, subject: str, body: str) -> str:
-        """Constructs official Gmail web compose URL with URL-encoded parameters."""
+    def build_gmail_compose_url(recipient: str, subject: str, body: str, account_index: int = 0) -> str:
+        """Constructs official Gmail web compose URL with URL-encoded parameters for active logged-in user."""
         recip_enc = urllib.parse.quote_plus(recipient.strip())
         subj_enc = urllib.parse.quote_plus(subject.strip())
         body_enc = urllib.parse.quote_plus(body.strip())
-        return f"https://mail.google.com/mail/?view=cm&fs=1&to={recip_enc}&su={subj_enc}&body={body_enc}"
+        return f"https://mail.google.com/mail/u/{account_index}/?view=cm&fs=1&to={recip_enc}&su={subj_enc}&body={body_enc}"
 
     @classmethod
     def open_in_system_browser(cls, url: str) -> bool:
@@ -39,6 +39,11 @@ class BrowserController:
         except Exception as e:
             print(f"[BrowserController] Failed to open system browser: {e}", file=sys.stderr)
             return False
+
+    @classmethod
+    def open_gmail_inbox(cls, account_index: int = 0) -> bool:
+        """Opens user's live Gmail inbox directly in their active host browser session."""
+        return cls.open_in_system_browser(f"https://mail.google.com/mail/u/{account_index}/#inbox")
 
     @classmethod
     def compose_in_gmail(cls, recipient: str, subject: str, body: str) -> dict[str, Any]:

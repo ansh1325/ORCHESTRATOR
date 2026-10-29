@@ -1,0 +1,415 @@
+#!/usr/bin/env python3
+"""
+Jarvis Autonomous Multi-Agent OS — Command-Line Interface (CLI)
+Creator: Ansh Tiwari (Chief Distributed Systems Architect)
+
+Provides 100% full-fidelity access to all Jarvis capabilities directly in the terminal:
+- Real-time Conversational Brain & Reasoning
+- Windows Native Voice Synthesis (Audio Spoken Output)
+- 5-Stage Autonomous Multi-Agent Swarm Lifecycle
+- Interactive Clarifying Questions & Knowledge Base Synthesis
+- Direct System Browser Automation (Gmail u/0 inbox, compose, and Playwright actions)
+- Session History, Workspaces, and Host File Exports
+"""
+
+import asyncio
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import threading
+from pathlib import Path
+from typing import Any, Optional
+
+# Add project root to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+# Ensure robust UTF-8 console output on Windows
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+from core.browser_controller import BrowserController
+from core.creator_memory import creator_memory
+from core.models import ExecutionEvent, IntentAnalysis
+from core.orchestrator import orchestrator
+from core.workflow_manager import workflow_manager
+
+# Terminal Colors & Styling
+class C:
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    CYAN = "\033[96m"
+    BLUE = "\033[94m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    MAGENTA = "\033[95m"
+    BG_BLUE = "\033[44m"
+
+
+class JarvisCLI:
+    def __init__(self):
+        self.voice_enabled: bool = True
+        self.active_session_id: Optional[str] = None
+        self._speech_lock = threading.Lock()
+
+    def speak(self, text: str):
+        """Speaks text aloud using Windows Native Speech Synthesis asynchronously."""
+        if not self.voice_enabled or not text:
+            return
+
+        # Strip markdown syntax and emojis for clean speech
+        clean = re.sub(r"[*#_`\[\]\(\)>~]", "", text)
+        clean = re.sub(r"[^\x00-\x7F]+", "", clean).strip()
+        if not clean:
+            return
+
+        def _do_speak():
+            with self._speech_lock:
+                try:
+                    p = subprocess.Popen(
+                        [
+                            "powershell",
+                            "-NoProfile",
+                            "-Command",
+                            "Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak([Console]::In.ReadToEnd())"
+                        ],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        text=True
+                    )
+                    p.communicate(input=clean[:250])
+                except Exception:
+                    pass
+
+        threading.Thread(target=_do_speak, daemon=True).start()
+
+    def print_banner(self):
+        print(f"\n{C.CYAN}{C.BOLD}{'='*75}")
+        print("   JARVIS // COGNITIVE MULTI-AGENT OS — TERMINAL INTERFACE")
+        print("   Chief Systems Architect: Ansh Tiwari")
+        print(f"{'='*75}{C.RESET}")
+        print(f"{C.DIM}Voice Output: {C.GREEN}ON{C.RESET}{C.DIM} (type 'voice off' to mute) | Type 'help' for commands | 'exit' to quit{C.RESET}\n")
+
+    def print_help(self):
+        print(f"\n{C.BOLD}Available CLI Directives & Commands:{C.RESET}")
+        print(f"  {C.CYAN}<any natural directive>{C.RESET}  Deploy autonomous multi-agent swarm (code, SaaS, microservices, business)")
+        print(f"  {C.CYAN}chat <message>{C.RESET}           Direct conversational dialogue with Jarvis Central Brain")
+        print(f"  {C.CYAN}browser inbox [idx]{C.RESET}      Open active Gmail inbox (https://mail.google.com/mail/u/0/#inbox) in host browser")
+        print(f"  {C.CYAN}browser compose <to> <subj> <body>{C.RESET} Open Gmail Compose tab pre-filled in host browser session")
+        print(f"  {C.CYAN}browser open <url>{C.RESET}       Open any URL in user's active host browser")
+        print(f"  {C.CYAN}browser run <url>{C.RESET}        Launch Playwright engine with smart locator, scrolling, and gestures")
+        print(f"  {C.CYAN}history{C.RESET}                  List recent missions, sessions, and generated deliverables")
+        print(f"  {C.CYAN}session <id>{C.RESET}             Inspect artifacts and file deliverables for a past mission")
+        print(f"  {C.CYAN}export <id> [path]{C.RESET}       Export deliverables to host Downloads or custom directory")
+        print(f"  {C.CYAN}workflows{C.RESET}                View saved recurring workflows")
+        print(f"  {C.CYAN}voice [on|off]{C.RESET}           Toggle Windows native spoken voice synthesis")
+        print(f"  {C.CYAN}clear{C.RESET}                    Clear terminal screen")
+        print(f"  {C.CYAN}exit{C.RESET}                     Quit Jarvis CLI\n")
+
+    async def handle_chat(self, message: str):
+        from core.config import settings
+        print(f"\n{C.BLUE}{C.BOLD}[Jarvis Brain Thinking...]{C.RESET}")
+        try:
+            llm = settings.get_llm_client()
+            resp = creator_memory.chat_response(
+                user_message=message,
+                is_mock=settings.is_mock(),
+                llm_client=llm
+            )
+            text = resp.get("text", "")
+            print(f"\n{C.GREEN}{C.BOLD}Jarvis:{C.RESET} {text}\n")
+            audio_text = resp.get("speech_audio") or text
+            if audio_text:
+                self.speak(audio_text[:200])
+        except Exception as e:
+            print(f"{C.RED}[Error] Central Brain communication error: {e}{C.RESET}")
+
+    async def run_mission(self, directive: str):
+        """Executes the full 5-stage multi-agent swarm pipeline from the terminal."""
+        print(f"\n{C.CYAN}{C.BOLD}[Stage 1/5] Analyzing Directive & Requirements...{C.RESET}")
+        self.speak("Directive received. Analyzing architecture and assembling specialized agent army.")
+
+        analysis = orchestrator.analyze_intent(vision=directive)
+        session_id = analysis.session_id
+        self.active_session_id = session_id
+
+        print(f"  • Mission ID: {C.BOLD}{session_id}{C.RESET}")
+        print(f"  • Track Identified: {C.YELLOW}{analysis.track_type}{C.RESET}")
+        print(f"  • Swarm Scale: {C.GREEN}{analysis.swarm_size_descriptor}{C.RESET}")
+
+        answers = dict(analysis.recommended_defaults)
+
+        # Clarifying Questions (Interactive)
+        if analysis.clarifications:
+            print(f"\n{C.YELLOW}{C.BOLD}Foundational Architectural Decisions ({len(analysis.clarifications)} points):{C.RESET}")
+            for idx, q in enumerate(analysis.clarifications, 1):
+                default_val = q.default_selection or q.options[0]
+                print(f"  {idx}. {C.BOLD}{q.question}{C.RESET}")
+                print(f"     {C.DIM}{q.why_needed}{C.RESET}")
+                print(f"     {C.GREEN}✓ Auto-Selected Optimal Policy: {default_val}{C.RESET}")
+
+        print(f"\n{C.CYAN}{C.BOLD}⚡ Deploying Autonomous Swarm Pipeline (Zero Clicks Required)...{C.RESET}\n")
+        self.speak("Commencing dynamic knowledge gathering and runtime DAG compilation.")
+
+        # Event stream handler for live terminal display
+        async def cli_event_listener(evt: ExecutionEvent):
+            if evt.speech_text:
+                self.speak(evt.speech_text)
+
+            if evt.event_type == "stage_change":
+                print(f"\n{C.MAGENTA}{C.BOLD}▶ [STAGE {evt.stage}/5] {evt.message}{C.RESET}")
+            elif evt.event_type == "kb_updated":
+                print(f"  {C.BLUE}[Knowledge Base]{C.RESET} {evt.message}")
+            elif evt.event_type == "dag_generated":
+                dag_nodes = evt.data.get("dag", {}).get("nodes", []) if evt.data else []
+                print(f"  {C.CYAN}[DAG Compiled]{C.RESET} {evt.message} ({len(dag_nodes)} specialized sub-agents)")
+                for node in dag_nodes:
+                    print(f"    • Agent [{node.get('id')}]: {node.get('description', '')[:70]}")
+            elif evt.event_type == "task_start":
+                print(f"  {C.YELLOW}⚡ [Agent Active]{C.RESET} {evt.task_id} -> {evt.message}")
+            elif evt.event_type == "task_complete":
+                print(f"  {C.GREEN}✓ [Agent Complete]{C.RESET} {evt.task_id} -> {evt.message}")
+            elif evt.event_type == "self_correction":
+                print(f"  {C.RED}⚠ [Self-Correction Triggered]{C.RESET} {evt.message}")
+            elif evt.event_type == "evaluation_passed":
+                print(f"  {C.GREEN}★ [Quality Gatekeeper Certified]{C.RESET} {evt.message}")
+            elif evt.event_type == "done":
+                print(f"\n{C.GREEN}{C.BOLD}🎉 [MISSION ACCOMPLISHED & CERTIFIED]{C.RESET} {evt.message}")
+                deliverables = evt.data.get("deliverables", []) if evt.data else []
+                if deliverables:
+                    print(f"\n{C.BOLD}Generated Workspace Deliverables ({len(deliverables)} files):{C.RESET}")
+                    for f in deliverables:
+                        fname = f if isinstance(f, str) else f.get("path", "")
+                        print(f"  {C.CYAN}[File]{C.RESET} workspaces/{session_id}/{fname}")
+                self.speak("Mission accomplished, Master Ansh. All tasks verified and deliverables ready.")
+            elif evt.event_type == "error":
+                print(f"  {C.RED}✖ [Error]{C.RESET} {evt.message}")
+
+        session = orchestrator.get_or_create_session(session_id)
+
+        # Concurrently consume events from session.event_queue
+        async def event_consumer():
+            while True:
+                try:
+                    evt: ExecutionEvent = await asyncio.wait_for(session.event_queue.get(), timeout=120)
+                    await cli_event_listener(evt)
+                    if evt.event_type in ["done", "error"]:
+                        break
+                except asyncio.TimeoutError:
+                    break
+
+        consumer_task = asyncio.create_task(event_consumer())
+
+        # Launch execution
+        await orchestrator.execute_full_lifecycle(
+            session_id=session_id,
+            clarification_answers=answers
+        )
+
+        try:
+            await asyncio.wait_for(consumer_task, timeout=10)
+        except asyncio.TimeoutError:
+            pass
+
+    def handle_browser_cmd(self, parts: list[str]):
+        """Direct browser automation commands from terminal."""
+        if len(parts) < 2:
+            print(f"{C.RED}Usage: browser <inbox|compose|open|run> [arguments]{C.RESET}")
+            return
+
+        sub = parts[1].lower()
+
+        if sub == "inbox":
+            account_idx = int(parts[2]) if len(parts) > 2 else 0
+            url = f"https://mail.google.com/mail/u/{account_idx}/#inbox"
+            print(f"{C.CYAN}Opening active host Gmail inbox in your logged-in browser session:{C.RESET} {url}")
+            success = BrowserController.open_gmail_inbox(account_idx)
+            if success:
+                print(f"{C.GREEN}✓ Browser launched directly into primary logged-in Gmail inbox (u/{account_idx}).{C.RESET}")
+                self.speak("Opening your live Gmail inbox.")
+            else:
+                print(f"{C.RED}Failed to launch host browser.{C.RESET}")
+
+        elif sub == "compose":
+            if len(parts) < 5:
+                print(f"{C.RED}Usage: browser compose <recipient> <subject> <body>{C.RESET}")
+                return
+            to = parts[2]
+            subject = parts[3]
+            body = " ".join(parts[4:])
+            print(f"{C.CYAN}Opening Gmail Compose for {to} in logged-in user session...{C.RESET}")
+            res = BrowserController.compose_in_gmail(recipient=to, subject=subject, body=body)
+            if res.get("success"):
+                print(f"{C.GREEN}✓ Compose tab opened in your browser with recipient, subject, and body prefilled.{C.RESET}")
+                self.speak(f"Composing email to {to}.")
+            else:
+                print(f"{C.RED}Failed to open compose tab.{C.RESET}")
+
+        elif sub == "open":
+            if len(parts) < 3:
+                print(f"{C.RED}Usage: browser open <url>{C.RESET}")
+                return
+            url = parts[2]
+            if not url.startswith(("http://", "https://")):
+                url = f"https://{url}"
+            print(f"{C.CYAN}Opening in host browser:{C.RESET} {url}")
+            BrowserController.open_in_system_browser(url)
+
+        elif sub == "run":
+            if len(parts) < 3:
+                print(f"{C.RED}Usage: browser run <url>{C.RESET}")
+                return
+            url = parts[2]
+            print(f"{C.CYAN}Launching Playwright autonomous engine on:{C.RESET} {url}")
+            res = BrowserController.run_playwright_automation(
+                url=url,
+                headless=False,
+                actions=[
+                    {"type": "scroll", "direction": "down", "distance": 300},
+                    {"type": "wait", "ms": 1000}
+                ],
+                screenshot_path="workspaces/screenshots/cli_browser_run.png"
+            )
+            print(f"{C.GREEN}✓ Browser automation completed:{C.RESET} {res.get('title')}")
+            for a in res.get("executed_actions", []):
+                print(f"  • {a}")
+            if res.get("screenshot"):
+                print(f"  • Screenshot saved: {res.get('screenshot')}")
+
+    def list_history(self):
+        items = workflow_manager.get_history()
+        if not items:
+            print(f"{C.DIM}No previous mission history found.{C.RESET}")
+            return
+
+        print(f"\n{C.BOLD}Recent Missions ({len(items)}):{C.RESET}")
+        for it in items[:15]:
+            sid = it.get("session_id", "")
+            title = it.get("title", "") or it.get("prompt", "")[:45]
+            folder = it.get("folder", "General")
+            files = len(it.get("deliverables", []) or it.get("artifacts", []))
+            print(f"  • [{folder}] {C.CYAN}{sid}{C.RESET}: {title} ({files} files)")
+        print()
+
+    def inspect_session(self, session_id: str):
+        session_dir = Path("workspaces") / session_id
+        if not session_dir.exists():
+            print(f"{C.RED}Session '{session_id}' not found in workspaces/.{C.RESET}")
+            return
+
+        files = list(session_dir.glob("**/*"))
+        files = [f for f in files if f.is_file() and not f.name.endswith(".pyc")]
+        print(f"\n{C.BOLD}Workspace for Session:{C.RESET} {C.CYAN}{session_id}{C.RESET}")
+        print(f"Path: {session_dir.resolve()}\n")
+
+        for f in files:
+            rel = f.relative_to(session_dir)
+            size = f.stat().st_size
+            print(f"  • {C.GREEN}{rel}{C.RESET} ({size} bytes)")
+        print()
+
+    def export_session(self, session_id: str, custom_dest: Optional[str] = None):
+        session_dir = Path("workspaces") / session_id
+        if not session_dir.exists():
+            print(f"{C.RED}Session '{session_id}' not found.{C.RESET}")
+            return
+
+        dest = Path(custom_dest) if custom_dest else (Path.home() / "Downloads" / f"jarvis_export_{session_id}")
+        dest.mkdir(parents=True, exist_ok=True)
+
+        count = 0
+        for f in session_dir.glob("**/*"):
+            if f.is_file() and not f.name.endswith(".pyc"):
+                rel = f.relative_to(session_dir)
+                target = dest / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(f.read_bytes())
+                count += 1
+
+        print(f"\n{C.GREEN}✓ Exported {count} deliverable files to:{C.RESET} {dest.resolve()}\n")
+        self.speak(f"Exported {count} deliverables to your destination.")
+
+    async def run_interactive(self):
+        self.print_banner()
+        self.speak("Jarvis Terminal Cognitive Interface online. Standing by for directives, Master Ansh.")
+
+        while True:
+            try:
+                line = input(f"{C.BOLD}{C.BLUE}Jarvis > {C.RESET}").strip()
+                if not line:
+                    continue
+
+                if line.lower() in ["exit", "quit", "q"]:
+                    print(f"\n{C.DIM}Powering down terminal interface. Central Brain standing by.{C.RESET}")
+                    self.speak("Standing by.")
+                    break
+
+                if line.lower() in ["help", "?"]:
+                    self.print_help()
+                    continue
+
+                if line.lower() == "clear":
+                    os.system("cls" if os.name == "nt" else "clear")
+                    self.print_banner()
+                    continue
+
+                if line.lower().startswith("voice "):
+                    setting = line.lower().split()[1]
+                    self.voice_enabled = (setting == "on")
+                    print(f"Voice output set to: {C.GREEN if self.voice_enabled else C.RED}{'ON' if self.voice_enabled else 'OFF'}{C.RESET}\n")
+                    if self.voice_enabled:
+                        self.speak("Voice output activated.")
+                    continue
+
+                if line.lower().startswith("browser "):
+                    parts = shlex.split(line)
+                    self.handle_browser_cmd(parts)
+                    continue
+
+                if line.lower() == "history":
+                    self.list_history()
+                    continue
+
+                if line.lower().startswith("session "):
+                    sid = line.split()[1]
+                    self.inspect_session(sid)
+                    continue
+
+                if line.lower().startswith("export "):
+                    parts = line.split()
+                    sid = parts[1]
+                    dest = parts[2] if len(parts) > 2 else None
+                    self.export_session(sid, dest)
+                    continue
+
+                if line.lower().startswith("chat "):
+                    msg = line[5:].strip()
+                    await self.handle_chat(msg)
+                    continue
+
+                # Autonomous Multi-Agent Swarm execution for actionable directives
+                await self.run_mission(line)
+
+            except (KeyboardInterrupt, EOFError):
+                print(f"\n{C.DIM}Session interrupted. Central Brain standing by.{C.RESET}")
+                break
+            except Exception as e:
+                print(f"\n{C.RED}[Error] {e}{C.RESET}\n")
+
+
+def main():
+    cli = JarvisCLI()
+    asyncio.run(cli.run_interactive())
+
+
+if __name__ == "__main__":
+    main()

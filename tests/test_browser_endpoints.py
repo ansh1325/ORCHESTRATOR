@@ -17,7 +17,8 @@ def test_build_gmail_compose_url():
         subject="hello i am jarvis",
         body="Dear Ansh, test letter."
     )
-    assert url.startswith("https://mail.google.com/mail/?view=cm")
+    assert "mail.google.com/mail" in url
+    assert "view=cm" in url
     assert "anshtiwarisocial%40gmail.com" in url
     assert "hello+i+am+jarvis" in url
     assert "Dear+Ansh" in url

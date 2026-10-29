@@ -9,23 +9,31 @@ import uuid
 import asyncio
 import zipfile
 import io
-from pathlib import Path
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 
-from core.config import settings
-from core.models import (
-    IntentAnalysis,
-    ClarificationQuestion,
-    DAGPlan,
-    TaskNode,
-    SubAgentSpec,
-    ExecutionEvent,
-    KnowledgeBase,
-    HistoryItem,
-    SavedWorkflow,
-    ScheduledTask
-)
+try:
+    from core.config import settings  # pyright: ignore[reportMissingImports]
+    from core.models import (  # pyright: ignore[reportMissingImports]
+        IntentAnalysis,
+        ClarificationQuestion,
+        DAGPlan,
+        TaskNode,
+        SubAgentSpec,
+        ExecutionEvent,
+        KnowledgeBase
+    )
+except (ImportError, ModuleNotFoundError):
+    from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
+    from .models import (  # type: ignore # pyright: ignore[reportMissingImports]
+        IntentAnalysis,
+        ClarificationQuestion,
+        DAGPlan,
+        TaskNode,
+        SubAgentSpec,
+        ExecutionEvent,
+        KnowledgeBase
+    )
 import json
 import re
 

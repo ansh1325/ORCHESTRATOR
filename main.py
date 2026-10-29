@@ -8,15 +8,15 @@ import json
 import asyncio
 import re
 from pathlib import Path
-from typing import Optional
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Body
-from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
-from core.config import settings
-from core.models import (
+from core.config import settings  # pyright: ignore[reportMissingImports]
+from core.mcp_server import MCPSandboxSecurityError  # pyright: ignore[reportMissingImports]
+from core.models import (  # pyright: ignore[reportMissingImports]
     ChatRequest,
     ChatResponse,
     AnalyzeRequest,
@@ -27,8 +27,8 @@ from core.models import (
     ImportPathRequest,
     ExportPathRequest
 )
-from core.creator_memory import creator_memory
-from core.orchestrator import orchestrator, history_manager
+from core.creator_memory import creator_memory  # pyright: ignore[reportMissingImports]
+from core.orchestrator import orchestrator, history_manager  # pyright: ignore[reportMissingImports]
 
 app = FastAPI(
     title="LlamaOrchestrator API",
@@ -52,12 +52,20 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
-    """Serves the central dark-mode dashboard."""
+    """Serves the central dark-mode dashboard with zero-cache headers."""
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         return HTMLResponse("<h1>LlamaOrchestrator Dashboard Initializing...</h1>")
     with open(index_file, "r", encoding="utf-8") as f:
-        return HTMLResponse(f.read())
+        content = f.read()
+    return HTMLResponse(
+        content=content,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 @app.get("/api/health")
 async def health_check():
@@ -237,10 +245,13 @@ async def receive_booking_webhook(payload: dict):
 async def get_workspace_file(session_id: str, path: str):
     """Reads a file from the workspace sandbox for in-browser preview."""
     session = orchestrator.get_or_create_session(session_id)
-    res = session.mcp.tool_file_read(path)
-    if not res.get("success"):
-        raise HTTPException(status_code=404, detail=res.get("error", "File not found"))
-    return res
+    try:
+        res = session.mcp.tool_file_read(path)
+        if not res.get("success"):
+            raise HTTPException(status_code=404, detail=res.get("error", "File not found"))
+        return res
+    except MCPSandboxSecurityError as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 @app.get("/api/history")
 async def get_work_history():

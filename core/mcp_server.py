@@ -8,7 +8,6 @@ to the isolated session workspace.
 import os
 import sys
 import re
-import json
 import shutil
 import subprocess
 from pathlib import Path

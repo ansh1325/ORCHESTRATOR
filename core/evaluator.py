@@ -10,9 +10,14 @@ import re
 import asyncio
 from pathlib import Path
 from typing import Dict, Any, List, Callable, Optional
-from core.models import ExecutionEvent
-from core.mcp_server import MCPServer
-from core.config import settings
+try:
+    from core.models import ExecutionEvent  # pyright: ignore[reportMissingImports]
+    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
+    from core.config import settings  # pyright: ignore[reportMissingImports]
+except (ImportError, ModuleNotFoundError):
+    from .models import ExecutionEvent  # type: ignore # pyright: ignore[reportMissingImports]
+    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
+    from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
 
 def robust_json_loads(raw: Optional[str]) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
@@ -244,8 +249,12 @@ class EvaluatorGatekeeper:
                 "Synthesize the evaluation JSON now."
             )
 
+            client = self.llm_client
+            if not client:
+                return self._fallback_evaluation(vision, files, score)
+
             def _call_model():
-                return self.llm_client.chat.completions.create(
+                return client.chat.completions.create(
                     model=settings.META_MODEL_ORCHESTRATOR,
                     messages=[
                         {"role": "system", "content": system_msg},

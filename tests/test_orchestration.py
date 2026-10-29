@@ -10,15 +10,14 @@ import tempfile
 from pathlib import Path
 from fastapi.testclient import TestClient
 
-from core.config import settings
-from core.creator_memory import CreatorMemory
-from core.mcp_server import MCPServer, MCPSandboxSecurityError
-from core.orchestrator import MetaOrchestrator
-from core.knowledge_agent import KnowledgeAgent
-from core.worker import DynamicWorkerEngine, clean_code_content
-from core.evaluator import EvaluatorGatekeeper
-from core.models import TaskNode, SubAgentSpec
-from main import app
+from core.creator_memory import CreatorMemory  # pyright: ignore[reportMissingImports]
+from core.mcp_server import MCPServer, MCPSandboxSecurityError  # pyright: ignore[reportMissingImports]
+from core.orchestrator import MetaOrchestrator  # pyright: ignore[reportMissingImports]
+from core.knowledge_agent import KnowledgeAgent  # pyright: ignore[reportMissingImports]
+from core.worker import DynamicWorkerEngine, clean_code_content  # pyright: ignore[reportMissingImports]
+from core.evaluator import EvaluatorGatekeeper  # pyright: ignore[reportMissingImports]
+from core.models import TaskNode, SubAgentSpec  # pyright: ignore[reportMissingImports]
+from main import app  # pyright: ignore[reportMissingImports]
 
 @pytest.fixture
 def temp_workspace():
@@ -223,6 +222,10 @@ def test_fastapi_rest_endpoints():
     d_res = client.get(f"/api/workspace/{sess_id}/download")
     assert d_res.status_code == 200
     assert d_res.headers["content-type"] == "application/zip"
+
+    # 6. Path traversal security gate (returns 403 Forbidden)
+    sec_res = client.get(f"/api/workspace/{sess_id}/file?path=../../sensitive.txt")
+    assert sec_res.status_code == 403
 
 def test_clean_code_content_and_url_normalization(temp_workspace):
     """Test code fence sanitization and URL schema auto-prefixing."""

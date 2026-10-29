@@ -8,9 +8,14 @@ import re
 import asyncio
 import json
 from typing import Dict, Any, List, Callable, Optional
-from core.models import TaskNode, SubAgentSpec, ExecutionEvent
-from core.mcp_server import MCPServer
-from core.config import settings
+try:
+    from core.models import TaskNode, SubAgentSpec, ExecutionEvent  # pyright: ignore[reportMissingImports]
+    from core.mcp_server import MCPServer  # pyright: ignore[reportMissingImports]
+    from core.config import settings  # pyright: ignore[reportMissingImports]
+except (ImportError, ModuleNotFoundError):
+    from .models import TaskNode, SubAgentSpec, ExecutionEvent  # type: ignore # pyright: ignore[reportMissingImports]
+    from .mcp_server import MCPServer  # type: ignore # pyright: ignore[reportMissingImports]
+    from .config import settings  # type: ignore # pyright: ignore[reportMissingImports]
 
 class WorkerExecutionError(Exception):
     """Raised when a worker task fails after exhausting self-correction attempts."""
@@ -188,8 +193,12 @@ class DynamicWorkerEngine:
             f"Generate all required production files for this task now. Output strictly valid JSON conforming to the schema."
         )
         
+        client = self.llm_client
+        if not client:
+            return []
+
         def _call_model():
-            return self.llm_client.chat.completions.create(
+            return client.chat.completions.create(
                 model=settings.META_MODEL_WORKER,
                 messages=[
                     {"role": "system", "content": system_msg},

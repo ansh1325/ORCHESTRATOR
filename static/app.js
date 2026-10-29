@@ -115,11 +115,11 @@ function setupEventListeners() {
   document.querySelectorAll(".folder-filter").forEach(btn => {
     btn.addEventListener("click", (e) => {
       document.querySelectorAll(".folder-filter").forEach(b => {
-        b.classList.remove("active", "bg-cyan-500/20", "text-cyan-300", "border-cyan-500/40");
-        b.classList.add("bg-brand-card", "text-slate-400", "border-brand-border");
+        b.classList.remove("active", "bg-amber-500/20", "text-amber-300", "border-amber-500/40");
+        b.classList.add("bg-brand-surface", "text-slate-400", "border-brand-border");
       });
-      btn.classList.add("active", "bg-cyan-500/20", "text-cyan-300", "border-cyan-500/40");
-      btn.classList.remove("bg-brand-card", "text-slate-400", "border-brand-border");
+      btn.classList.add("active", "bg-amber-500/20", "text-amber-300", "border-amber-500/40");
+      btn.classList.remove("bg-brand-surface", "text-slate-400", "border-brand-border");
       state.activeFolderFilter = btn.getAttribute("data-folder");
       renderHistoryList();
     });
@@ -348,7 +348,7 @@ function setupEventListeners() {
   if (chatModeBtn && swarmModeBtn) {
     chatModeBtn.addEventListener("click", () => {
       state.activeMode = "chat";
-      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40 transition active";
+      chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active";
       swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
       if (modeDescription) modeDescription.textContent = "Asking questions & direct conversation (No sub-agents spawned)";
       if (directiveInput) directiveInput.placeholder = "Ask Jarvis anything (code, system architecture, capabilities)...";
@@ -356,7 +356,7 @@ function setupEventListeners() {
 
     swarmModeBtn.addEventListener("click", () => {
       state.activeMode = "swarm";
-      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40 transition active";
+      swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active";
       chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
       if (modeDescription) modeDescription.textContent = "Autonomous Multi-Agent compiler (deploys agent army, generates files)";
       if (directiveInput) directiveInput.placeholder = "Enter directive to build (e.g. Build AWS telemetry microservice)...";
@@ -408,7 +408,7 @@ function resetSession() {
   const modeDescription = document.getElementById("modeDescription");
   if (chatModeBtn && swarmModeBtn) {
     state.activeMode = "chat";
-    chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40 transition active";
+    chatModeBtn.className = "mode-pill px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 transition active";
     swarmModeBtn.className = "mode-pill px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition";
     if (modeDescription) modeDescription.textContent = "Asking questions & direct conversation (No sub-agents spawned)";
   }
@@ -1380,14 +1380,26 @@ async function selectHistoryItem(item) {
   renderHistoryList();
   appendChatMessage(`Retrieved workspace for: "${item.title || item.prompt}"`, "assistant");
 
+  // Automatically close sidebar drawer on selection
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  if (sidebar) sidebar.classList.add("-translate-x-full");
+  if (overlay) overlay.classList.add("hidden");
+
   // Show Deliverables from history or live session
   const deliverables = item.deliverables || item.artifacts || [];
   try {
     const res = await fetch(`/api/session/${item.session_id}`);
     if (res.ok) {
       const data = await res.json();
+      if (data.dag_plan) {
+        const swarmDeck = document.getElementById("swarmDeckContainer");
+        if (swarmDeck) swarmDeck.classList.remove("hidden");
+        renderDAG(data.dag_plan);
+      }
       if (data.workspace_files && data.workspace_files.length > 0) {
         showWorkDoneBanner(data.workspace_files.map(f => typeof f === 'string' ? f : f.path));
+        updateStageUI(5);
         return;
       }
     }
@@ -1397,6 +1409,7 @@ async function selectHistoryItem(item) {
 
   if (deliverables && deliverables.length > 0) {
     showWorkDoneBanner(deliverables);
+    updateStageUI(5);
   }
 }
 

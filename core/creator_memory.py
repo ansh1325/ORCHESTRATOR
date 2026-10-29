@@ -6,7 +6,7 @@ Functions as Jarvis/Alfred: loyal, highly technical, audible, and proactive.
 
 import json
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 from datetime import datetime, timezone
 from core.config import settings
 
@@ -153,12 +153,12 @@ class CreatorMemory:
     def get_judge_introduction(self) -> str:
         """Returns the high-impact voice introduction for Meta Hackathon judges."""
         return (
-            f"Greetings, esteemed Meta Hackathon judges. I am LlamaOrchestrator, created by Ansh Tiwari. "
-            f"I am not a disposable chatbot - I am an autonomous multi-agent compiler and lifelong AI partner. "
-            f"Powered by Meta Llama 3.1 and 3.2 models, I ingest high-level human vision, synthesize specialized "
-            f"worker sub-agents via the Model Context Protocol, and autonomously execute with closed-loop self-correction. "
-            f"Whether compiling authenticated microservices or standing up complete client-acquisition businesses, "
-            f"my mission is zero-failure autonomous execution. All systems are online. How may we build today, Ansh?"
+            "Greetings, esteemed Meta Hackathon judges. I am LlamaOrchestrator, created by Ansh Tiwari. "
+            "I am not a disposable chatbot - I am an autonomous multi-agent compiler and lifelong AI partner. "
+            "Powered by Meta Llama 3.1 and 3.2 models, I ingest high-level human vision, synthesize specialized "
+            "worker sub-agents via the Model Context Protocol, and autonomously execute with closed-loop self-correction. "
+            "Whether compiling authenticated microservices or standing up complete client-acquisition businesses, "
+            "my mission is zero-failure autonomous execution. All systems are online. How may we build today, Ansh?"
         )
 
     def log_mission(self, mission_title: str, status: str = "Completed"):
@@ -222,7 +222,7 @@ class CreatorMemory:
             }
 
         if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
-            speech = f"At your service, Master Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
+            speech = "At your service, Master Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
             return {
                 "role": "assistant",
                 "text": speech,
@@ -232,9 +232,9 @@ class CreatorMemory:
 
         if any(term in cleaned for term in ["earn", "money", "marketing agency", "automation agency", "affiliate", "it firm"]):
             speech = (
-                f"Understood, Master Ansh. I am engineered to handle your business compilation and client acquisition across all 5 phases: "
-                f"from cold client acquisition to service fulfillment, scaling with Meta ads, systems engineering, and quantitative trading. "
-                f"Issue your directive in the command bar to launch the compilation."
+                "Understood, Master Ansh. I am engineered to handle your business compilation and client acquisition across all 5 phases: "
+                "from cold client acquisition to service fulfillment, scaling with Meta ads, systems engineering, and quantitative trading. "
+                "Issue your directive in the command bar to launch the compilation."
             )
             return {
                 "role": "assistant",
@@ -245,10 +245,10 @@ class CreatorMemory:
 
         # Deterministic rich technical response
         reply = (
-            f"Affirmative, Ansh. As your autonomous orchestrator, I am ready to ingest your vision. "
-            f"I will formulate the 6-stage lifecycle: Intent Clarification, MCP Knowledge Gathering, "
-            f"DAG Worker Synthesis, Sandboxed Execution with runtime stderr self-correction, and Evaluator Gatekeeping. "
-            f"Select a preset or enter any business or technical vision to begin."
+            "Affirmative, Ansh. As your autonomous orchestrator, I am ready to ingest your vision. "
+            "I will formulate the 6-stage lifecycle: Intent Clarification, MCP Knowledge Gathering, "
+            "DAG Worker Synthesis, Sandboxed Execution with runtime stderr self-correction, and Evaluator Gatekeeping. "
+            "Select a preset or enter any business or technical vision to begin."
         )
         return {
             "role": "assistant",

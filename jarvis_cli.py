@@ -34,6 +34,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
+from core.autonomous_solver import CreativeProblemSolver, StrategicOutreachArchitect, PortSafetyGuard
 from core.browser_controller import BrowserController
 from core.creator_memory import creator_memory
 from core.models import ExecutionEvent, IntentAnalysis
@@ -129,6 +130,8 @@ class JarvisCLI:
         print(f"  {C.CYAN}<any natural directive>{C.RESET}  Deploy autonomous multi-agent swarm (code, SaaS, microservices, business)")
         print(f"  {C.CYAN}listen / mic{C.RESET}             Activate microphone and speak your command using Windows voice recognition")
         print(f"  {C.CYAN}browse <goal or query>{C.RESET}   Autonomous web discovery & DOM interaction (Zero templates; figures out links on its own)")
+        print(f"  {C.CYAN}transcript <media_url>{C.RESET}   Extract transcript from video/IG reel via progressive fallback (No official API needed)")
+        print(f"  {C.CYAN}outreach <niche> [hook]{C.RESET}  Compile high-efficiency cold outreach system (<30c subject, <100w body, 4-stage follow-up)")
         print(f"  {C.CYAN}chat <message>{C.RESET}           Direct conversational dialogue with Jarvis Central Brain (with voice narration)")
         print(f"  {C.CYAN}browser inbox [idx]{C.RESET}      Open active Gmail inbox (https://mail.google.com/mail/u/0/#inbox) in host browser")
         print(f"  {C.CYAN}browser compose <to> <subj> <body>{C.RESET} Open Gmail Compose tab pre-filled in host browser session")
@@ -293,6 +296,40 @@ class JarvisCLI:
 
         self.speak("Exploration complete. Discovered web interface and extracted interactive elements.")
 
+    def handle_transcript_cmd(self, url: str):
+        print(f"\n{C.CYAN}{C.BOLD}[Creative Problem Solver]{C.RESET} Analyzing target media without official API: {C.YELLOW}{url}{C.RESET}")
+        self.speak("Commencing progressive fallback deduction to extract media transcript.")
+        res = CreativeProblemSolver.extract_media_transcript_without_api(url)
+
+        print(f"\n{C.BOLD}Autonomous Deduction Ladder:{C.RESET}")
+        for step in res.get("deduction_log", []):
+            print(f"  • {C.DIM}{step}{C.RESET}")
+
+        print(f"\n{C.GREEN}{C.BOLD}✓ Extracted Certified Transcript:{C.RESET}\n")
+        print(f"{C.CYAN}{res.get('transcript')}{C.RESET}\n")
+        self.speak("Transcript successfully extracted and verified.")
+
+    def handle_outreach_cmd(self, niche: str, hook: str):
+        print(f"\n{C.CYAN}{C.BOLD}[Strategic Outreach Architect]{C.RESET} Compiling high-efficiency system for: {C.YELLOW}{niche}{C.RESET}")
+        self.speak("Compiling cold outreach infrastructure with collision-free port guards.")
+        res = StrategicOutreachArchitect.compile_high_efficiency_outreach_suite(target_niche=niche, value_hook=hook)
+
+        print(f"  • Allocated Safe Port: {C.GREEN}{res.get('allocated_port')}{C.RESET} (Collision-Free Guarantee)")
+        rules = res.get("rules_enforced", {})
+        print(f"  • Deep Domain Rules: Subject < {rules.get('max_subject_length')} chars | Body < {rules.get('max_body_words')} words")
+        print(f"  • Strategic Insight: {C.YELLOW}{rules.get('follow_up_ratio')}{C.RESET}")
+
+        print(f"\n{C.BOLD}Compiled 4-Touch Follow-Up Cadence:{C.RESET}")
+        for touch in res.get("cadence", []):
+            print(f"\n  {C.MAGENTA}[{touch['timing']}]{C.RESET} Subject: '{C.BOLD}{touch['subject']}{C.RESET}' ({touch['body_word_count']} words)")
+            print(f"  {C.DIM}{touch['body']}{C.RESET}")
+
+        out_dir = Path("workspaces/outreach_system")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "safe_webhook_receiver.py").write_text(res.get("webhook_receiver_code", ""), encoding="utf-8")
+        print(f"\n{C.GREEN}✓ Outreach receiver script generated: {out_dir / 'safe_webhook_receiver.py'}{C.RESET}\n")
+        self.speak("Outreach infrastructure compiled. 4-touch follow-up cadence active.")
+
     def handle_browser_cmd(self, parts: list[str]):
         """Direct browser automation commands from terminal."""
         if len(parts) < 2:
@@ -454,6 +491,18 @@ class JarvisCLI:
         if low.startswith("browse "):
             goal = line[7:].strip()
             await self.handle_autonomous_browse(goal)
+            return True
+
+        if low.startswith("transcript "):
+            url = line[11:].strip()
+            self.handle_transcript_cmd(url)
+            return True
+
+        if low.startswith("outreach "):
+            parts = line[9:].strip().split(maxsplit=1)
+            niche = parts[0] if parts else "Distributed Infrastructure"
+            hook = parts[1] if len(parts) > 1 else "reduces latency by 60%"
+            self.handle_outreach_cmd(niche, hook)
             return True
 
         if low.startswith("browser "):

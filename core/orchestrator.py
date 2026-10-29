@@ -9,7 +9,7 @@ import uuid
 import asyncio
 import zipfile
 import io
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
 try:
@@ -52,223 +52,23 @@ def robust_json_loads(raw: Optional[str]) -> dict:
             clean = clean[first_brace:last_brace + 1]
     return json.loads(clean)
 
-HISTORY_FILE = settings.WORKSPACE_DIR / "history.json"
-WORKFLOWS_FILE = settings.WORKSPACE_DIR / "workflows.json"
-SCHEDULES_FILE = settings.WORKSPACE_DIR / "schedules.json"
+from core.workflow_manager import (  # pyright: ignore[reportMissingImports]
+    history_manager,
+    HistoryManager
+)
+from core.scheduler import (  # pyright: ignore[reportMissingImports]
+    parse_schedule_directive
+)
 
-DEFAULT_WORKFLOWS = [
-    {
-        "id": "wf_emails",
-        "title": "3 Personal Emails from Jarvis",
-        "description": "Drafts 3 heartfelt loyalty emails to anshtiwarisocial@gmail.com with subject 'i am jarvis'.",
-        "prompt_template": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line i am jarvis and body with whatever you feel for me",
-        "folder": "Personal"
-    },
-    {
-        "id": "wf_agency",
-        "title": "Client-Acquisition Agency Business",
-        "description": "Scaffolds complete B2B agency, scrapes leads, and simulates calendar bookings.",
-        "prompt_template": "I know full-stack dev, build me a business and find me clients",
-        "folder": "Business"
-    },
-    {
-        "id": "wf_telemetry",
-        "title": "Authenticated Telemetry Microservice",
-        "description": "Compiles production FastAPI telemetry service with JWT auth and 100% Pytest pass.",
-        "prompt_template": "Build an authenticated telemetry microservice with JWT & tests",
-        "folder": "Engineering"
-    }
+__all__ = [
+    "MetaOrchestrator",
+    "orchestrator",
+    "history_manager",
+    "HistoryManager",
+    "parse_schedule_directive",
+    "SessionState"
 ]
 
-class HistoryManager:
-    """Manages persistent work history, folders, pins, and saved workflows."""
-    def __init__(self):
-        self._ensure_files()
-
-    def _ensure_files(self):
-        settings.WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
-        if not HISTORY_FILE.exists():
-            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-                json.dump([], f)
-        if not WORKFLOWS_FILE.exists():
-            with open(WORKFLOWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(DEFAULT_WORKFLOWS, f, indent=2)
-        if not SCHEDULES_FILE.exists():
-            with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
-                json.dump([], f)
-
-    def list_history(self) -> List[Dict[str, Any]]:
-        try:
-            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-                items = json.load(f)
-            # Pinned sessions appear at the top, followed by newest created_at
-            items.sort(key=lambda x: (1 if x.get("is_pinned") else 0, x.get("created_at", "")), reverse=True)
-            return items
-        except Exception:
-            return []
-
-    def record_session(self, session_id: str, title: str, prompt: str, folder: str = "General", artifacts: Optional[List[str]] = None):
-        history = self.list_history()
-        # Update if exists, else prepend
-        for item in history:
-            if item.get("session_id") == session_id:
-                item["title"] = title
-                item["artifacts"] = artifacts or []
-                item["deliverables"] = artifacts or []
-                item["status"] = "completed"
-                self._save_history(history)
-                return
-        new_item = {
-            "session_id": session_id,
-            "title": title,
-            "prompt": prompt,
-            "folder": folder,
-            "is_pinned": False,
-            "status": "completed",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "artifacts": artifacts or [],
-            "deliverables": artifacts or []
-        }
-        history.insert(0, new_item)
-        self._save_history(history)
-
-    def update_folder(self, session_id: str, folder: str):
-        history = self.list_history()
-        for item in history:
-            if item.get("session_id") == session_id:
-                item["folder"] = folder
-                break
-        self._save_history(history)
-
-    def toggle_pin(self, session_id: str, is_pinned: bool):
-        history = self.list_history()
-        for item in history:
-            if item.get("session_id") == session_id:
-                item["is_pinned"] = is_pinned
-                break
-        self._save_history(history)
-
-    def _save_history(self, history: List[Dict[str, Any]]):
-        try:
-            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-                json.dump(history, f, indent=2)
-        except Exception:
-            pass
-
-    def list_workflows(self) -> List[Dict[str, Any]]:
-        try:
-            with open(WORKFLOWS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return DEFAULT_WORKFLOWS
-
-    def save_workflow(self, workflow_data: Dict[str, Any]):
-        wfs = self.list_workflows()
-        wfs.append(workflow_data)
-        try:
-            with open(WORKFLOWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(wfs, f, indent=2)
-        except Exception:
-            pass
-
-    def delete_workflow(self, workflow_id: str) -> bool:
-        wfs = self.list_workflows()
-        filtered = [w for w in wfs if w.get("id") != workflow_id]
-        if len(filtered) != len(wfs):
-            try:
-                with open(WORKFLOWS_FILE, "w", encoding="utf-8") as f:
-                    json.dump(filtered, f, indent=2)
-                return True
-            except Exception:
-                pass
-        return False
-
-    def list_schedules(self) -> List[Dict[str, Any]]:
-        try:
-            with open(SCHEDULES_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return []
-
-    def add_schedule(self, schedule_data: Dict[str, Any]) -> Dict[str, Any]:
-        schedules = self.list_schedules()
-        task_id = schedule_data.get("task_id") or schedule_data.get("id") or f"sched_{uuid.uuid4().hex[:8]}"
-        hour = int(schedule_data.get("hour", 6))
-        minute = int(schedule_data.get("minute", 0))
-        sched_time = schedule_data.get("schedule_cron") or f"Daily {hour:02d}:{minute:02d}"
-        
-        entry = {
-            "task_id": task_id,
-            "id": task_id,
-            "title": schedule_data.get("title") or "Daily Autonomous Mission",
-            "prompt": schedule_data.get("prompt", ""),
-            "schedule_cron": sched_time,
-            "hour": hour,
-            "minute": minute,
-            "is_active": schedule_data.get("is_active", True),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "last_run_at": None,
-            "last_run_date": None,
-            "run_count": 0
-        }
-        
-        existing = False
-        for i, s in enumerate(schedules):
-            if s.get("task_id") == task_id or s.get("id") == task_id:
-                schedules[i] = entry
-                existing = True
-                break
-        if not existing:
-            schedules.append(entry)
-            
-        try:
-            with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
-                json.dump(schedules, f, indent=2)
-        except Exception:
-            pass
-        return entry
-
-    def toggle_schedule(self, task_id: str, is_active: bool) -> bool:
-        schedules = self.list_schedules()
-        for s in schedules:
-            if s.get("task_id") == task_id or s.get("id") == task_id:
-                s["is_active"] = is_active
-                try:
-                    with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
-                        json.dump(schedules, f, indent=2)
-                    return True
-                except Exception:
-                    pass
-                break
-        return False
-
-    def delete_schedule(self, task_id: str) -> bool:
-        schedules = self.list_schedules()
-        filtered = [s for s in schedules if s.get("task_id") != task_id and s.get("id") != task_id]
-        if len(filtered) != len(schedules):
-            try:
-                with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
-                    json.dump(filtered, f, indent=2)
-                return True
-            except Exception:
-                pass
-        return False
-
-    def update_schedule_run_status(self, task_id: str, run_date_str: str):
-        schedules = self.list_schedules()
-        for s in schedules:
-            if s.get("task_id") == task_id or s.get("id") == task_id:
-                s["last_run_at"] = datetime.now(timezone.utc).isoformat()
-                s["last_run_date"] = run_date_str
-                s["run_count"] = int(s.get("run_count", 0)) + 1
-                try:
-                    with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
-                        json.dump(schedules, f, indent=2)
-                except Exception:
-                    pass
-                break
-
-history_manager = HistoryManager()
 from core.creator_memory import creator_memory
 from core.mcp_server import MCPServer
 from core.knowledge_agent import KnowledgeAgent
@@ -337,40 +137,6 @@ def generate_chat_title(vision: str) -> str:
     if meaningful:
         return " ".join(meaningful[:5])
     return cleaned[:40].title()
-
-def parse_schedule_directive(text: str) -> Optional[Dict[str, Any]]:
-    """Detects recurring daily schedule commands like 'everyday at 6am', 'daily at 06:00', 'every morning at 7:30 am'."""
-    if not text:
-        return None
-    pattern = r"(?:every\s*day|daily|every\s*morning|every\s*night)\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"
-    m = re.search(pattern, text, re.IGNORECASE)
-    if not m:
-        pattern2 = r"schedule\s+(?:this\s+)?(?:for\s+)?(?:every\s*day|daily)?\s*at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"
-        m = re.search(pattern2, text, re.IGNORECASE)
-        if not m:
-            return None
-    
-    hour = int(m.group(1))
-    minute = int(m.group(2)) if m.group(2) else 0
-    meridiem = (m.group(3) or "").lower()
-    if meridiem == "pm" and hour < 12:
-        hour += 12
-    elif meridiem == "am" and hour == 12:
-        hour = 0
-        
-    cleaned_prompt = re.sub(pattern, "", text, flags=re.IGNORECASE)
-    cleaned_prompt = re.sub(r"^(?:do\s+this\s+particular\s+work\s+for|do\s+this\s+for|schedule\s+this\s+for|please\s+run\s+this)\s*", "", cleaned_prompt, flags=re.IGNORECASE).strip(" :,-")
-    if not cleaned_prompt:
-        cleaned_prompt = text
-        
-    title = f"Daily {hour:02d}:{minute:02d} - {generate_chat_title(cleaned_prompt)}"
-    return {
-        "hour": hour,
-        "minute": minute,
-        "schedule_cron": f"Daily {hour:02d}:{minute:02d}",
-        "prompt": cleaned_prompt,
-        "title": title
-    }
 
 class SessionState:
     def __init__(self, session_id: str, vision: str):

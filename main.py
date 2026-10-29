@@ -7,7 +7,6 @@ voice-driven Jarvis interaction, live DAG monitoring, and workspace downloads.
 import json
 import asyncio
 import re
-from datetime import datetime
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Body
@@ -30,12 +29,14 @@ from core.models import (  # pyright: ignore[reportMissingImports]
     ExportPathRequest
 )
 from core.creator_memory import creator_memory  # pyright: ignore[reportMissingImports]
-from core.orchestrator import orchestrator, history_manager  # pyright: ignore[reportMissingImports]
+from core.orchestrator import orchestrator  # pyright: ignore[reportMissingImports]
+from core.workflow_manager import history_manager  # pyright: ignore[reportMissingImports]
+from core.scheduler import scheduler  # pyright: ignore[reportMissingImports]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Launch 24/7 background scheduler loop
-    scheduler_task = asyncio.create_task(autonomous_scheduler_loop())
+    scheduler_task = asyncio.create_task(scheduler.autonomous_scheduler_daemon(orchestrator, poll_interval_sec=25))
     yield
     # Shutdown: cancel task cleanly
     scheduler_task.cancel()
@@ -280,37 +281,6 @@ async def update_history_pin(req: PinUpdateRequest):
     """Toggles pin status for a session."""
     history_manager.toggle_pin(req.session_id, req.is_pinned)
     return {"success": True}
-
-async def autonomous_scheduler_loop():
-    """Background daemon running continuously on the PC to execute scheduled missions at their target time."""
-    while True:
-        try:
-            now = datetime.now()
-            current_hour = now.hour
-            current_minute = now.minute
-            today_str = now.strftime("%Y-%m-%d")
-
-            schedules = history_manager.list_schedules()
-            for sched in schedules:
-                if not sched.get("is_active", True):
-                    continue
-                s_hour = int(sched.get("hour", 6))
-                s_minute = int(sched.get("minute", 0))
-
-                if current_hour == s_hour and current_minute == s_minute:
-                    if sched.get("last_run_date") != today_str:
-                        tid = sched.get("task_id") or sched.get("id") or "sched"
-                        print(f"[Scheduler] ⏰ Triggering scheduled daily mission '{sched.get('title')}' at {now.strftime('%H:%M:%S')}...")
-                        history_manager.update_schedule_run_status(tid, today_str)
-                        asyncio.create_task(
-                            orchestrator.run_scheduled_mission(
-                                prompt=sched.get("prompt", ""),
-                                title=sched.get("title", "Daily Autonomous Mission")
-                            )
-                        )
-        except Exception as e:
-            print(f"[Scheduler Loop Error] {e}")
-        await asyncio.sleep(25)
 
 @app.get("/api/workflows")
 async def get_saved_workflows():

@@ -11,6 +11,39 @@
     "deliverables": []
   },
   {
+    "session_id": "i_want_you_send_ebf1",
+    "title": "I Want You Send Me",
+    "prompt": "hey i want you to send me 3 mails to anshtiwarif17@gmail.com\nwith subject hello i am jarvis and  with body different for every mail describing whatever you feel about me",
+    "folder": "Personal",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T17:03:33.578859+00:00",
+    "artifacts": [
+      "browser_permission_granted.json",
+      "browser_send_emails.py",
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md",
+      "send_emails_smtp.py"
+    ],
+    "deliverables": [
+      "browser_permission_granted.json",
+      "browser_send_emails.py",
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md",
+      "send_emails_smtp.py"
+    ]
+  },
+  {
     "session_id": "sched_run_aff03672",
     "title": "Daily 6AM Test Run",
     "prompt": "Test prompt",

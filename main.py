@@ -355,7 +355,7 @@ async def browser_open_url(req: dict = Body(...)):
         raise HTTPException(status_code=400, detail="Missing 'url' parameter")
     if not url.startswith(("http://", "https://")):
         url = f"https://{url}"
-    success = BrowserController.open_in_system_browser(url)
+    success = await asyncio.to_thread(BrowserController.open_in_system_browser, url)
     return {"success": success, "url": url}
 
 @app.post("/api/browser/compose-email")
@@ -401,7 +401,7 @@ async def browser_compose_email(req: dict = Body(...)):
     if not open_all and len(emails_to_open) > 1:
         emails_to_open = emails_to_open[:1]
 
-    res = BrowserController.compose_batch_in_gmail(emails_to_open)
+    res = await asyncio.to_thread(BrowserController.compose_batch_in_gmail, emails_to_open)
     return res
 
 @app.post("/api/browser/playwright-run")
@@ -425,7 +425,8 @@ async def browser_playwright_run(req: dict = Body(...)):
         body = "Hello Master Ansh, this is Jarvis executing autonomously like a real person on your desktop."
 
     if recipient:
-        res = BrowserController.automate_gmail_dispatch_playwright(
+        res = await asyncio.to_thread(
+            BrowserController.automate_gmail_dispatch_playwright,
             recipient=recipient,
             subject=subject,
             body=body,
@@ -435,7 +436,12 @@ async def browser_playwright_run(req: dict = Body(...)):
 
     url = req.get("url", "https://mail.google.com")
     actions = req.get("actions", [])
-    res = BrowserController.run_playwright_automation(url=url, headless=headless, actions=actions)
+    res = await asyncio.to_thread(
+        BrowserController.run_playwright_automation,
+        url=url,
+        headless=headless,
+        actions=actions
+    )
     return res
 
 @app.post("/api/email/smtp-send")
@@ -449,7 +455,8 @@ async def email_smtp_send(req: dict = Body(...)):
     smtp_server = req.get("smtp_server", "smtp.gmail.com")
     smtp_port = int(req.get("smtp_port", 587))
 
-    res = BrowserController.send_smtp_email(
+    res = await asyncio.to_thread(
+        BrowserController.send_smtp_email,
         recipient=recipient,
         subject=subject,
         body=body,

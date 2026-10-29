@@ -857,20 +857,21 @@ async function handleDirectiveSubmit(e) {
   input.value = "";
   appendChatMessage(text, "user");
 
-  // Determine routing based on selected mode and prompt content
-  const lower = text.toLowerCase().trim();
-  
-  // Explicit task execution directives that require deploying a sub-agent swarm
-  const isExplicitDirective = /^(build|deploy|create|launch|scrape|generate|compile|make|set up|scaffold|execute|send|write|mail)\b/i.test(lower) ||
-    lower.includes("build me") || lower.includes("deploy it") || lower.includes("scrape leads") || lower.includes("write me 3 mails") || lower.includes("run a campaign") ||
-    lower.includes("3 mails") || lower.includes("mails to") || lower.includes("email to") || lower.includes("i want you") || lower.includes("trading") || lower.includes("quant");
+  // Autonomous Escalation Intelligence: Understands automatically when to give a simple direct response vs deploy a whole army of agents
+  const isSwarmDirective = (state.activeMode === "swarm") ||
+    /^(build|deploy|create|launch|scrape|generate|compile|make|set up|scaffold|execute|send|write|mail|dispatch|automate|schedule)\b/i.test(lower) ||
+    lower.includes("build me") || lower.includes("deploy it") || lower.includes("scrape leads") || lower.includes("send mail") || lower.includes("send email") ||
+    lower.includes("3 mails") || lower.includes("mails to") || lower.includes("email to") || lower.includes("i want you to") || lower.includes("trading desk") ||
+    lower.includes("quant") || lower.includes("continuous") || lower.includes("daily at") || lower.includes("workflow");
 
-  const isConversationalQuery = (lower.endsWith("?") && !isExplicitDirective) ||
-    /^(what|who|how|why|when|where|which|can you tell me|explain|describe|introduce yourself|are you|status)\b/i.test(lower) ||
-    lower.includes("what can you do") || lower.includes("what are your capabilities") || lower.includes("who are you");
+  const isConversational = !isSwarmDirective && (
+    state.activeMode === "chat" ||
+    lower.endsWith("?") ||
+    /^(hi|hello|hey|who|what|how|why|when|where|which|tell me|explain|describe|status|are you|can you)\b/i.test(lower) ||
+    lower.includes("what can you do") || lower.includes("capabilities") || lower.includes("who are you") || lower.includes("how does")
+  );
 
-  // Route to chat ONLY if it is purely an informational question without an action directive
-  const shouldRouteToChat = !isExplicitDirective && (state.activeMode === "chat" || isConversationalQuery) && state.activeMode !== "swarm";
+  const shouldRouteToChat = !isSwarmDirective && isConversational;
 
   if (shouldRouteToChat) {
     try {

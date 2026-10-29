@@ -17,14 +17,51 @@ SCHEDULES_FILE = settings.WORKSPACE_DIR / "schedules.json"
 
 def parse_schedule_directive(text: str) -> Optional[Dict[str, Any]]:
     """
-    Detects recurring daily schedule commands like:
+    Detects recurring daily or continuous schedule commands like:
     - 'everyday at 6am'
     - 'daily at 06:00'
     - 'every morning at 7:30 am'
-    - 'schedule this for everyday at 6am: ...'
+    - 'continuous non ending workflows'
+    - 'run continuously 24/7'
+    - 'every hour'
     """
     if not text:
         return None
+
+    # 1. Continuous Non-Ending Loop Directives
+    if re.search(r"\b(?:continuously|continuous|non-?ending|24/7|forever|perpetual|unending)\b", text, re.IGNORECASE):
+        cleaned_prompt = re.sub(r"\b(?:continuously|continuous non-?ending workflows?|continuous workflows?|run continuously|24/7|non-?ending)\b", "", text, flags=re.IGNORECASE).strip(" :,-")
+        if not cleaned_prompt:
+            cleaned_prompt = text
+        words = re.findall(r'[a-zA-Z0-9@.-]+', cleaned_prompt)
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'for', 'to', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'as', 'is', 'it', 'all', 'be', 'will', 'that', 'this'}
+        meaningful = [w.capitalize() for w in words if w.lower() not in stop_words]
+        title_suffix = " ".join(meaningful[:4]) if meaningful else cleaned_prompt[:30]
+        return {
+            "hour": -1,
+            "minute": -1,
+            "schedule_cron": "Continuous (24/7 Daemon Loop)",
+            "prompt": cleaned_prompt,
+            "title": f"Continuous 24/7 - {title_suffix}"
+        }
+
+    # 2. Hourly Cadence
+    if re.search(r"\b(?:every\s*hour|hourly)\b", text, re.IGNORECASE):
+        cleaned_prompt = re.sub(r"\b(?:every\s*hour|hourly)\b", "", text, flags=re.IGNORECASE).strip(" :,-")
+        if not cleaned_prompt:
+            cleaned_prompt = text
+        words = re.findall(r'[a-zA-Z0-9@.-]+', cleaned_prompt)
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'for', 'to', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'as', 'is', 'it', 'all', 'be', 'will', 'that', 'this'}
+        meaningful = [w.capitalize() for w in words if w.lower() not in stop_words]
+        title_suffix = " ".join(meaningful[:4]) if meaningful else cleaned_prompt[:30]
+        return {
+            "hour": -1,
+            "minute": 0,
+            "schedule_cron": "Hourly (:00)",
+            "prompt": cleaned_prompt,
+            "title": f"Hourly - {title_suffix}"
+        }
+
     pattern = r"(?:every\s*day|daily|every\s*morning|every\s*night)\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"
     m = re.search(pattern, text, re.IGNORECASE)
     if not m:

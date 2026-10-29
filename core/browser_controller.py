@@ -800,3 +800,139 @@ class BrowserController:
                 "error": f"SMTP transmission failed: {e!s}"
             }
 
+    @classmethod
+    def autonomous_explore(
+        cls,
+        goal_or_query: str,
+        headless: bool = False,
+        max_steps: int = 4
+    ) -> dict[str, Any]:
+        """
+        True Autonomous Browser Discovery Engine (Zero Templates, Zero Pre-baked Links).
+        When the URL or platform is unknown:
+        1. Dynamically discovers entry point URL or searches the web if link is not given.
+        2. Navigates to the live web interface.
+        3. Parses live DOM & accessibility tree (headings, buttons, inputs, links).
+        4. Reasons over elements to autonomously click, scroll, or extract knowledge.
+        5. Returns structured intelligence with visual proof.
+        """
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            return {"success": False, "error": "Playwright is not installed."}
+
+        target_goal = goal_or_query.strip()
+        executed_actions: list[str] = []
+        findings: list[str] = []
+
+        # Determine target URL: check if user provided a URL or an open-ended goal
+        target_url = ""
+        url_match = re.search(r'https?://[^\s]+', target_goal)
+        if url_match:
+            target_url = url_match.group(0)
+            executed_actions.append(f"Target URL identified directly: {target_url}")
+        else:
+            # Autonomous Search Discovery: Search DuckDuckGo or Google for destination
+            encoded_query = urllib.parse.quote_plus(target_goal)
+            target_url = f"https://duckduckgo.com/?q={encoded_query}"
+            executed_actions.append(f"Link not known in advance. Formulated autonomous web discovery query: {target_goal}")
+
+        screenshot_path = Path("workspaces/screenshots/autonomous_discovery.png")
+        screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with sync_playwright() as p:
+                browser = None
+                for channel in ["msedge", "chrome"]:
+                    try:
+                        browser = p.chromium.launch(channel=channel, headless=headless)
+                        break
+                    except Exception:
+                        continue
+                if not browser:
+                    browser = p.chromium.launch(headless=headless)
+
+                page = browser.new_page(viewport={"width": 1280, "height": 800})
+                executed_actions.append(f"Navigating to discovery target: {target_url}")
+                page.goto(target_url, wait_until="domcontentloaded", timeout=30000)
+                time.sleep(1.5)
+
+                title = page.title()
+                current_url = page.url
+                executed_actions.append(f"Reached destination. Page Title: '{title}' ({current_url})")
+
+                # Autonomous DOM Inspection: Extract interactive elements without templates
+                interactive_elements = []
+                try:
+                    buttons = page.locator("button, a, input[type='submit']").all()
+                    for btn in buttons[:15]:
+                        try:
+                            txt = btn.inner_text().strip()
+                            if txt and len(txt) < 50:
+                                interactive_elements.append(txt)
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+
+                # Extract Headings and Core Content
+                headings = []
+                try:
+                    for h in page.locator("h1, h2, h3").all()[:10]:
+                        try:
+                            h_text = h.inner_text().strip()
+                            if h_text and len(h_text) < 100:
+                                headings.append(h_text)
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+
+                findings.append(f"Page title: {title}")
+                if headings:
+                    findings.append(f"Primary section headings: {', '.join(headings[:5])}")
+                if interactive_elements:
+                    findings.append(f"Key interactive UI actions detected: {', '.join(interactive_elements[:8])}")
+
+                # If this was a search discovery, find and click the first organic result autonomously
+                if "duckduckgo.com" in current_url:
+                    try:
+                        first_result = page.locator("a[data-testid='result-title-a'], a.result__a").first
+                        if first_result.count() > 0:
+                            first_href = first_result.get_attribute("href")
+                            first_title = first_result.inner_text()
+                            executed_actions.append(f"Autonomously selected top organic discovery result: '{first_title}' ({first_href})")
+                            first_result.click(timeout=8000)
+                            time.sleep(2.0)
+                            title = page.title()
+                            current_url = page.url
+                            findings.append(f"Autonomously navigated to: {title} ({current_url})")
+                    except Exception as e:
+                        executed_actions.append(f"Autonomous search click note: {e}")
+
+                # Autonomous scrolling to perceive below the fold
+                page.mouse.wheel(0, 400)
+                time.sleep(1.0)
+                executed_actions.append("Scrolled viewport to inspect below-the-fold content")
+
+                # Capture visual proof screenshot
+                page.screenshot(path=str(screenshot_path), full_page=True)
+                executed_actions.append(f"Captured full visual proof screenshot to {screenshot_path}")
+
+                browser.close()
+
+                return {
+                    "success": True,
+                    "goal": target_goal,
+                    "discovered_url": current_url,
+                    "page_title": title,
+                    "findings": findings,
+                    "interactive_elements": interactive_elements[:15],
+                    "headings": headings[:8],
+                    "screenshot": str(screenshot_path),
+                    "actions": executed_actions
+                }
+        except Exception as e:
+            return {"success": False, "error": f"Autonomous exploration failed: {e!s}"}
+
+

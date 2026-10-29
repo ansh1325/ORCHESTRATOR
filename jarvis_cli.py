@@ -102,9 +102,8 @@ class JarvisCLI:
     def print_help(self):
         print(f"\n{C.BOLD}Available CLI Directives & Commands:{C.RESET}")
         print(f"  {C.CYAN}<any natural directive>{C.RESET}  Deploy autonomous multi-agent swarm (code, SaaS, microservices, business)")
+        print(f"  {C.CYAN}browse <goal or query>{C.RESET}   Autonomous web discovery & DOM interaction (Zero templates; figures out links on its own)")
         print(f"  {C.CYAN}chat <message>{C.RESET}           Direct conversational dialogue with Jarvis Central Brain")
-        print(f"  {C.CYAN}browser inbox [idx]{C.RESET}      Open active Gmail inbox (https://mail.google.com/mail/u/0/#inbox) in host browser")
-        print(f"  {C.CYAN}browser compose <to> <subj> <body>{C.RESET} Open Gmail Compose tab pre-filled in host browser session")
         print(f"  {C.CYAN}browser open <url>{C.RESET}       Open any URL in user's active host browser")
         print(f"  {C.CYAN}browser run <url>{C.RESET}        Launch Playwright engine with smart locator, scrolling, and gestures")
         print(f"  {C.CYAN}history{C.RESET}                  List recent missions, sessions, and generated deliverables")
@@ -219,6 +218,52 @@ class JarvisCLI:
             await asyncio.wait_for(consumer_task, timeout=10)
         except asyncio.TimeoutError:
             pass
+
+    async def handle_autonomous_browse(self, goal_or_query: str):
+        """
+        True Autonomous Browser Discovery (Zero Templates, Zero Hardcoded Links).
+        Figures out destination links and inspects live UI structure on its own.
+        """
+        print(f"\n{C.CYAN}{C.BOLD}[Autonomous Browser Agent]{C.RESET} Exploring objective dynamically...")
+        print(f"  • Objective: {C.YELLOW}{goal_or_query}{C.RESET}")
+        print(f"  • Policy: {C.GREEN}Zero Templates / Autonomous Link & DOM Discovery{C.RESET}")
+        self.speak("Commencing autonomous web exploration and live DOM discovery.")
+
+        res = await asyncio.to_thread(
+            BrowserController.autonomous_explore,
+            goal_or_query=goal_or_query,
+            headless=False
+        )
+
+        if not res.get("success"):
+            print(f"{C.RED}[Error] Autonomous exploration encountered issue: {res.get('error')}{C.RESET}")
+            return
+
+        print(f"\n{C.GREEN}{C.BOLD}✓ Autonomous Exploration Completed:{C.RESET}")
+        print(f"  • Discovered Target: {C.CYAN}{res.get('discovered_url')}{C.RESET}")
+        print(f"  • Page Title: {C.BOLD}{res.get('page_title')}{C.RESET}")
+
+        actions = res.get("actions", [])
+        if actions:
+            print(f"\n{C.BOLD}Autonomous Steps Taken:{C.RESET}")
+            for a in actions:
+                print(f"  ✓ {a}")
+
+        findings = res.get("findings", [])
+        if findings:
+            print(f"\n{C.BOLD}Intelligence & Findings Extracted:{C.RESET}")
+            for f in findings:
+                print(f"  • {f}")
+
+        elements = res.get("interactive_elements", [])
+        if elements:
+            print(f"\n{C.BOLD}Interactive UI Elements Detected (Click/Action Candidates):{C.RESET}")
+            print(f"  {C.DIM}{', '.join(elements)}{C.RESET}")
+
+        if res.get("screenshot"):
+            print(f"\n  • Visual Proof Screenshot: {C.CYAN}{res.get('screenshot')}{C.RESET}\n")
+
+        self.speak("Exploration complete. Discovered web interface and extracted interactive elements.")
 
     def handle_browser_cmd(self, parts: list[str]):
         """Direct browser automation commands from terminal."""
@@ -368,6 +413,11 @@ class JarvisCLI:
                     print(f"Voice output set to: {C.GREEN if self.voice_enabled else C.RED}{'ON' if self.voice_enabled else 'OFF'}{C.RESET}\n")
                     if self.voice_enabled:
                         self.speak("Voice output activated.")
+                    continue
+
+                if line.lower().startswith("browse "):
+                    goal = line[7:].strip()
+                    await self.handle_autonomous_browse(goal)
                     continue
 
                 if line.lower().startswith("browser "):

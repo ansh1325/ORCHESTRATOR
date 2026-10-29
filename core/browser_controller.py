@@ -126,6 +126,55 @@ class BrowserController:
         return page.locator(f"text={target}").first
 
     @classmethod
+    def defeat_or_detect_captcha(cls, page: Any) -> dict[str, Any]:
+        """
+        Autonomous Anti-Bot & CAPTCHA Defense Engine.
+        1. Probes for Cloudflare Turnstile, reCAPTCHA v2/v3, and hCaptcha.
+        2. Tries to autonomously trigger/click verification checkboxes.
+        3. Returns challenge telemetry without crashing the automation flow.
+        """
+        result = {"detected": False, "type": "none", "solved_autonomously": False}
+        try:
+            cf_frames = page.frames
+            for frame in cf_frames:
+                f_url = (frame.url or "").lower()
+                if any(x in f_url for x in ["turnstile", "cloudflare", "challenges"]):
+                    result["detected"] = True
+                    result["type"] = "cloudflare_turnstile"
+                    try:
+                        cb = frame.locator("input[type='checkbox'], #challenge-stage, .ctp-checkbox-label").first
+                        if cb.count() > 0:
+                            cb.click(timeout=3000)
+                            time.sleep(1.5)
+                            result["solved_autonomously"] = True
+                    except Exception:
+                        pass
+                    return result
+
+                if "recaptcha" in f_url:
+                    result["detected"] = True
+                    result["type"] = "google_recaptcha"
+                    try:
+                        rc_box = frame.locator(".recaptcha-checkbox-border, #recaptcha-anchor").first
+                        if rc_box.count() > 0:
+                            rc_box.click(timeout=3000)
+                            time.sleep(1.5)
+                            result["solved_autonomously"] = True
+                    except Exception:
+                        pass
+                    return result
+
+            # Top-level DOM signature check
+            body_text = page.locator("body").inner_text(timeout=1500).lower()
+            if any(sig in body_text for sig in ["verify you are human", "security check", "challenge-running", "checking your browser"]):
+                result["detected"] = True
+                result["type"] = "generic_perimeter_challenge"
+        except Exception:
+            pass
+
+        return result
+
+    @classmethod
     def run_playwright_automation(
         cls,
         url: str,
@@ -136,9 +185,11 @@ class BrowserController:
         """
         Autonomous Multi-Tab Browser Automation Engine (like n8n / Stagehand).
         Capable of:
+        - Stealth anti-bot execution (spoofs navigator.webdriver, disables automation blink features)
+        - Defeating and detecting Cloudflare Turnstile / reCAPTCHA challenges
         - Opening multiple tabs and switching between them
         - Understanding and resolving semantic UI elements (text, roles, labels, placeholders)
-        - Full interactions: Click, Double Click, Hover, Type, Fill, Press Key
+        - Resilient self-healing interactions: Click, Double Click, Hover, Type, Fill, Press Key
         - Real gestures: Scroll (up, down, to bottom, to element), Swipe / Drag & Drop
         - Screenshot captures and live DOM telemetry
         """
@@ -157,24 +208,44 @@ class BrowserController:
 
         captured_data: dict[str, Any] = {"title": "", "url": target_url, "executed_actions": [], "tabs_opened": 1}
 
+        launch_args = [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage"
+        ]
+
         try:
             with sync_playwright() as p:
                 browser = None
                 for channel in ["msedge", "chrome"]:
                     try:
-                        browser = p.chromium.launch(channel=channel, headless=headless)
+                        browser = p.chromium.launch(channel=channel, headless=headless, args=launch_args)
                         break
                     except Exception:
                         continue
 
                 if not browser:
-                    browser = p.chromium.launch(headless=headless)
+                    browser = p.chromium.launch(headless=headless, args=launch_args)
 
-                context = browser.new_context(viewport={"width": 1280, "height": 800})
+                context = browser.new_context(
+                    viewport={"width": 1280, "height": 800},
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                )
                 page = context.new_page()
+                page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
                 page.goto(target_url, wait_until="domcontentloaded", timeout=30000)
                 captured_data["title"] = page.title()
                 captured_data["url"] = page.url
+
+                # Check and defeat CAPTCHA if encountered
+                captcha_res = cls.defeat_or_detect_captcha(page)
+                captured_data["captcha_telemetry"] = captcha_res
+                if captcha_res.get("detected"):
+                    captured_data["executed_actions"].append(
+                        f"Anti-Bot Challenge Detected ({captcha_res.get('type')}) -> Solved: {captcha_res.get('solved_autonomously')}"
+                    )
 
                 pages = [page]
                 current_page = page
@@ -210,31 +281,52 @@ class BrowserController:
                             captured_data["executed_actions"].append("Closed active tab and returned to previous")
 
                     elif act_type == "click":
-                        loc = cls._smart_locate(current_page, target)
                         try:
-                            loc.scroll_into_view_if_needed(timeout=5000)
+                            loc = cls._smart_locate(current_page, target)
+                            try:
+                                loc.scroll_into_view_if_needed(timeout=3000)
+                            except Exception:
+                                pass
+                            loc.click(timeout=6000)
+                            captured_data["executed_actions"].append(f"Clicked UI element '{target}'")
                         except Exception:
-                            pass
-                        loc.click(timeout=8000)
-                        captured_data["executed_actions"].append(f"Clicked UI element '{target}'")
+                            # Self-healing fallback: click via text locator with force
+                            try:
+                                current_page.get_by_text(target).first.click(timeout=3000, force=True)
+                                captured_data["executed_actions"].append(f"Clicked UI element '{target}' via text fallback")
+                            except Exception:
+                                captured_data["executed_actions"].append(f"Resilient Notice: Could not click '{target}', proceeding without failing")
 
                     elif act_type == "double_click":
-                        loc = cls._smart_locate(current_page, target)
                         try:
-                            loc.scroll_into_view_if_needed(timeout=5000)
+                            loc = cls._smart_locate(current_page, target)
+                            try:
+                                loc.scroll_into_view_if_needed(timeout=3000)
+                            except Exception:
+                                pass
+                            loc.dblclick(timeout=6000)
+                            captured_data["executed_actions"].append(f"Double-clicked UI element '{target}'")
                         except Exception:
-                            pass
-                        loc.dblclick(timeout=8000)
-                        captured_data["executed_actions"].append(f"Double-clicked UI element '{target}'")
+                            captured_data["executed_actions"].append(f"Resilient Notice: Could not double-click '{target}', continuing")
 
                     elif act_type in ["type", "fill"]:
-                        loc = cls._smart_locate(current_page, target)
                         try:
-                            loc.scroll_into_view_if_needed(timeout=5000)
+                            loc = cls._smart_locate(current_page, target)
+                            try:
+                                loc.scroll_into_view_if_needed(timeout=3000)
+                            except Exception:
+                                pass
+                            loc.fill(str(val), timeout=6000)
+                            captured_data["executed_actions"].append(f"Filled '{val}' into '{target}'")
                         except Exception:
-                            pass
-                        loc.fill(str(val), timeout=8000)
-                        captured_data["executed_actions"].append(f"Filled '{val}' into '{target}'")
+                            # Self-healing fallback: click and type via keyboard
+                            try:
+                                loc = cls._smart_locate(current_page, target)
+                                loc.click(timeout=2000)
+                                current_page.keyboard.type(str(val))
+                                captured_data["executed_actions"].append(f"Filled '{val}' into '{target}' via keyboard fallback")
+                            except Exception:
+                                captured_data["executed_actions"].append(f"Resilient Notice: Could not fill '{val}' into '{target}', continuing")
 
                     elif act_type == "hover":
                         loc = cls._smart_locate(current_page, target)

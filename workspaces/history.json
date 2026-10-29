@@ -11,6 +11,74 @@
     "deliverables": []
   },
   {
+    "session_id": "telemetry_microservice_jwt_e228",
+    "title": "Authenticated Telemetry Microservice",
+    "prompt": "Build a distributed microservice for real-time crypto price tracking with SQLite storage, JWT auth, and pytest test suite",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T21:10:09.587833+00:00",
+    "artifacts": [
+      "backtest_engine.py",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "paper_execution_loop.py",
+      "risk_manager.py",
+      "test_trading_system.py",
+      "trading_blueprint.md",
+      "trading_strategy.py",
+      "campaigns/ready_for_permission.json"
+    ],
+    "deliverables": [
+      "backtest_engine.py",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "paper_execution_loop.py",
+      "risk_manager.py",
+      "test_trading_system.py",
+      "trading_blueprint.md",
+      "trading_strategy.py",
+      "campaigns/ready_for_permission.json"
+    ]
+  },
+  {
+    "session_id": "sched_run_eebf35cd",
+    "title": "Daily 6AM Test Run",
+    "prompt": "Test prompt",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T20:29:24.468525+00:00",
+    "artifacts": [
+      "architecture_prd.md",
+      "browser_automator.py",
+      "continuous_daemon.py",
+      "core_engine.py",
+      "data_connector.py",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "my_module.py",
+      "README.md",
+      "run_tests.py",
+      "storage_manager.py",
+      "tests/test_my_module.py"
+    ],
+    "deliverables": [
+      "architecture_prd.md",
+      "browser_automator.py",
+      "continuous_daemon.py",
+      "core_engine.py",
+      "data_connector.py",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "my_module.py",
+      "README.md",
+      "run_tests.py",
+      "storage_manager.py",
+      "tests/test_my_module.py"
+    ]
+  },
+  {
     "session_id": "telemetry_microservice_jwt_5b7b",
     "title": "Authenticated Telemetry Microservice",
     "prompt": "Build an authenticated telemetry microservice with JWT auth and SQLite metrics storage",

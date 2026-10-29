@@ -250,6 +250,8 @@ class MetaOrchestrator:
             ])
             if is_query_only:
                 c_tier = "solo"
+            elif t_type == "communication_assistant" or any(w in v_low for w in ["mail", "email", "gmail", "letter"]):
+                c_tier = "tactical_squad"
             elif is_swarm or t_type in ("business_acquisition", "quantitative_trading", "robotics_humanoid"):
                 c_tier = "swarm_army"
             else:
@@ -258,6 +260,31 @@ class MetaOrchestrator:
 
             if is_query_only:
                 clarifications = []
+            elif t_type == "communication_assistant" or any(w in v_low for w in ["mail", "email", "gmail", "letter"]):
+                clarifications = [
+                    ClarificationQuestion(
+                        id="email_delivery_channel",
+                        question="How would you like me to send these 3 emails to anshtiwarisocial@gmail.com?",
+                        why_needed="Determines whether Jarvis executes via automated browser session control or direct SMTP credentials.",
+                        options=[
+                            "Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation - requires browser permission)",
+                            "Direct SMTP Relay (Send directly via SMTP server credentials)",
+                            "Staged Sandbox Verification (Draft letters in workspace with 1-click dispatch trigger)"
+                        ],
+                        default_selection="Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation - requires browser permission)"
+                    ),
+                    ClarificationQuestion(
+                        id="permission_authorization",
+                        question="Human Authorization & Access Permission Gate:",
+                        why_needed="Jarvis operates as your loyal partner and strictly requests your consent before initiating external browser or network actions.",
+                        options=[
+                            "Grant Browser & Network Permission to Jarvis for live dispatch",
+                            "Pre-compile authenticated dispatch script (send_emails.py) for manual review",
+                            "Interactive Confirmation (Preview each email in chat before dispatch)"
+                        ],
+                        default_selection="Grant Browser & Network Permission to Jarvis for live dispatch"
+                    )
+                ]
             else:
                 clarifications = []
                 for c in data.get("clarifications", []):

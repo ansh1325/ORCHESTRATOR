@@ -254,6 +254,14 @@ function setupEventListeners() {
   }
 
   // Clarification Modal Buttons
+  const toggleDeliverablesListBtn = document.getElementById("toggleDeliverablesListBtn");
+  if (toggleDeliverablesListBtn) {
+    toggleDeliverablesListBtn.addEventListener("click", () => {
+      const list = document.getElementById("completedDeliverablesList");
+      if (list) list.classList.toggle("hidden");
+    });
+  }
+
   const closeModalBtn = document.getElementById("closeModalBtn");
   if (closeModalBtn) {
     closeModalBtn.addEventListener("click", () => {
@@ -769,6 +777,16 @@ function appendChatMessage(text, role) {
   container.appendChild(msgDiv);
   container.scrollTop = container.scrollHeight;
   if (window.lucide) lucide.createIcons();
+
+  // Smooth scroll chat and window to focus on Jarvis's friendly response
+  setTimeout(() => {
+    const chat = document.getElementById("chatHistory");
+    if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+    const banner = document.getElementById("workDoneBanner");
+    if (banner) {
+      window.scrollTo({ top: banner.offsetTop - 20, behavior: "smooth" });
+    }
+  }, 150);
 }
 
 // Append Terminal Log
@@ -959,6 +977,16 @@ function renderClarificationModal(analysis) {
   }
 
   if (window.lucide) lucide.createIcons();
+
+  // Smooth scroll chat and window to focus on Jarvis's friendly response
+  setTimeout(() => {
+    const chat = document.getElementById("chatHistory");
+    if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+    const banner = document.getElementById("workDoneBanner");
+    if (banner) {
+      window.scrollTo({ top: banner.offsetTop - 20, behavior: "smooth" });
+    }
+  }, 150);
 }
 
 // Launch Autonomous Lifecycle (Stages 2 -> 5)
@@ -1143,6 +1171,7 @@ function updateTaskNodeStatus(taskId, status) {
 function showWorkDoneBanner(deliverables) {
   const banner = document.getElementById("workDoneBanner");
   const deliverablesList = document.getElementById("completedDeliverablesList");
+  const deliverablesCountLabel = document.getElementById("deliverablesCountLabel");
   if (!banner) return;
 
   banner.classList.remove("hidden");
@@ -1155,9 +1184,13 @@ function showWorkDoneBanner(deliverables) {
       state.activeDeliverables = ["mail_1.md", "mail_2.md", "mail_3.md", "browser_send_emails.py", "send_emails_smtp.py", "emails.json", "dispatch_summary.md"];
     }
 
+    if (deliverablesCountLabel) {
+      deliverablesCountLabel.textContent = `📁 ${state.activeDeliverables.length} Files`;
+    }
+
     state.activeDeliverables.forEach(file => {
       const btn = document.createElement("button");
-      btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface hover:bg-amber-500/20 text-slate-200 hover:text-amber-300 border border-brand-border transition cursor-pointer font-mono text-[11px] shadow-sm";
+      btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#071536] hover:bg-blue-900 text-amber-300 hover:text-amber-200 border border-blue-500/40 transition cursor-pointer font-mono text-[11px] shadow-sm";
       btn.innerHTML = `<i data-lucide="file" class="w-3.5 h-3.5 text-amber-400"></i><span>${escapeHtml(file)}</span>`;
       btn.addEventListener("click", () => previewWorkspaceFile(file));
       deliverablesList.appendChild(btn);
@@ -1236,6 +1269,16 @@ function showWorkDoneBanner(deliverables) {
   }
 
   if (window.lucide) lucide.createIcons();
+
+  // Smooth scroll chat and window to focus on Jarvis's friendly response
+  setTimeout(() => {
+    const chat = document.getElementById("chatHistory");
+    if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+    const banner = document.getElementById("workDoneBanner");
+    if (banner) {
+      window.scrollTo({ top: banner.offsetTop - 20, behavior: "smooth" });
+    }
+  }, 150);
 }
 
 // Interactive Live Browser Dispatch Trigger

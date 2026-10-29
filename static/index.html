@@ -59,14 +59,25 @@
   </script>
 
   <style>
+    html {
+      scroll-behavior: smooth;
+      height: 100%;
+    }
     body {
       background-color: #030818;
       background-image: 
-        radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.20) 0%, transparent 60%),
-        radial-gradient(circle at 10% 85%, rgba(245, 158, 11, 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 90% 85%, rgba(37, 99, 235, 0.16) 0%, transparent 45%);
+        radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.22) 0%, transparent 60%),
+        radial-gradient(circle at 10% 85%, rgba(245, 158, 11, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 90% 85%, rgba(37, 99, 235, 0.18) 0%, transparent 45%);
       color: #F1F5F9;
-      min-height: 100vh;
+      min-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    #chatHistory {
+      overscroll-behavior: auto;
+      scroll-behavior: smooth;
     }
 
     .glass-card {
@@ -380,30 +391,38 @@
 
       </div>
 
-      <!-- MISSION ACCOMPLISHED BANNER (Expands when mission finishes) -->
-      <div id="workDoneBanner" class="hidden mb-4 p-4 rounded-2xl bg-gradient-to-r from-amber-950/60 via-blue-950/60 to-slate-900 border border-amber-500/50 shadow-2xl space-y-2 shrink-0">
+      <!-- MISSION CERTIFIED EXECUTIVE HEADER (Compact, non-intrusive) -->
+      <div id="workDoneBanner" class="hidden mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-blue-950 via-[#0A173B] to-slate-900 border border-amber-400/50 shadow-2xl space-y-2.5 shrink-0 transition-all">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40 shadow-lg shadow-amber-500/20">
-              <i data-lucide="check-circle-2" class="w-5 h-5 stroke-[2.5]"></i>
+            <div class="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-400 flex items-center justify-center border border-amber-400/50 shadow-md shadow-amber-500/20">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
             </div>
             <div>
-              <h2 class="text-sm font-bold text-white">Mission Accomplished, Ansh.</h2>
-              <p class="text-xs text-amber-200/80" id="workDoneSummary">All autonomous tasks executed, verified, and certified.</p>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xs font-bold text-white uppercase tracking-wider">Mission Certified, Master Ansh</h2>
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 font-mono font-bold">100% Verified</span>
+              </div>
+              <p class="text-[11px] text-blue-200/80" id="workDoneSummary">All autonomous tasks executed, tested, and certified.</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button id="exportToDownloadsBtn" class="px-3.5 py-2 rounded-xl bg-blue-900/60 hover:bg-blue-800/80 text-amber-300 border border-amber-500/30 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition">
-              <i data-lucide="folder-output" class="w-3.5 h-3.5"></i>
+            <button id="toggleDeliverablesListBtn" class="px-2.5 py-1.5 rounded-xl bg-blue-900/50 hover:bg-blue-800 text-amber-300 border border-blue-400/30 text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="folder" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span id="deliverablesCountLabel">View Deliverables</span>
+            </button>
+            <button id="exportToDownloadsBtn" class="px-3 py-1.5 rounded-xl bg-blue-900/70 hover:bg-blue-800 text-blue-100 border border-amber-400/30 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="folder-output" class="w-3.5 h-3.5 text-amber-400"></i>
               <span>Save to Downloads</span>
             </button>
-            <button id="downloadCompletedZipBtn" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow-lg shadow-amber-500/30">
+            <button id="downloadCompletedZipBtn" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 transition shadow-lg shadow-amber-500/30 cursor-pointer">
               <i data-lucide="download" class="w-3.5 h-3.5"></i>
               <span>Download (.ZIP)</span>
             </button>
           </div>
         </div>
-        <div class="pt-2 border-t border-amber-500/20 flex flex-wrap gap-2 text-xs" id="completedDeliverablesList"></div>
+        <!-- Collapsible Deliverables Tray (discreet, accessible without overwhelming) -->
+        <div class="hidden pt-2 border-t border-amber-400/20 flex flex-wrap gap-2 text-xs" id="completedDeliverablesList"></div>
       </div>
 
       <!-- DYNAMIC AGENT SWARM DECK (Hidden during normal chat, appears when agents build) -->
@@ -538,6 +557,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20261029_v3_schedules_pinning"></script>
+  <script src="/static/app.js?v=20261029_v4_royal_gold_friend"></script>
 </body>
 </html>

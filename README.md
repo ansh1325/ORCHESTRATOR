@@ -1,5 +1,5 @@
-# 🦙 LlamaOrchestrator
-### Autonomous Hierarchical Multi-Agent Engine & Strategic AI Partner
+# LlamaOrchestrator
+### Autonomous Hierarchical Multi-Agent Operating System & Strategic AI Partner
 **Dynamic Worker Synthesis • Model Context Protocol (MCP) • Closed-Loop Self-Correction • Full Browser Automation**
 
 [![Meta Global AI Developer Hackathon 2026](https://img.shields.io/badge/Meta%20Hackathon-2026%20Official%20Submission-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
@@ -14,42 +14,30 @@
 
 ---
 
-## 🌟 Executive Summary: The Autonomous AI Organization
+## Executive Summary: The Autonomous AI Organization
 
 ### The Problem with Single-Prompt AI
-When a founder or enterprise executive issues an ambitious directive to ChatGPT, Claude, or Copilot—such as:
+When an entrepreneur, CTO, or engineer issues an ambitious directive to ChatGPT, Claude, or Copilot—such as:
 * *"I am a full-stack engineer. Build me an agency business around my skills, identify target SaaS clients across LinkedIn and email, draft personalized sequences, and schedule discovery calls."*
 * *"Architect an institutional quantitative trading desk for crypto and equities with strict 5% max drawdown risk limits and backtest metrics."*
 * *"Scaffold an authenticated FastAPI microservice, containerize it, write comprehensive unit tests, and prepare AWS cloud deployment blueprints."*
 
-Traditional LLMs return **a wall of text or disconnected code snippets that fail upon execution**. They cannot create files, they cannot run unit tests, they cannot diagnose runtime syntax errors, and they cannot navigate live browser sessions.
+Traditional LLMs return **a wall of text or disconnected code snippets that break the moment you run them in a terminal**. They cannot create files, they cannot run unit tests, they cannot diagnose runtime syntax errors, and they cannot navigate live browser sessions.
 
 **One person cannot run an entire enterprise alone — and neither can a single AI prompt.**
 
 ### The LlamaOrchestrator Solution
 **LlamaOrchestrator** is an autonomous multi-agent operating system and lifelong strategic AI partner (operating in the spirit of **Jarvis**). Instead of merely answering questions, it compiles high-level human directives into an **unbounded, self-correcting swarm of vertically specialized Meta Llama worker sub-agents**:
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                   TRADITIONAL 13-WEEK WATERFALL CYCLE                                  │
-│                                                                                                        │
-│   ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐ │
-│   │ Product Spec │ ──► │ Architecture │ ──► │ Backend API  │ ──► │ QA & Testing │ ──► │ Cloud Deploy │ │
-│   │ (PM: 2 wks)  │     │ (Staff: 2 wk)│     │ (Team: 4 wk) │     │ (QA: 3 wks)  │     │ (SRE: 2 wks) │ │
-│   └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘ │
-│                                                                                                        │
-│                           Calendar Time: 13 Weeks | Headcount Cost: $180,000+                          │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                    ▼
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                              LLAMAORCHESTRATOR DETERMINISTIC AUTONOMOUS RUN                            │
-│                                                                                                        │
-│   Vision Ingestion ──► DAG Compilation ──► Sub-Agent Swarm ──► Self-Correction ──► Evaluator Certified │
-│                                                                                                        │
-│                           Calendar Time: ~60 Seconds | Execution Cost: < $0.05                         │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+| Dimension | Traditional Waterfall Development | LlamaOrchestrator Autonomous Run |
+| :--- | :--- | :--- |
+| **Workflow Cycle** | Product Brief (2 wks) -> Architecture (2 wks) -> API Dev (4 wks) -> QA (3 wks) -> Deploy (2 wks) | Vision -> Topological DAG -> Parallel Swarms -> Self-Patching -> Certified Output |
+| **Turnaround Time** | **13 Weeks** | **~60 Seconds** |
+| **Engineering Cost** | **$180,000+** in staff salaries | **< $0.05** in compute tokens |
+| **Failure Recovery** | Human debugging cycles, meetings, and Jira delays | Autonomous closed-loop stderr intercept & self-healing |
+| **Output Deliverable** | Fragmented documentation & unverified branches | Path-contained sandboxed files, certified unit tests & 1-click downloads |
 
+### Core Operating Pillars
 1. **Acts as a Strategic Partner & Friend:** Never dumps raw files without context. Proactively verifies deployment channels, requests explicit authorization for browser or external dispatches, and maintains conversational loyalty.
 2. **Speaks Aloud with Neural Voice:** Communicates naturally through modern Web Speech executive neural voices (`Microsoft Guy Online Natural`, `Google UK Male`), presenting letter previews and mission status verbally.
 3. **Synthesizes Custom Sub-Agents On Demand:** Spawns an unbounded fleet of specialized workers—Quantitative Strategists, Lead Harvesters, API Architects, Outreach Copywriters, and Browser Automation Specialists—with zero pre-coded limits.
@@ -59,57 +47,85 @@ Traditional LLMs return **a wall of text or disconnected code snippets that fail
 
 ---
 
-## 💼 Engineering Perspective for Enterprise Clients, CTOs & Venture Partners
+## High-Stakes Decision Making: Software Architecture & Grand Slam Offers
 
-### Objective Capabilities & Concrete Service Level Agreements (SLAs)
+### 1. How Jarvis Formulates Software Architecture Decisions
+Software architecture decisions (monolith vs. microservices, synchronous REST vs. async WebSockets, SQL vs. document stores, 1kHz PID control vs. ROS2) cannot rely on generic guesses. Jarvis utilizes a **3-tier architectural decision engine**:
 
-| Objective | What LlamaOrchestrator Delivers Autonomously | Measurable Performance & SLA |
+* **Latency & Throughput Heuristics:** If sub-10ms latency is required, it provisions low-latency `asyncio` or C++ loops; if high-throughput background processing is required, it provisions decoupled worker pools.
+* **Zero-Trust Security Layer:** Enforces HMAC-SHA256 JWT tokens, path containment via `MCPServer`, and environment variable credential isolation.
+* **Persistent Intelligence Base:** All validated architectural designs are indexed in `workspaces/master_knowledge_base.json`, allowing Jarvis to compound engineering intelligence across missions.
+
+### 2. How Jarvis Crafts Irresistible Grand Slam Offers
+To acquire clients across any industry, Jarvis implements the **Alex Hormozi $100M Value Equation**:
+
+> **Perceived Value = (Dream Outcome × Perceived Likelihood of Achievement) / (Time Delay × Effort & Sacrifice)**
+
+* **Dream Outcome (Maximizer):** Identifies the highest-leverage economic transformation for the prospect (e.g. *"Eliminate software engineering backlog without senior hiring overhead"*).
+* **Perceived Likelihood of Achievement (Maximizer):** Scaffolds ironclad risk-reversal guarantees (e.g. *"50% payment only upon passing all automated unit test suites in production"*).
+* **Time Delay (Minimizer):** Compresses calendar turnaround from 3 months to 7 days.
+* **Effort & Sacrifice (Minimizer):** Turnkey delivery where Jarvis writes the code, Docker blueprints, and tests, leaving only a 1-click review for the client.
+
+### 3. The 3-Tier Human Governance Boundary: When Jarvis Asks vs. Executes
+
+| Governance Level | Autonomous vs. Human Gate | Specific Tasks & Decisions Handled |
 | :--- | :--- | :--- |
-| **Architectural Decomposition** | Evaluates raw directives and compiles a topological Directed Acyclic Graph (DAG) with exact dependency ordering. | Sub-2s compilation; 100% cycle-free DAG validation. |
-| **Sub-Agent Swarm Scalability** | Synthesizes on-demand, vertically-specialized AI worker sub-agents with scoped prompts, isolated workspaces, and tool access. | **Unbounded Swarm Scaling:** 1 solo agent up to 20+ parallel worker nodes with zero hard ceiling. |
-| **Zero-Hallucination Delivery** | All generated code is subjected to automated compilation (`py_compile`), AST syntax parsing, and sandboxed pytest suites. | **100% Test Pass Guarantee:** Zero broken code leaves the workspace sandbox. |
-| **Closed-Loop Self-Correction** | Intercepts nonzero returncodes and `stderr` tracebacks, feeding them back into inference loops for automated patch synthesis. | Up to 3 recursive self-healing iterations with 0 human intervention. |
-| **Model Context Protocol (MCP)** | JSON-RPC 2.0 tool execution layer with strict path-containment and subprocess isolation. | 17 verified sandboxed tools; zero directory traversal vulnerabilities (`MCPSandboxSecurityError`). |
-| **Human Governance Boundary** | Establishes mathematical separation between autonomous execution and human-authorized operations (IAM keys, capital spend, sales calls). | Zero unauthorized transactions; pre-staged 1-click permission queues. |
-| **Antigravity / Gemini Chat Naming** | Automatically generates clean, descriptive titles and zip filenames (e.g., `3_Personal_Emails_to_Ansh_Tiwari.zip`). | Human-readable filesystem exports; 0 hexadecimal UUID clutter. |
-
-### Competitive Advantage vs. Legacy Multi-Agent Frameworks
-
-| Capability | CrewAI | AutoGen | LangGraph | **LlamaOrchestrator** |
-| :--- | :--- | :--- | :--- | :--- |
-| **Worker Agent Synthesis** | Rigid static Python classes | Generic conversable agents | Manual state graph nodes | **Dynamic runtime synthesis from first principles** |
-| **Filesystem Isolation** | None (Runs directly on host) | Dangerous (Direct terminal access) | Uncontained memory state | **Zero-Trust MCP Sandbox (`MCPServer`)** |
-| **Runtime Self-Correction** | Basic retry loop | Chat-based iteration | Manual exception routing | **Automated `stderr` diagnosis & AST patching** |
-| **Voice Interaction** | None | None | None | **Live neural voice synthesis & Arc Reactor UI** |
-| **Human-in-the-Loop Gate** | Blocking synchronous prompt | Raw terminal prompt | Breakpoint interrupts | **Non-blocking 1-click authorization queue** |
-| **Host System Integration** | Manual file copying | Unrestricted filesystem access | Manual serialization | **Safe directive file ingestion & 1-click Downloads export** |
+| **Tier 1: 100% Autonomous** | Zero Human Bother | • Writing Python, FastAPI, Docker, and Terraform code<br>• Compiling topological DAG execution plans<br>• Sandboxed unit testing & py_compile syntax validation<br>• Intercepting stderr exceptions, debugging tracebacks & auto-patching<br>• Ingesting local directive paths (e.g., `Downloads/data.csv`) |
+| **Tier 2: Interactive Dialogue** | Strategic Human Consultation | • Dispatch Channel: Browser automation session vs. direct SMTP relay vs. draft review<br>• Business Pricing Tiers: Pilot retainer vs. performance percentage<br>• Financial Risk Limits: 5% max portfolio drawdown vs. trailing stops |
+| **Tier 3: Gated Authorization** | 1-Click Permission Queue | • Real money transactions / live exchange trading keys<br>• Injecting live LinkedIn or Gmail session cookies into automated browser runners<br>• Deploying live infrastructure to AWS with user IAM credentials |
 
 ---
 
-## ⚡ Core Architectural Capabilities
+## Decoupled Modular Architecture
 
-### 1. Dynamic Combat Escalation: Solo Response vs. Swarm Army
-* **Solo Direct Response:** For informational queries (*"What is the system architecture?"*), Jarvis responds immediately via voice and chat without spawning unneeded workers or asking unnecessary clarification questions.
+Adhering to the **Single Responsibility Principle (SRP)**, LlamaOrchestrator separates state machines, background schedulers, external communications, and worker runners into dedicated subsystems:
+
+```text
+core/
+├── config.py              # Zero-trust environment configuration & provider keys
+├── models.py              # Pydantic schemas, data contracts & event definitions
+├── creator_memory.py      # Central Brain identity, persistent relationship with Ansh Tiwari
+├── mcp_server.py          # Strict path-containment sandbox & JSON-RPC tool server
+│
+├── workflow_manager.py    # Dedicated: Saved workflow blueprints, mission history & chat pinning
+├── scheduler.py           # Dedicated: 24/7 background scheduler daemon & natural language cron
+├── dispatch_engine.py     # Dedicated: Playwright browser runner, SMTP relay & permission manifests
+│
+├── knowledge_agent.py     # Stage 2: Autonomous domain research & knowledge synthesis
+├── orchestrator.py        # Stage 1 & 3: Lean topological DAG compiler & dynamic worker synthesis
+├── worker.py              # Stage 4: Dynamic ReAct worker execution & closed-loop self-healing
+└── evaluator.py           # Stage 5: Rigorous gatekeeper & 100% pytest pass validation
+```
+
+---
+
+## Core Operational Capabilities
+
+### 1. 24/7 Persistent PC Scheduler (Runs Forever on PC)
+* **Natural Language Detection:** Instruct Jarvis with directives like *"do this particular work for everyday at 6am: scrape 20 leads and send emails"* or *"daily at 18:30 analyze crypto momentum"*.
+* **Background Async Daemon:** Powered by `autonomous_scheduler_daemon` in `core/scheduler.py`, it runs persistently on your machine, triggers execution at designated times, and maintains audit logs in `schedules.json`.
+* **Sidebar Controls:** View live schedules, toggle pause/active states, and click **"Run Now"** to execute immediately.
+
+### 2. Reusable Saved Workflows Catalog
+* **Save Any Vision:** Bookmark missions from the UI or chat into `core/workflow_manager.py`.
+* **1-Click Execution:** Instantly populate prompts and launch pre-configured multi-agent swarms.
+* **REST CRUD Endpoints:** Full support for `GET /api/workflows`, `POST /api/workflows`, and `DELETE /api/workflows/{id}`.
+
+### 3. Pin Work Chats to Top
+* **Top Header Pin Button:** Click the **Pin** button in the active session header to lock the mission to the top of your workspace.
+* **Priority Sorting:** Pinned missions automatically float to index `0` in history lists.
+* **Folder Filter:** Isolate pinned missions with one click using the `Pinned` folder pill.
+
+### 4. Dynamic Combat Escalation: Solo Response vs. Swarm Army
+* **Solo Direct Response:** For informational queries (*"What is the system architecture?"*), Jarvis responds immediately via voice and chat without spawning unneeded workers or asking clarification questions.
 * **Swarm Army Deployment:** When tasked with complex missions (*"Build an algorithmic trading desk"*, *"Launch an omnichannel marketing engine"*), it deploys an unbounded squad of Meta Llama workers across an execution DAG.
 
-### 2. Strategic Clarification & Interactive Companionship
-For sensitive external actions (e.g. sending emails, making financial transactions, or deploying cloud infrastructure), LlamaOrchestrator proactively halts at Stage 1 to align with you:
-1. **Channel Selection:** Prompts whether to use an authenticated browser session, direct SMTP relay, or generate reviewable drafts.
-2. **Permission Gate:** Requests explicit authorization before touching any external network service.
-3. **Interactive Letter Previews:** Renders live letter cards with 1-click **"Grant Browser Permission & Dispatch"** buttons directly inside the chat stream.
-
-### 3. Omnichannel Campaign Vault & Browser Automation
+### 5. Omnichannel Campaign Vault & Browser Automation
 Outreach is never restricted to cold email alone. LlamaOrchestrator structures a dedicated `campaigns/` architecture:
-* **`campaigns/linkedin/`:** Connection notes and executable browser automation scripts (`linkedin_browser_script.py`) with 3–7 second human jitter to safely navigate modern web interfaces.
-* **`campaigns/communities/`:** Target groups in `target_groups.json` (r/SaaS, r/Entrepreneur, IndieHackers) paired with technical teardowns (`high_value_posts.md`) driving organic inbound interest.
+* **`campaigns/linkedin/`:** Connection notes and executable browser automation scripts (`linkedin_browser_script.py`) with 3–7 second human jitter.
+* **`campaigns/communities/`:** Target groups in `target_groups.json` (r/SaaS, r/Entrepreneur, IndieHackers) paired with technical teardowns (`high_value_posts.md`).
 * **`campaigns/twitter_x/`:** Founder conversation starters and high-authority technical threads.
 * **`campaigns/cold_email/`:** RFC-5322 validated founder contacts (`leads.csv`) and personalized sequences (`sequences.md`).
-
-### 4. Non-Blocking "Ready-for-Permission" Action Queue
-If external credentials or live authorizations are pending, **Jarvis never stalls or crashes**. It completes 100% of prep work—scraping leads, drafting copy, compiling browser scripts, and backtesting models—and stages every pending action in `campaigns/ready_for_permission.json`. Once authorized, the entire queue executes with one click.
-
-### 5. Closed-Loop Self-Correction with Zero-Trust MCP Sandboxing
-Sub-agents execute inside isolated sandboxes (`./workspaces/{session_id}/`). If any unit test or syntax compilation fails, the self-correction engine intercepts the failure, diagnoses the traceback, applies an automated patch, and re-runs verification until 100% pass criteria are satisfied.
 
 ### 6. Host File Ingestion & 1-Click Downloads Export
 * **Auto-Ingestion from Directives:** Mention any host path or filename (e.g., `Downloads/leads.csv`, `C:\data\clients.json`), and the Central Brain automatically imports it into the sandboxed session workspace.
@@ -117,7 +133,7 @@ Sub-agents execute inside isolated sandboxes (`./workspaces/{session_id}/`). If 
 
 ---
 
-## 🏛️ System Architecture: Enterprise Multi-Agent Flow
+## System Architecture: Enterprise Multi-Agent Flow
 
 ```mermaid
 graph TD
@@ -149,7 +165,7 @@ graph TD
 
 ---
 
-## 💡 Real-World Production Scenarios
+## Real-World Production Scenarios
 
 ### Scenario 1: The Solo Developer Compiling a $10,000 Client Acquisition Engine
 * **Directive:** *"I know full-stack software development and want to sell it. Build me a high-converting marketing campaign, scrape target client leads, write personalized cold emails, and deploy everything autonomously. Do not bother me unless a client is ready to get on a call."*
@@ -181,7 +197,7 @@ graph TD
 
 ---
 
-## 🚀 Quickstart & 1-Command Installation
+## Quickstart & 1-Command Installation
 
 Anyone cloning this repository can run it immediately without missing dependencies, configuration traps, or mandatory API keys.
 
@@ -223,7 +239,7 @@ python -m pytest tests/test_orchestration.py -v
 ```
 You will see 100% green verification:
 ```text
-============================= 15 passed in 26.12s =============================
+============================= 15 passed in 35.94s =============================
 ```
 
 #### 5. Launch the Application
@@ -235,7 +251,7 @@ Open your browser to:
 
 ---
 
-## 🧪 Comprehensive Pytest Test Suite (15/15 Certified)
+## Comprehensive Pytest Test Suite (15/15 Certified)
 
 Every architectural stage, tool sandbox, and safety mechanism is verified through unit and integration tests:
 
@@ -259,7 +275,7 @@ Every architectural stage, tool sandbox, and safety mechanism is verified throug
 
 ---
 
-## 🏆 Creator & Chief Systems Architect
+## Creator & Chief Systems Architect
 
 * **Creator & Lead Architect:** **Ansh Tiwari** ([GitHub: @ansh1325](https://github.com/ansh1325))
 * **Competition Track:** Meta Global AI Developer Hackathon (2026) — 1st Place Indie Developer Track ($150,000) & Best Agentic Use-Case ($5,000)

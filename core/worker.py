@@ -1095,7 +1095,7 @@ class DynamicWorkerEngine:
             self.mcp.tool_file_write("telemetry_service.py", content)
             artifacts.append("telemetry_service.py")
 
-        elif "test" in tid and ("telemetry" in tid or track_type == "telemetry") and "task_0" not in tid and "founder" not in track_type:
+        elif "test" in tid and ("telemetry" in tid or "tech_test" in tid or track_type in ["telemetry", "technical_software"]) and "task_0" not in tid and not track_type.startswith("founder"):
             test_content = (
                 '"""Test Suite for Authenticated Telemetry Microservice."""\n'
                 'import pytest\n'

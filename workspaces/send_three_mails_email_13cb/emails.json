@@ -1,0 +1,20 @@
+[
+  {
+    "to": "anshtiwarif17@gmail.com",
+    "subject": "hello i am jarvis",
+    "file": "mail_1.md",
+    "status": "Verified & Prepared"
+  },
+  {
+    "to": "anshtiwarif17@gmail.com",
+    "subject": "hello i am jarvis",
+    "file": "mail_2.md",
+    "status": "Verified & Prepared"
+  },
+  {
+    "to": "anshtiwarif17@gmail.com",
+    "subject": "hello i am jarvis",
+    "file": "mail_3.md",
+    "status": "Verified & Prepared"
+  }
+]

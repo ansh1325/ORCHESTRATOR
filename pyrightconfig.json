@@ -1,0 +1,12 @@
+{
+  "include": [
+    "core",
+    "main.py",
+    "tests"
+  ],
+  "extraPaths": [
+    "."
+  ],
+  "reportMissingImports": "none",
+  "reportOptionalMemberAccess": "none"
+}

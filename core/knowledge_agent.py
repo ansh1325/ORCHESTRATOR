@@ -14,8 +14,10 @@ from core.mcp_server import MCPServer
 from core.config import settings
 from datetime import datetime, timezone
 
-def robust_json_loads(raw: str) -> dict:
+def robust_json_loads(raw: Optional[str]) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    if not raw:
+        return {}
     clean = str(raw).strip()
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
     if match:
@@ -42,7 +44,7 @@ class KnowledgeAgent:
         vision: str,
         clarification_answers: Dict[str, str],
         mcp: MCPServer,
-        emit_event: Optional[Callable[[ExecutionEvent], None]] = None
+        emit_event: Optional[Callable[[ExecutionEvent], Any]] = None
     ) -> KnowledgeBase:
         # Check if dynamic LLM synthesis is available
         if self.llm_client and not settings.is_mock():
@@ -506,7 +508,7 @@ class KnowledgeAgent:
         vision: str,
         clarification_answers: Dict[str, str],
         mcp: MCPServer,
-        emit_event: Optional[Callable[[ExecutionEvent], None]] = None
+        emit_event: Optional[Callable[[ExecutionEvent], Any]] = None
     ) -> Optional[KnowledgeBase]:
         """Dynamically formulates research queries and synthesizes a structured Knowledge Base using the LLM."""
         search_query = f"{vision[:60]} architecture best practices requirements"

@@ -16,8 +16,10 @@ class WorkerExecutionError(Exception):
     """Raised when a worker task fails after exhausting self-correction attempts."""
     pass
 
-def robust_json_loads(raw: str) -> dict:
+def robust_json_loads(raw: Optional[str]) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    if not raw:
+        return {}
     clean = str(raw).strip()
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
     if match:
@@ -52,7 +54,7 @@ class DynamicWorkerEngine:
         task: TaskNode,
         spec: SubAgentSpec,
         track_type: str,
-        emit_event: Optional[Callable[[ExecutionEvent], None]] = None,
+        emit_event: Optional[Callable[[ExecutionEvent], Any]] = None,
         max_retries: int = 2
     ) -> bool:
         """Executes a single DAG task with real MCP tool execution and closed-loop self-correction."""
@@ -457,7 +459,7 @@ class DynamicWorkerEngine:
             self.mcp.tool_file_write("test_humanoid_robotics.py", test_content)
             artifacts.append("test_humanoid_robotics.py")
 
-            spec = (
+            spec_doc = (
                 '# Tesla Optimus Class Humanoid Robotics Architecture Specification\n'
                 'Compiled by: Jarvis (LlamaOrchestrator Central Brain)\n'
                 'Lead Architect: Ansh Tiwari\n\n'
@@ -472,7 +474,7 @@ class DynamicWorkerEngine:
                 '- **safety_failsafe.py**: Thermal monitoring (85C threshold) and instant emergency stop state machine.\n'
                 '- **test_humanoid_robotics.py**: 100% test-verified simulation suite.\n'
             )
-            self.mcp.tool_file_write("humanoid_architecture_spec.md", spec)
+            self.mcp.tool_file_write("humanoid_architecture_spec.md", spec_doc)
             artifacts.append("humanoid_architecture_spec.md")
 
         # Quantitative Trading Handlers

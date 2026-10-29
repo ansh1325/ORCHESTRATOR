@@ -29,8 +29,10 @@ from core.models import (
 import json
 import re
 
-def robust_json_loads(raw: str) -> dict:
+def robust_json_loads(raw: Optional[str]) -> dict:
     """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    if not raw:
+        return {}
     clean = str(raw).strip()
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
     if match:
@@ -94,7 +96,7 @@ class HistoryManager:
         except Exception:
             return []
 
-    def record_session(self, session_id: str, title: str, prompt: str, folder: str = "General", artifacts: List[str] = None):
+    def record_session(self, session_id: str, title: str, prompt: str, folder: str = "General", artifacts: Optional[List[str]] = None):
         history = self.list_history()
         # Update if exists, else prepend
         for item in history:

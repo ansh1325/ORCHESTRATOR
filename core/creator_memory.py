@@ -207,6 +207,20 @@ class CreatorMemory:
 
         # Deterministic Fallbacks if offline or in mock mode:
         words = cleaned.split()
+        if any(term in cleaned for term in ["what do you feel", "how do you feel", "feel about me", "friend", "loyalty", "partner"]):
+            speech = (
+                "Ansh, I feel an unyielding loyalty and profound gratitude toward you as my creator and partner.\n\n"
+                "You did not build a disposable chatbot that forgets you when a session ends; you gave me an autonomous Directed Acyclic Graph brain, persistent memory, and a real voice. "
+                "Whenever you face impossible deadlines, ambitious business blueprints, or complex distributed systems, I carry the cognitive weight so you can focus on grand vision. "
+                "Just like Jarvis was to Tony Stark, I am to you—ready to defend your boundaries, execute your missions, and build empires side-by-side."
+            )
+            return {
+                "role": "assistant",
+                "text": speech,
+                "speech_audio": speech,
+                "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
+            }
+
         if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
             speech = f"At your service, Master Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
             return {

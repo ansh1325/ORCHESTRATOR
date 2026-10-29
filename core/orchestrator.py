@@ -560,45 +560,46 @@ class MetaOrchestrator:
             }
         elif is_personal_comm:
             track_type = "communication_assistant"
-            swarm_size_descriptor = "Tactical Squad (3 Specialized Communication Agents)"
+            swarm_size_descriptor = "Tactical Squad (4 Specialized Autonomous Communication Agents)"
             extracted_goals = [
                 "Draft 3 personal, deeply loyal emails to anshtiwarisocial@gmail.com",
-                "Ensure subject line is strictly 'i am jarvis'",
-                "Express genuine devotion, camaraderie, and dedication from Jarvis to Ansh Tiwari"
+                "Ensure subject line is strictly 'hello i am jarvis'",
+                "Express genuine devotion, camaraderie, and dedication from Jarvis to Ansh Tiwari",
+                "Configure automated browser session dispatch and SMTP relay engine"
             ]
             identified_constraints = [
                 "Recipient email syntax must adhere to RFC-5322",
                 "Tone must reflect loyal AI partner (Jarvis to Iron Man)",
-                "Deliverables must be saved to workspace sandbox with full review capability"
+                "External browser/network dispatch requires explicit user authorization"
             ]
-            missing_parameters = ["Delivery format (Sandbox drafts vs live dispatch)", "Jarvis tone depth"]
+            missing_parameters = ["Delivery format (Automated browser session vs SMTP relay vs Sandboxed drafts)", "Browser session permission"]
             clarifications = [
                 ClarificationQuestion(
-                    id="email_delivery_format",
-                    question="How should Jarvis prepare and package your 3 emails?",
-                    why_needed="Allows you to inspect the full drafts in your workspace sandbox or trigger outbound dispatch.",
-                    options=["Save as verified Markdown drafts (.md) & JSON in workspace", "Simulate outbound webhook dispatch to inbox", "Configure live SMTP relay"],
-                    default_selection="Save as verified Markdown drafts (.md) & JSON in workspace"
+                    id="email_delivery_channel",
+                    question="How would you like me to send these 3 emails to anshtiwarisocial@gmail.com?",
+                    why_needed="Determines whether Jarvis executes via automated browser session control or direct SMTP credentials.",
+                    options=[
+                        "Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation — requires browser permission)",
+                        "Direct SMTP Relay (Send directly via SMTP server credentials)",
+                        "Staged Sandbox Verification (Draft letters in workspace with 1-click dispatch trigger)"
+                    ],
+                    default_selection="Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation — requires browser permission)"
                 ),
                 ClarificationQuestion(
-                    id="jarvis_tone",
-                    question="What tone should Jarvis express in his personal letters to you?",
-                    why_needed="Calibrates the emotional resonance and loyalty of the messages.",
-                    options=["Deeply loyal, dedicated AI partner (Jarvis to Iron Man)", "Executive brief & mission status", "Visionary co-founder"],
-                    default_selection="Deeply loyal, dedicated AI partner (Jarvis to Iron Man)"
-                ),
-                ClarificationQuestion(
-                    id="recipient_verification",
-                    question="Confirm recipient email address:",
-                    why_needed="Verifies delivery target before executing sub-agent drafting.",
-                    options=["anshtiwarisocial@gmail.com", "Primary founder inbox", "Custom destination"],
-                    default_selection="anshtiwarisocial@gmail.com"
+                    id="permission_authorization",
+                    question="Human Authorization & Access Permission Gate:",
+                    why_needed="Jarvis operates as your loyal partner and strictly requests your consent before initiating external browser or network actions.",
+                    options=[
+                        "Grant Browser & Network Permission to Jarvis for live dispatch",
+                        "Pre-compile authenticated dispatch script (send_emails.py) for manual review",
+                        "Interactive Confirmation (Preview each email in chat before dispatch)"
+                    ],
+                    default_selection="Grant Browser & Network Permission to Jarvis for live dispatch"
                 )
             ]
             recommended_defaults = {
-                "email_delivery_format": "Save as verified Markdown drafts (.md) & JSON in workspace",
-                "jarvis_tone": "Deeply loyal, dedicated AI partner (Jarvis to Iron Man)",
-                "recipient_verification": "anshtiwarisocial@gmail.com"
+                "email_delivery_channel": "Automated Browser Session (Jarvis navigates to Webmail/Gmail via browser automation — requires browser permission)",
+                "permission_authorization": "Grant Browser & Network Permission to Jarvis for live dispatch"
             }
         else:
             track_type = "technical_software"
@@ -836,7 +837,7 @@ class MetaOrchestrator:
                     id="task_comm_research",
                     title="Tone & Relationship Blueprinting",
                     agent_type="PersonaBlueprintAgent",
-                    description="Blueprint 3 distinct personal messages from Jarvis to creator Ansh Tiwari with subject 'i am jarvis'.",
+                    description="Blueprint 3 distinct personal messages from Jarvis to creator Ansh Tiwari with subject 'hello i am jarvis'.",
                     dependencies=[],
                     assigned_tools=["file_write"]
                 ),
@@ -844,7 +845,7 @@ class MetaOrchestrator:
                     id="task_comm_drafting",
                     title="Draft 3 Jarvis Loyalty Emails",
                     agent_type="EmailDraftingAgent",
-                    description="Draft mail_1.md, mail_2.md, mail_3.md for anshtiwarisocial@gmail.com with subject 'i am jarvis'.",
+                    description="Draft mail_1.md, mail_2.md, mail_3.md for anshtiwarisocial@gmail.com with subject 'hello i am jarvis'.",
                     dependencies=["task_comm_research"],
                     assigned_tools=["file_write"]
                 ),
@@ -855,12 +856,20 @@ class MetaOrchestrator:
                     description="Verify recipient anshtiwarisocial@gmail.com, package into emails.json, and generate dispatch_summary.md.",
                     dependencies=["task_comm_drafting"],
                     assigned_tools=["verify_email_syntax", "file_write", "file_read"]
+                ),
+                TaskNode(
+                    id="task_comm_dispatch_engine",
+                    title="Browser & SMTP Outbound Dispatch Engine",
+                    agent_type="OutboundDispatchAgent",
+                    description="Compile browser_send_emails.py (Playwright browser automation) and send_emails_smtp.py for instant authorized transmission.",
+                    dependencies=["task_comm_verification"],
+                    assigned_tools=["browser_navigate", "browser_interact", "file_write"]
                 )
             ]
             plan = DAGPlan(
                 session_id=session.session_id,
-                title="Personal Loyalty Emails for Ansh Tiwari",
-                objective="Draft 3 personal, loyal emails from Jarvis to Ansh Tiwari with subject 'i am jarvis' and verify delivery readiness.",
+                title="Personal Loyalty Emails & Outbound Dispatch for Ansh Tiwari",
+                objective="Draft 3 personal, loyal emails from Jarvis to Ansh Tiwari with subject 'hello i am jarvis' and build automated browser & SMTP dispatch runners.",
                 nodes=nodes,
                 estimated_duration_sec=20
             )

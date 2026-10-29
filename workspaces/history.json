@@ -1,5 +1,32 @@
 [
   {
+    "session_id": "session_6c271f98",
+    "title": "Personal Loyalty Emails for Ansh Tiwari",
+    "prompt": "hey i want you 3 mails to the email address anshtiwarisocial@gmail.com with exact subject line hello i am jarvis and body will be different of all 3 mails describing what you feel about me",
+    "folder": "Personal",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-29T12:17:46.027341+00:00",
+    "artifacts": [
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md"
+    ],
+    "deliverables": [
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md"
+    ]
+  },
+  {
     "session_id": "session_fbe861d9",
     "title": "Enterprise AI Automation Service Development Plan",
     "prompt": "hello what can you do and what are your capabilities",

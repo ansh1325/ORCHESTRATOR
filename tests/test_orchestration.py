@@ -434,5 +434,58 @@ def test_import_export_fastapi_endpoints(tmp_path):
     assert (export_actual / "brief.txt").exists()
 
 
+@pytest.mark.asyncio
+async def test_personal_communication_and_browser_dispatch_lifecycle(temp_workspace):
+    """Verifies personal loyal communication track, 2-question clarification gate, and browser email dispatch engine."""
+    orch = MetaOrchestrator()
+    prompt = "hey i want you 3 mails to the email address anshtiwarisocial@gmail.com with exact subject line hello i am jarvis and body will be different of all 3 mails describing what you feel about me"
+    
+    # 1. Stage 1: Clarification Gate
+    analysis = orch.analyze_intent(prompt, session_id="test_comm_sess")
+    assert analysis.track_type == "communication_assistant"
+    assert len(analysis.clarifications) >= 2
+    clarif_ids = [c.id for c in analysis.clarifications]
+    assert "email_delivery_channel" in clarif_ids
+    assert "permission_authorization" in clarif_ids
+
+    # 2. Stage 3: DAG Compilation
+    session = orch.get_or_create_session("test_comm_sess", vision=prompt)
+    session.workspace_path = temp_workspace
+    session.mcp = MCPServer(temp_workspace)
+    dag_plan = orch.compile_dag_and_synthesize_workers(session)
+    assert len(dag_plan.nodes) == 4
+    node_ids = [n.id for n in dag_plan.nodes]
+    assert "task_comm_dispatch_engine" in node_ids
+
+    # 3. Stage 4: Worker Execution
+    worker = DynamicWorkerEngine(mcp=session.mcp)
+    for node in dag_plan.nodes:
+        spec = orch.get_subagent_spec(node.agent_type, session)
+        ok = await worker.execute_task(node, spec, track_type="communication_assistant")
+        assert ok is True
+
+    # Check deliverables
+    assert (temp_workspace / "mail_1.md").exists()
+    assert (temp_workspace / "mail_2.md").exists()
+    assert (temp_workspace / "mail_3.md").exists()
+    assert (temp_workspace / "browser_send_emails.py").exists()
+    assert (temp_workspace / "send_emails_smtp.py").exists()
+    assert (temp_workspace / "browser_permission_granted.json").exists()
+    assert (temp_workspace / "emails.json").exists()
+    assert (temp_workspace / "dispatch_summary.md").exists()
+
+    mail_1_content = (temp_workspace / "mail_1.md").read_text(encoding="utf-8")
+    assert "hello i am jarvis" in mail_1_content
+    assert "anshtiwarisocial@gmail.com" in mail_1_content
+    assert "Ansh" in mail_1_content
+
+    # 4. Stage 5: Evaluator Gatekeeper
+    evaluator = EvaluatorGatekeeper(mcp=session.mcp)
+    report = await evaluator.evaluate_deliverables("test_comm_sess", track_type="communication_assistant")
+    assert report["passed"] is True
+    assert report["score_percentage"] == 100.0
+
+
+
 
 

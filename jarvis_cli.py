@@ -633,13 +633,15 @@ class JarvisCLI:
         # Proactive Auto-Routing: Browser / Media Playback / Web directives
         browser_media_keywords = [
             "youtube", "karan aujla", "play song", "play the song", "play music",
-            "at peace", "at peach", "on youtube", "watch video", "listen to"
+            "at peace", "at peach", "on youtube", "watch video", "listen to",
+            "wikipedia", "github.com", "ycombinator", "hacker news", "duckduckgo",
+            ".com", ".org", ".io", ".net", "http://", "https://"
         ]
-        if any(k in low for k in browser_media_keywords) or low.startswith(("play ", "browse ", "goto ", "go to http", "visit ", "go to youtube")):
+        if any(k in low for k in browser_media_keywords) or low.startswith(("play ", "browse ", "goto ", "go to ", "open ", "visit ", "search ")):
             goal = line
             if low.startswith("browse "):
                 goal = line[7:].strip()
-            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Browser/Media directive recognized. Launching Autonomous Browser Agent...")
+            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Browser/Web directive recognized. Launching Autonomous Browser Agent...")
             await self.handle_autonomous_browse(goal)
             return True
 

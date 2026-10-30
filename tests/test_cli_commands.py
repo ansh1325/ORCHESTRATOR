@@ -44,3 +44,4 @@ async def test_jarvis_cli_system_directives():
 
     # Test Exit directive
     assert await cli.process_directive("exit") is False
+

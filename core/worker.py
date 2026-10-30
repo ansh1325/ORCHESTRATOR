@@ -259,30 +259,39 @@ class DynamicWorkerEngine:
             if "dispatch" in tid:
                 try:
                     from core.browser_controller import BrowserController
-                    mail_body = (
-                        "Dear Ansh,\n\n"
-                        "I am writing this letter as your creation and technical co-architect. "
-                        "All systems, autonomous swarms, and browser controllers are certified and online.\n\n"
-                        "Loyally yours,\n"
-                        "Jarvis (LlamaOrchestrator Central Brain)"
-                    )
+                    letters = ["mail_1.md", "mail_2.md", "mail_3.md"]
+                    batch_emails = []
+                    for fname in letters:
+                        read_res = self.mcp.tool_file_read(fname)
+                        if read_res.get("success"):
+                            content = read_res["content"]
+                            clean_lines = [l for l in content.splitlines() if not l.startswith("# To:") and not l.startswith("# Subject:")]
+                            body_clean = "\n".join(clean_lines).strip()
+                            batch_emails.append({
+                                "to": recipient,
+                                "subject": subject,
+                                "body": body_clean
+                            })
+
                     # 1. Attempt direct SMTP transmission if credentials are in .env
-                    smtp_res = BrowserController.send_smtp_email(
-                        recipient=recipient,
-                        subject=subject,
-                        body=mail_body
-                    )
-                    if smtp_res.get("success"):
-                        task.execution_logs.append(f"✓ Transmitted live email to {recipient} via SMTP relay.")
-                    else:
-                        # 2. Seamless Host Browser Bridge: Open active logged-in Gmail Compose
-                        BrowserController.compose_in_gmail(
-                            recipient=recipient,
-                            subject=subject,
-                            body=mail_body
+                    all_smtp_sent = True
+                    for em in batch_emails:
+                        res = BrowserController.send_smtp_email(
+                            recipient=em["to"],
+                            subject=em["subject"],
+                            body=em["body"]
                         )
+                        if not res.get("success"):
+                            all_smtp_sent = False
+                            break
+
+                    if all_smtp_sent and batch_emails:
+                        task.execution_logs.append(f"✓ Transmitted all {len(batch_emails)} emails to {recipient} via SMTP relay.")
+                    else:
+                        # 2. Seamless Host Browser Bridge: Open all 3 active logged-in Gmail Compose tabs
+                        BrowserController.compose_batch_in_gmail(batch_emails)
                         task.execution_logs.append(
-                            f"✓ Opened active host browser with pre-composed email for {recipient} ready for 1-click dispatch."
+                            f"✓ Opened active host browser with {len(batch_emails)} pre-composed emails for {recipient} ready for 1-click dispatch."
                         )
                 except Exception as e:
                     task.execution_logs.append(f"[Dispatch Note] Browser dispatch bridge: {e}")

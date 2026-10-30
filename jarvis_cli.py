@@ -425,6 +425,17 @@ class JarvisCLI:
                 print(f"  • {act}")
             self.speak(f"Email dispatched for {to}.")
 
+        elif sub in ["login", "auth"]:
+            print(f"{C.CYAN}Launching Jarvis Persistent Browser Profile (Axiom Mode)...{C.RESET}")
+            print(f"{C.YELLOW}Sign in to your Google Account ONCE in the browser window that appears.\nOnce signed in, Jarvis will autonomously control Gmail, compose, and click Send forever!{C.RESET}")
+            self.speak("Launching persistent browser window. Please sign in to your Google account.")
+            res = BrowserController.launch_login_session()
+            if res.get("logged_in"):
+                print(f"\n{C.GREEN}{C.BOLD}✓ Authentication session saved! Autonomous browser dispatch is now permanently active.{C.RESET}\n")
+                self.speak("Authentication saved. Autonomous dispatch active.")
+            else:
+                print(f"\n{C.DIM}Session closed. Profile saved at: {res.get('profile_path')}{C.RESET}\n")
+
     def list_history(self):
         items = workflow_manager.list_history()
         if not items:

@@ -648,18 +648,31 @@ class BrowserController:
         try:
             with sync_playwright() as p:
                 context = None
-                for channel in ["msedge", "chrome"]:
-                    try:
-                        context = p.chromium.launch_persistent_context(
-                            user_data_dir=str(profile_path),
-                            channel=channel,
-                            headless=headless,
-                            args=["--start-maximized", "--disable-blink-features=AutomationControlled"]
-                        )
-                        executed_actions.append(f"Launched persistent browser context via {channel}")
-                        break
-                    except Exception:
-                        continue
+                is_cdp = False
+
+                # Step 0: Check for active Chrome DevTools debugging session (Axiom Mode)
+                try:
+                    cdp_browser = p.chromium.connect_over_cdp("http://localhost:9222")
+                    if cdp_browser.contexts:
+                        context = cdp_browser.contexts[0]
+                        is_cdp = True
+                        executed_actions.append("Connected to active running Chrome session via DevTools Protocol (Axiom Mode)")
+                except Exception:
+                    pass
+
+                if not context:
+                    for channel in ["msedge", "chrome"]:
+                        try:
+                            context = p.chromium.launch_persistent_context(
+                                user_data_dir=str(profile_path),
+                                channel=channel,
+                                headless=headless,
+                                args=["--start-maximized", "--disable-blink-features=AutomationControlled"]
+                            )
+                            executed_actions.append(f"Launched persistent browser context via {channel}")
+                            break
+                        except Exception:
+                            continue
 
                 if not context:
                     context = p.chromium.launch_persistent_context(
@@ -844,6 +857,60 @@ class BrowserController:
                 }
         except Exception as e:
             return {"success": False, "error": f"Playwright real-person execution error: {e!s}"}
+
+    @classmethod
+    def launch_login_session(cls, target_url: str = "https://mail.google.com") -> dict[str, Any]:
+        """
+        Launches visible desktop browser in persistent profile so user can log in once (Axiom style).
+        All cookies, tokens, and active sessions are saved permanently in ~/.llama_orchestrator/browser_profile.
+        """
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            return {"success": False, "error": "Playwright is not installed."}
+
+        profile_path = Path.home() / ".llama_orchestrator" / "browser_profile"
+        profile_path.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with sync_playwright() as p:
+                context = None
+                for channel in ["msedge", "chrome"]:
+                    try:
+                        context = p.chromium.launch_persistent_context(
+                            user_data_dir=str(profile_path),
+                            channel=channel,
+                            headless=False,
+                            args=["--start-maximized", "--disable-blink-features=AutomationControlled"]
+                        )
+                        break
+                    except Exception:
+                        continue
+                if not context:
+                    context = p.chromium.launch_persistent_context(
+                        user_data_dir=str(profile_path),
+                        headless=False,
+                        args=["--start-maximized"]
+                    )
+                page = context.pages[0] if context.pages else context.new_page()
+                page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
+                # Keep open up to 90 seconds for user to sign in
+                logged_in = False
+                try:
+                    page.wait_for_url("**/mail.google.com/**", timeout=90000)
+                    time.sleep(2.0)
+                    logged_in = True
+                except Exception:
+                    logged_in = False
+                context.close()
+                return {
+                    "success": True,
+                    "logged_in": logged_in,
+                    "profile_path": str(profile_path),
+                    "message": "Browser profile session saved. Subsequent browser actions will use this authenticated session."
+                }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     @classmethod
     def send_smtp_email(

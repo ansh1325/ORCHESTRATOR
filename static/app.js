@@ -2008,8 +2008,7 @@ window.saveActivePromptAsWorkflow = async function() {
         title: name,
         name: name,
         folder: "Custom",
-        prompt: promptVal,
-        prompt_template: promptVal
+        prompt: promptVal
       })
     });
     await loadSavedWorkflows();

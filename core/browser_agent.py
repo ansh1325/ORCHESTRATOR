@@ -563,3 +563,4 @@ class BrowserAgent:
 
 # Global Singleton Instance
 browser_agent = BrowserAgent()
+

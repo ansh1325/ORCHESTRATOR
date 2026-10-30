@@ -19,21 +19,21 @@ DEFAULT_WORKFLOWS: list[dict[str, Any]] = [
         "id": "wf_emails",
         "title": "3 Personal Emails from Jarvis",
         "description": "Drafts 3 heartfelt loyalty emails to anshtiwarisocial@gmail.com with subject 'hello i am jarvis'.",
-        "prompt_template": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line hello i am jarvis and body with whatever you feel for me",
+        "prompt": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line hello i am jarvis and body with whatever you feel for me",
         "folder": "Personal"
     },
     {
         "id": "wf_agency",
         "title": "Client-Acquisition Agency Business",
         "description": "Scaffolds complete B2B agency, scrapes leads, and simulates calendar bookings.",
-        "prompt_template": "I know full-stack dev, build me a business and find me clients",
+        "prompt": "I know full-stack dev, build me a business and find me clients",
         "folder": "Business"
     },
     {
         "id": "wf_telemetry",
         "title": "Authenticated Telemetry Microservice",
         "description": "Compiles production FastAPI telemetry service with JWT auth and 100% Pytest pass.",
-        "prompt_template": "Build an authenticated telemetry microservice with JWT & tests",
+        "prompt": "Build an authenticated telemetry microservice with JWT & tests",
         "folder": "Engineering"
     }
 ]
@@ -149,8 +149,8 @@ class WorkflowAndHistoryManager:
         workflow_data["id"] = wf_id
         if "title" not in workflow_data and "name" in workflow_data:
             workflow_data["title"] = workflow_data["name"]
-        if "prompt_template" not in workflow_data and "prompt" in workflow_data:
-            workflow_data["prompt_template"] = workflow_data["prompt"]
+        if "prompt" not in workflow_data and "prompt_template" in workflow_data:
+            workflow_data["prompt"] = workflow_data["prompt_template"]
         if "folder" not in workflow_data and "category" in workflow_data:
             workflow_data["folder"] = workflow_data["category"]
 

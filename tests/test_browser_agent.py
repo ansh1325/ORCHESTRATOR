@@ -120,3 +120,4 @@ def test_browser_agent_fastapi_endpoints():
         })
         assert email_res.status_code == 200
         assert email_res.json()["success"] is True
+

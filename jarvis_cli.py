@@ -521,7 +521,10 @@ class JarvisCLI:
             return True
 
         if low.startswith("export "):
-            parts = line.split()
+            try:
+                parts = shlex.split(line)
+            except Exception:
+                parts = line.split()
             if len(parts) > 1:
                 sid = parts[1]
                 dest = parts[2] if len(parts) > 2 else None

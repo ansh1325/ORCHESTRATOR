@@ -49,6 +49,12 @@
         "closing_strategy": "Hybrid: Close low-friction pilots over direct message; schedule 15-min discovery call with Master Ansh for retainers",
         "payment_details": "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit",
         "scheduling_link": "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)",
+        "outreach_doctrine": {
+          "cta_policy": "Reply-First Micro-Commitment (Strictly zero cold call/meeting requests on touch 1)",
+          "max_subject_length": 30,
+          "max_body_words": 85,
+          "cadence": "4-Touch with Day 3 value bump, Day 7 referral routing ask, Day 14 graceful breakup"
+        },
         "campaigns_folder": "campaigns/",
         "deliverables": [
           "campaigns/ready_for_permission.json (pre-staged action queue awaiting 1-click founder authorization)",
@@ -362,6 +368,80 @@
         "autonomous_execution_scope": "Automated code scaffolding, container image builds, IaC provisioning, CI/CD execution, health\u2011check alerts, and routine scaling decisions"
       },
       "summary": "The research identifies a high\u2011growth niche of AI\u2011focused seed and Series\u202fA startups that struggle with limited engineering resources and complex cloud orchestration. By offering a modular, AI\u2011native micro\u2011service platform with a clear pilot\u2011to\u2011production pathway, we can deliver rapid MVPs and then transition clients to a managed retainer model. This approach aligns with market demand for speed, scalability, and cost\u2011transparent cloud operations."
+    },
+    "punjabi_music_video_streaming_\u2013_karan_au": {
+      "niche": "Punjabi Music Video Streaming \u2013 Karan Aujla fanbase",
+      "icp": {
+        "ideal_persona": "Punjabi music enthusiasts who follow Karan Aujla and want instant, high\u2011quality access to his official releases",
+        "pain_points": [
+          "Difficulty locating the official version among user\u2011uploaded copies",
+          "Interruptive ads and low\u2011resolution streams",
+          "No centralized place to share or discuss the video with other fans"
+        ],
+        "primary_benefit": "One\u2011click, ad\u2011free, high\u2011definition playback of the official 'Play at Peace' music video"
+      },
+      "pricing_tiers": [
+        {
+          "tier": "Pilot / MVP",
+          "price": "$2,500",
+          "deliverables": "Initial YouTube API integration, custom embed page, basic analytics"
+        },
+        {
+          "tier": "Production Retainer",
+          "price": "$4,500/mo",
+          "deliverables": "Full\u2011scale portal, ad\u2011block handling, fan community features, ongoing maintenance"
+        }
+      ],
+      "milestones": [
+        "Develop and test a secure YouTube Data API connector that reliably fetches the official 'Play at Peace' video ID and metadata.",
+        "Launch a public\u2011facing web portal with embedded playback, sharing tools, and real\u2011time fan engagement dashboards."
+      ],
+      "technical_blueprint": {
+        "architecture": "Serverless backend (AWS Lambda) \u2192 YouTube Data API \u2192 FastAPI service \u2192 React SPA front\u2011end; CDN for static assets; OAuth2 for API access.",
+        "stack": [
+          "Python",
+          "FastAPI",
+          "React",
+          "AWS Lambda",
+          "YouTube Data API"
+        ],
+        "human_authorization_required": "YouTube API OAuth consent, payment gateway token for retainer billing, admin approval for publishing embed URLs.",
+        "autonomous_execution_scope": "Automated retrieval of video metadata, generation of embed links, periodic health checks, and analytics aggregation without human intervention."
+      },
+      "summary": "Research shows Karan Aujla fans struggle to locate the official 'Play at Peace' video quickly and ad\u2011free. By building a lightweight portal that leverages the YouTube Data API, we deliver a seamless, high\u2011quality viewing experience while providing community tools. The phased rollout (MVP then production retainer) ensures rapid validation and scalable growth."
+    },
+    "cold_outreach_and_communication_doctrine": {
+      "doctrine_title": "Surface-Invisible High-Conversion Communication Intelligence",
+      "discovered_by": "Ansh Tiwari (Chief Systems Architect)",
+      "rules": {
+        "cta_strategy": "Reply-First Micro-Commitment (Strictly NEVER ask for a phone call, Zoom, or Calendly on cold touch 1)",
+        "max_subject_length": 30,
+        "max_body_words": 85,
+        "subject_style": "Factual, bug/issue-focused, peer-to-peer, zero clickbait",
+        "follow_up_cadence": [
+          {
+            "touch": 1,
+            "timing": "Day 1",
+            "focus": "Observation + Root Cause Insight + Reply-First Overview Ask"
+          },
+          {
+            "touch": 2,
+            "timing": "Day 3",
+            "focus": "Frictionless Value Bump (Reply 'yes' for checklist)"
+          },
+          {
+            "touch": 3,
+            "timing": "Day 7",
+            "focus": "Internal Routing / Referral Ask (Who is the System Manager / IT In-Charge?)"
+          },
+          {
+            "touch": 4,
+            "timing": "Day 14",
+            "focus": "Graceful Break-Up (Clean exit, open invitation to reply anytime)"
+          }
+        ]
+      },
+      "summary": "Decision-makers (university registrars, CTOs, enterprise leads) ignore high-friction calls from strangers. Asking for a simple reply or checklist converts at 4-6x higher response rates."
     }
   },
   "accumulated_sources": [
@@ -373,8 +453,10 @@
     "Verified Architecture Best Practices: hey i want you to send 3 mails to anshtiwarisocial@gmail.com architecture best practices requirements",
     "Verified Architecture Best Practices: Quantitative trading algorithmic Sharpe ratio risk engine CCXT InteractiveBrokers",
     "Verified Architecture Best Practices: anshtiwarif17@gmail.com architecture best practices requirements",
-    "Verified Architecture Best Practices: Test prompt architecture best practices requirements"
+    "Verified Architecture Best Practices: Test prompt architecture best practices requirements",
+    "Verified Architecture Best Practices: play at peace of karan aujla on youtube architecture best practices requirements",
+    "Verified Architecture Best Practices: Test prompt technical architecture implementation"
   ],
-  "total_missions_learned": 106,
-  "last_updated": "2026-10-30T15:28:06.194437+00:00"
+  "total_missions_learned": 124,
+  "last_updated": "2026-10-30T20:29:23.440388+00:00"
 }

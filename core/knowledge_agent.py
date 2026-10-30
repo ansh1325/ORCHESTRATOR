@@ -92,18 +92,9 @@ class KnowledgeAgent:
         v_lower = vision.lower()
         is_marketing = any(w in v_lower for w in ["marketing", "ad", "ads", "meta ad", "facebook ad", "roas"])
 
-        # Step 1: Research query formulation
+        # Step 1: Dynamic research query formulation from user vision
         if emit_event:
-            if track_type == "robotics_humanoid":
-                query_desc = "Humanoid robotics inverse kinematics and 1kHz actuator control loop"
-            elif track_type == "quantitative_trading":
-                query_desc = "Algorithmic momentum & risk-managed quantitative trading architecture"
-            elif is_marketing:
-                query_desc = "Meta Ads agency acquisition benchmarks"
-            elif track_type == "business_acquisition":
-                query_desc = "Omnichannel B2B client acquisition and browser automation"
-            else:
-                query_desc = "FastAPI telemetry architecture"
+            query_desc = vision.strip()[:65] or "Technical System Architecture"
 
             await emit_event(ExecutionEvent(
                 event_type="log",
@@ -115,18 +106,8 @@ class KnowledgeAgent:
             ))
             await asyncio.sleep(0.3)
 
-        # Step 2: Query MCP Web Search Tool
-        if track_type == "robotics_humanoid":
-            search_query = "Tesla Optimus humanoid robot kinematics control loop ROS2 architecture"
-        elif track_type == "quantitative_trading":
-            search_query = "Quantitative trading algorithmic Sharpe ratio risk engine CCXT InteractiveBrokers"
-        elif is_marketing:
-            search_query = "Meta ads B2B agency pricing and client acquisition"
-        elif track_type == "business_acquisition":
-            search_query = "Omnichannel B2B client acquisition LinkedIn browser outreach Reddit groups"
-        else:
-            search_query = "FastAPI telemetry authenticated microservice architecture"
-            
+        # Step 2: Query MCP Web Search Tool dynamically formulated from vision
+        search_query = f"{vision.strip()[:75]} technical architecture implementation"
         search_results = mcp.tool_web_search(search_query)
 
         if emit_event:
@@ -398,6 +379,12 @@ class KnowledgeAgent:
                         "closing_strategy": closing_strategy,
                         "payment_details": payment_details,
                         "scheduling_link": scheduling_link,
+                        "outreach_doctrine": {
+                            "cta_policy": "Reply-First Micro-Commitment (Strictly zero cold call/meeting requests on touch 1)",
+                            "max_subject_length": 30,
+                            "max_body_words": 85,
+                            "cadence": "4-Touch with Day 3 value bump, Day 7 referral routing ask, Day 14 graceful breakup"
+                        },
                         "campaigns_folder": "campaigns/",
                         "deliverables": [
                             "campaigns/ready_for_permission.json (pre-staged action queue awaiting 1-click founder authorization)",

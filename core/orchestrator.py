@@ -74,7 +74,7 @@ from core.worker import DynamicWorkerEngine
 
 
 def generate_readable_session_slug(vision: str) -> str:
-    """Generates an Antigravity/Gemini-style human-readable slug for session IDs and export folders."""
+    """Generates an Antigravity/Gemini-style human-readable slug dynamically from user vision (Zero Templates)."""
     if not vision:
         return f"session_{uuid.uuid4().hex[:8]}"
     
@@ -85,28 +85,16 @@ def generate_readable_session_slug(vision: str) -> str:
         flags=re.IGNORECASE
     ).strip()
     
-    v_low = cleaned.lower()
-    if "mail" in v_low and "anshtiwarisocial" in v_low:
-        base = "3_personal_emails_ansh_tiwari"
-    elif "trading" in v_low or "quant" in v_low:
-        base = "algorithmic_trading_engine"
-    elif "robot" in v_low or "humanoid" in v_low or "optimus" in v_low:
-        base = "tesla_optimus_humanoid"
-    elif "omnichannel" in v_low or "acquisition" in v_low or "agency" in v_low:
-        base = "omnichannel_agency_campaign"
-    elif "telemetry" in v_low or "microservice" in v_low:
-        base = "telemetry_microservice_jwt"
-    else:
-        words = re.findall(r'[a-zA-Z0-9]+', cleaned)
-        stop_words = {'the', 'a', 'an', 'and', 'or', 'for', 'to', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'as', 'is', 'it', 'all', 'be', 'will', 'that', 'this'}
-        sig = [w.lower() for w in words if w.lower() not in stop_words]
-        base = "_".join(sig[:4]) if sig else "mission"
+    words = re.findall(r'[a-zA-Z0-9]+', cleaned)
+    stop_words = {'the', 'a', 'an', 'and', 'or', 'for', 'to', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'as', 'is', 'it', 'all', 'be', 'will', 'that', 'this'}
+    sig = [w.lower() for w in words if w.lower() not in stop_words]
+    base = "_".join(sig[:4]) if sig else "mission"
     
     short_hash = uuid.uuid4().hex[:4]
     return f"{base}_{short_hash}"
 
 def generate_chat_title(vision: str) -> str:
-    """Generates an Antigravity/Gemini-style descriptive title for sessions, exports, and history."""
+    """Generates a clean descriptive title dynamically from user vision (Zero Templates)."""
     if not vision:
         return "Autonomous Mission"
     
@@ -117,24 +105,12 @@ def generate_chat_title(vision: str) -> str:
         flags=re.IGNORECASE
     ).strip()
     
-    v_low = cleaned.lower()
-    if "mail" in v_low and "anshtiwarisocial" in v_low:
-        return "3 Personal Emails to Ansh Tiwari"
-    elif "trading" in v_low or "quant" in v_low:
-        return "Algorithmic Trading & Risk Engine"
-    elif "robot" in v_low or "humanoid" in v_low or "optimus" in v_low:
-        return "Tesla Optimus Humanoid Architecture"
-    elif "omnichannel" in v_low or "acquisition" in v_low or "agency" in v_low:
-        return "Omnichannel Client Acquisition Agency"
-    elif "telemetry" in v_low or "microservice" in v_low:
-        return "Authenticated Telemetry Microservice"
-    
     words = re.findall(r'[a-zA-Z0-9@.-]+', cleaned)
     stop_words = {'the', 'a', 'an', 'and', 'or', 'for', 'to', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'as', 'is', 'it', 'all', 'be', 'will', 'that', 'this'}
     meaningful = [w.capitalize() for w in words if w.lower() not in stop_words]
     if meaningful:
         return " ".join(meaningful[:5])
-    return cleaned[:40].title()
+    return cleaned[:35].strip().title() or "Autonomous Mission"
 
 class SessionState:
     def __init__(self, session_id: str, vision: str):
@@ -207,7 +183,10 @@ class MetaOrchestrator:
                 '  ],\n'
                 '  "recommended_defaults": {\n'
                 '    "clarification_key_1": "Option A"\n'
-                '  }\n'
+                '  },\n'
+                '  "weirdness_score": 0.0 to 1.0 (score 0.0 for standard clear software/business directives; score >= 0.4 for weird, bizarre, extremely vague, or ambiguous directives),\n'
+                '  "is_ambiguous_or_unusual": true | false (true if directive needs conversational clarification with user before spawning agents),\n'
+                '  "socratic_dialogue": "Conversational, polite, sharp explanation from Jarvis directly addressing Master Ansh explaining what was detected and asking for clarification before assembling the swarm."\n'
                 "}"
             )
             resp = self.llm_client.chat.completions.create(
@@ -326,7 +305,10 @@ class MetaOrchestrator:
                 identified_constraints=data.get("identified_constraints", ["Autonomous sandboxed execution with human handoff gates"]),
                 missing_parameters=data.get("missing_parameters", []),
                 clarifications=clarifications,
-                recommended_defaults=data.get("recommended_defaults", {c.id: c.default_selection for c in clarifications})
+                recommended_defaults=data.get("recommended_defaults", {c.id: c.default_selection for c in clarifications}),
+                weirdness_score=float(data.get("weirdness_score", 0.0)),
+                is_ambiguous_or_unusual=bool(data.get("is_ambiguous_or_unusual", False)),
+                socratic_dialogue=str(data.get("socratic_dialogue", ""))
             )
             return analysis
         except Exception:
@@ -694,6 +676,26 @@ class MetaOrchestrator:
             if needed_clarifications:
                 clarifications = needed_clarifications
 
+        # Compute Ambiguity / Anomaly / Weirdness Score
+        words = [w for w in v_lower.split() if w.strip()]
+        weirdness_score = 0.0
+        is_ambiguous = False
+        socratic_dialogue = ""
+
+        # Very short or vague commands (e.g. "do it", "make money", "build something", "hack", "asdf")
+        if len(words) <= 3 and not is_query_only:
+            weirdness_score = 0.75
+            is_ambiguous = True
+            socratic_dialogue = f"Master Ansh, your directive '{vision}' is very brief. To ensure the swarm builds exactly what you want without guessing, could you specify what specific software, target audience, or deliverable you'd like me to build?"
+        elif any(w in v_lower for w in ["hack the", "break the", "magic", "infinity money", "destroy", "crazy thing", "something weird", "whatever"]):
+            weirdness_score = 0.85
+            is_ambiguous = True
+            socratic_dialogue = f"Master Ansh, your directive '{vision}' includes unusual or unbounded objectives. Before launching sub-agents, let's clarify the realistic system architecture and parameters you want deployed."
+        elif len(clarifications) >= 3 and not any(spec in v_lower for spec in ["fastapi", "cli", "sqlite", "postgres", "hourly", "retainer", "crypto", "robotics"]):
+            weirdness_score = 0.45
+            is_ambiguous = True
+            socratic_dialogue = f"Directive received. I analyzed the architectural scope for '{vision}', but identified several open design decisions. Let's align on key choices before deploying the swarm."
+
         analysis = IntentAnalysis(
             session_id=session.session_id,
             track_type=track_type,
@@ -705,7 +707,10 @@ class MetaOrchestrator:
             identified_constraints=identified_constraints,
             missing_parameters=missing_parameters,
             clarifications=clarifications,
-            recommended_defaults=recommended_defaults
+            recommended_defaults=recommended_defaults,
+            weirdness_score=weirdness_score,
+            is_ambiguous_or_unusual=is_ambiguous,
+            socratic_dialogue=socratic_dialogue
         )
         session.intent_analysis = analysis
         return analysis
@@ -1302,6 +1307,21 @@ class MetaOrchestrator:
             worker_engine = DynamicWorkerEngine(mcp=session.mcp, llm_client=self.llm_client)
             for node in dag_plan.nodes:
                 spec = self.get_subagent_spec(node.agent_type, session)
+
+                # Human-in-the-Loop Gatekeeper: Check if task involves sensitive external actions or permissions
+                task_keywords = (node.title + " " + node.description).lower()
+                if any(k in task_keywords for k in ["live deployment", "deploy to aws", "real trade", "send outbound email", "delete database", "drop table", "live trading", "secrets.json"]):
+                    await self.emit_event(session, ExecutionEvent(
+                        event_type="permission_required",
+                        session_id=session_id,
+                        stage=4,
+                        stage_name="Human-in-the-Loop Gatekeeper",
+                        task_id=node.id,
+                        message=f"Agent [{spec.name}] requests permission for '{node.title}': Action involves external network, credential, or sensitive operations.",
+                        speech_text=f"Master Ansh, Agent {spec.name} requests your authorization before proceeding with {node.title}."
+                    ))
+                    await asyncio.sleep(0.5)
+
                 success = await worker_engine.execute_task(
                     task=node,
                     spec=spec,

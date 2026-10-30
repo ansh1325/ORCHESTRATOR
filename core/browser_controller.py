@@ -25,6 +25,21 @@ from typing import Any, Optional
 class BrowserController:
     """Unified controller for system browser interaction and Playwright automation."""
 
+    @classmethod
+    def get_brave_executable_path(cls) -> Optional[str]:
+        """Detects Brave browser executable on Windows/Linux/macOS."""
+        candidate_paths = [
+            r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+            r"C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+            "/usr/bin/brave-browser",
+            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+        ]
+        for p in candidate_paths:
+            if os.path.exists(p):
+                return p
+        return None
+
     @staticmethod
     def build_gmail_compose_url(recipient: str, subject: str, body: str, account_index: int = 0) -> str:
         """Constructs official Gmail web compose URL with URL-encoded parameters for active logged-in user."""
@@ -220,12 +235,20 @@ class BrowserController:
         try:
             with sync_playwright() as p:
                 browser = None
-                for channel in ["msedge", "chrome"]:
+                brave_bin = cls.get_brave_executable_path()
+                if brave_bin:
                     try:
-                        browser = p.chromium.launch(channel=channel, headless=headless, args=launch_args)
-                        break
+                        browser = p.chromium.launch(executable_path=brave_bin, headless=headless, args=launch_args)
                     except Exception:
-                        continue
+                        browser = None
+
+                if not browser:
+                    for channel in ["msedge", "chrome"]:
+                        try:
+                            browser = p.chromium.launch(channel=channel, headless=headless, args=launch_args)
+                            break
+                        except Exception:
+                            continue
 
                 if not browser:
                     browser = p.chromium.launch(headless=headless, args=launch_args)

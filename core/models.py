@@ -32,6 +32,9 @@ class IntentAnalysis(BaseModel):
     missing_parameters: list[str]
     clarifications: list[ClarificationQuestion]
     recommended_defaults: dict[str, str]
+    weirdness_score: float = Field(default=0.0, description="0.0 to 1.0 score of ambiguity, anomaly, or weirdness in the command")
+    is_ambiguous_or_unusual: bool = Field(default=False, description="True if command needs interactive clarification dialogue before running")
+    socratic_dialogue: str = Field(default="", description="Natural conversational explanation from Central Brain to user")
     created_at: str = Field(default_factory=utc_now_iso)
 
 class ClarificationResponse(BaseModel):

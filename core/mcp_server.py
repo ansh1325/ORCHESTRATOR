@@ -133,6 +133,65 @@ class MCPServer:
                 "stderr": f"Subprocess exception: {e!s}"
             }
 
+    def tool_http_request(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[dict[str, str]] = None,
+        data: Optional[Any] = None,
+        json_data: Optional[Any] = None,
+        timeout_sec: int = 15
+    ) -> dict[str, Any]:
+        """
+        Executes real HTTP requests (GET, POST, PUT, DELETE, PATCH, HEAD).
+        Allows sub-agents to query any external REST/GraphQL API, webhooks, or endpoints directly.
+        """
+        import requests
+        m = method.strip().upper()
+        try:
+            req_headers = headers or {}
+            if "User-Agent" not in req_headers:
+                req_headers["User-Agent"] = "LlamaOrchestrator-MCP-Client/1.0"
+
+            resp = requests.request(
+                method=m,
+                url=url,
+                headers=req_headers,
+                data=data,
+                json=json_data,
+                timeout=timeout_sec
+            )
+            
+            # Try parsing response body
+            body_text = resp.text
+            parsed_json = None
+            try:
+                parsed_json = resp.json()
+            except Exception:
+                pass
+
+            return {
+                "success": 200 <= resp.status_code < 300,
+                "status_code": resp.status_code,
+                "method": m,
+                "url": resp.url,
+                "headers": dict(resp.headers),
+                "body": body_text[:2000],
+                "json": parsed_json,
+                "error": None if 200 <= resp.status_code < 300 else f"HTTP Status {resp.status_code}"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "status_code": 0,
+                "method": m,
+                "url": url,
+                "headers": {},
+                "body": "",
+                "json": None,
+                "error": f"HTTP Request failed: {e!s}"
+            }
+
     def tool_web_search(self, query: str) -> dict[str, Any]:
         """Domain search simulation providing curated intelligence for business and technical tracks."""
         q = query.lower()
@@ -531,6 +590,7 @@ class MCPServer:
             {"name": "file_read", "description": "Read content of a file located within the workspace sandbox."},
             {"name": "file_list", "description": "List files in the workspace sandbox."},
             {"name": "run_command", "description": "Execute a shell command within the sandboxed workspace."},
+            {"name": "http_request", "description": "Execute real HTTP requests (GET, POST, PUT, DELETE, PATCH) to external APIs and webhooks."},
             {"name": "web_search", "description": "Autonomous search tool to gather domain research."},
             {"name": "verify_email_syntax", "description": "Validate syntax of outbound sales lead emails."},
             {"name": "send_mock_booking", "description": "Dispatch simulated calendar booking webhook."},
@@ -568,6 +628,15 @@ class MCPServer:
                     res = self.tool_file_list(tool_args.get("subpath", ""))
                 elif tool_name == "run_command":
                     res = self.tool_run_command(tool_args["command"], tool_args.get("timeout_sec", 15))
+                elif tool_name == "http_request":
+                    res = self.tool_http_request(
+                        method=tool_args.get("method", "GET"),
+                        url=tool_args.get("url", ""),
+                        headers=tool_args.get("headers"),
+                        data=tool_args.get("data"),
+                        json_data=tool_args.get("json"),
+                        timeout_sec=tool_args.get("timeout_sec", 15)
+                    )
                 elif tool_name == "web_search":
                     res = self.tool_web_search(tool_args["query"])
                 elif tool_name == "verify_email_syntax":

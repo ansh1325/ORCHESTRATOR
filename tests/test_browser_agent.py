@@ -161,3 +161,40 @@ def test_browser_agent_fastapi_endpoints():
         assert email_res.status_code == 200
         assert email_res.json()["success"] is True
 
+
+def test_computer_use_spatial_grounding_and_vision_overlay():
+    """Verify Computer Use spatial coordinates, Set-of-Marks badges, and holographic cursor injection."""
+    agent = BrowserAgent(headless=True)
+    el = BrowserElement(
+        index=3,
+        tag="button",
+        element_type="submit",
+        text="Submit Application",
+        selector="button#submit",
+        x=120.0,
+        y=450.0,
+        width=160.0,
+        height=40.0,
+        center_x=200.0,
+        center_y=470.0
+    )
+    assert el.center_x == 200.0
+    assert el.center_y == 470.0
+    assert el.width == 160.0
+
+    # Verify DOM summary includes spatial coordinates
+    summary = agent._build_dom_summary(MagicMock(url="https://portal.dev", title=lambda: "Portal"), [el])
+    assert "@ (200, 470)" in summary
+    assert "[#3] BUTTON (submit): \"Submit Application\"" in summary
+
+    # Verify mock page receives cursor and Set-of-Marks badge evaluations
+    mock_page = MagicMock()
+    agent.inject_human_cursor_overlay(mock_page)
+    assert mock_page.evaluate.called
+
+    agent.render_visual_grounding_overlay(mock_page, [el])
+    assert mock_page.evaluate.call_count >= 2
+
+    agent.clear_visual_grounding_overlay(mock_page)
+    assert mock_page.evaluate.call_count >= 3
+

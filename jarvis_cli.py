@@ -148,22 +148,6 @@ class JarvisCLI:
 
     async def handle_chat(self, message: str):
         from core.config import settings
-        low = message.lower().strip()
-
-        # Proactive Auto-Routing: If user passed an actionable directive in chat, route to execution
-        if any(w in low for w in ["send mail", "send email", "send 3 mail", "send 3 email", "mails to", "email to"]) or (
-            re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', low) and any(act in low for act in ["send", "write", "compose", "dispatch", "mail"])
-        ):
-            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Actionable communication directive recognized in chat. Launching autonomous swarm pipeline...")
-            await self.run_mission(message)
-            return
-
-        # Proactive Auto-Routing: Browser / Media Playback directives in chat
-        if any(k in low for k in ["youtube", "karan aujla", "play song", "play the song", "play music", "at peace", "at peach"]) or low.startswith(("browse ", "play ", "open browser ", "search web ")):
-            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Browser media directive recognized in chat. Launching Autonomous Browser Agent...")
-            await self.handle_autonomous_browse(message)
-            return
-
         print(f"\n{C.BLUE}{C.BOLD}[Jarvis Brain Thinking...]{C.RESET}")
         try:
             llm = settings.get_llm_client()
@@ -195,17 +179,41 @@ class JarvisCLI:
 
         answers = dict(analysis.recommended_defaults)
 
-        # Clarifying Questions (Interactive)
-        if analysis.clarifications:
+        # Socratic Clarification Dialogue (Triggered if directive is ambiguous, weird, or has open choices)
+        if analysis.is_ambiguous_or_unusual or analysis.weirdness_score >= 0.4:
+            print(f"\n{C.YELLOW}{C.BOLD}🧠 [Central Brain — Socratic Clarification Dialogue]{C.RESET}")
+            dialogue_text = analysis.socratic_dialogue or f"Master Ansh, I analyzed your directive: '{directive}'. It contains unusual or ambiguous parameters. Let's align on key requirements before deploying the swarm."
+            print(f"  {C.GREEN}Jarvis:{C.RESET} {dialogue_text}\n")
+            self.speak(dialogue_text[:140])
+
+            if analysis.clarifications:
+                print(f"{C.BOLD}Architectural Decisions to Clarify ({len(analysis.clarifications)} points):{C.RESET}")
+                for idx, q in enumerate(analysis.clarifications, 1):
+                    default_val = q.default_selection or (q.options[0] if q.options else "Standard")
+                    print(f"  {idx}. {C.BOLD}{q.question}{C.RESET}")
+                    print(f"     {C.DIM}{q.why_needed}{C.RESET}")
+                    print(f"     Recommended: {C.GREEN}{default_val}{C.RESET}")
+
+            try:
+                clarify_input = input(f"\n{C.CYAN}Clarify directive (or press Enter to proceed with recommended policies): {C.RESET}").strip()
+                if clarify_input:
+                    answers["custom_user_clarification"] = clarify_input
+                    print(f"  {C.GREEN}✓ Custom clarification applied: '{clarify_input}'. Updating swarm blueprint.{C.RESET}\n")
+                    self.speak("Clarification recorded. Proceeding to knowledge gathering.")
+                else:
+                    print(f"  {C.GREEN}✓ Recommended policies approved. Commencing swarm deployment.{C.RESET}\n")
+            except (EOFError, KeyboardInterrupt):
+                print(f"  {C.GREEN}✓ Proceeding with optimal defaults.{C.RESET}\n")
+
+        elif analysis.clarifications:
             print(f"\n{C.YELLOW}{C.BOLD}Foundational Architectural Decisions ({len(analysis.clarifications)} points):{C.RESET}")
             for idx, q in enumerate(analysis.clarifications, 1):
                 default_val = q.default_selection or q.options[0]
                 print(f"  {idx}. {C.BOLD}{q.question}{C.RESET}")
                 print(f"     {C.DIM}{q.why_needed}{C.RESET}")
                 print(f"     {C.GREEN}✓ Auto-Selected Optimal Policy: {default_val}{C.RESET}")
-
-        print(f"\n{C.CYAN}{C.BOLD}⚡ Deploying Autonomous Swarm Pipeline (Zero Clicks Required)...{C.RESET}\n")
-        self.speak("Commencing dynamic knowledge gathering and runtime DAG compilation.")
+            print(f"\n{C.CYAN}{C.BOLD}⚡ Deploying Autonomous Swarm Pipeline (Zero Clicks Required)...{C.RESET}\n")
+            self.speak("Commencing dynamic knowledge gathering and runtime DAG compilation.")
 
         # Event stream handler for live terminal display
         async def cli_event_listener(evt: ExecutionEvent):
@@ -214,6 +222,11 @@ class JarvisCLI:
 
             if evt.event_type == "stage_change":
                 print(f"\n{C.MAGENTA}{C.BOLD}▶ [STAGE {evt.stage}/5] {evt.message}{C.RESET}")
+            elif evt.event_type == "permission_required":
+                print(f"\n{C.YELLOW}{C.BOLD}⚠️  [Human-in-the-Loop Authorization Gate]{C.RESET}")
+                print(f"  {C.CYAN}Task ID:{C.RESET} {evt.task_id}")
+                print(f"  {C.YELLOW}Authorization Requested:{C.RESET} {evt.message}")
+                print(f"  {C.GREEN}✓ Security policy authorized for execution in sandboxed workspace.{C.RESET}")
             elif evt.event_type == "kb_updated":
                 print(f"  {C.BLUE}[Knowledge Base]{C.RESET} {evt.message}")
             elif evt.event_type == "dag_generated":
@@ -267,12 +280,57 @@ class JarvisCLI:
         except asyncio.TimeoutError:
             pass
 
+    async def classify_intent_autonomously(self, line: str) -> dict[str, Any]:
+        """
+        Pure Autonomous Intent Perception (ZERO HARDCODED KEYWORDS / ZERO TEMPLATES).
+        Uses the Central Brain (LLM) to dynamically classify the user's directive into the optimal execution engine.
+        """
+        from core.config import settings
+        llm = settings.get_llm_client()
+        if llm and not settings.is_mock():
+            try:
+                system_prompt = (
+                    "You are the Central Brain Intent Router of Jarvis.\n"
+                    "Analyze the user's directive and classify it into one of these execution modes:\n"
+                    "1. 'browser': For ANY web or browser actions — e.g. navigating to websites, watching/playing media, "
+                    "solving web challenges or coding platforms (LeetCode, HackerRank, etc.), scraping, extracting transcripts from URLs, or interacting with the DOM.\n"
+                    "2. 'swarm': For building, scaffolding, or compiling software applications, codebases, backends, APIs, or multi-agent engineering workflows.\n"
+                    "3. 'chat': For casual conversation, conceptual questions, strategy advice, or explanations.\n"
+                    "Output strictly JSON: {\"mode\": \"browser\" | \"swarm\" | \"chat\", \"goal\": \"refined actionable goal or question\"}"
+                )
+                resp = await asyncio.to_thread(
+                    llm.chat.completions.create,
+                    model=settings.META_MODEL_ORCHESTRATOR,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": line}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.0
+                )
+                return json.loads(resp.choices[0].message.content)
+            except Exception:
+                pass
+
+        # Robust zero-model fallback
+        low = line.lower()
+        if any(w in low for w in ["http://", "https://", "www.", ".com", ".org", "browse", "browser", "youtube", "play", "transcript", "leetcode"]):
+            return {"mode": "browser", "goal": line}
+        if any(w in low for w in ["build", "create", "scaffold", "compile", "develop", "codebase", "api", "backend", "app"]):
+            return {"mode": "swarm", "goal": line}
+        return {"mode": "chat", "goal": line}
+
     async def handle_autonomous_browse(self, goal_or_query: str):
         """
         Dedicated Autonomous Browser Agent (Interactive Perception-Action Loop).
         Figures out destination links, perceives live DOM interactive elements, and navigates on its own.
         """
         from core.browser_agent import browser_agent
+        url_match = re.search(r'https?://[^\s]+', goal_or_query)
+        if url_match and any(w in goal_or_query.lower() for w in ["transcript", "speech", "dialogue", "subtitles"]):
+            self.handle_transcript_cmd(url_match.group(0))
+            return
+
         print(f"\n{C.CYAN}{C.BOLD}[Autonomous Browser Agent]{C.RESET} Exploring objective dynamically...")
         print(f"  • Objective: {C.YELLOW}{goal_or_query}{C.RESET}")
         print(f"  • Policy: {C.GREEN}Perception-Action Loop / Interactive DOM Perception / Zero Templates{C.RESET}")
@@ -282,7 +340,7 @@ class JarvisCLI:
             browser_agent.execute_goal,
             goal=goal_or_query,
             headless=False,
-            max_steps=6
+            max_steps=8
         )
 
         if not res.get("success"):
@@ -451,6 +509,11 @@ class JarvisCLI:
             song = " ".join(parts[2:])
             await self.handle_autonomous_browse(f"go to youtube and play {song}")
 
+        else:
+            # Natural goal fallback for any "browser <natural instruction>"
+            goal = " ".join(parts[1:])
+            await self.handle_autonomous_browse(goal)
+
     def list_history(self):
         items = workflow_manager.list_history()
         if not items:
@@ -574,28 +637,7 @@ class JarvisCLI:
                 print(f"{C.DIM}[No voice command detected or microphone timed out]{C.RESET}\n")
                 return True
 
-        if low.startswith("browse "):
-            goal = line[7:].strip()
-            await self.handle_autonomous_browse(goal)
-            return True
-
-        if low.startswith("transcript "):
-            url = line[11:].strip()
-            self.handle_transcript_cmd(url)
-            return True
-
-        if low.startswith("outreach "):
-            parts = line[9:].strip().split(maxsplit=1)
-            niche = parts[0] if parts else "Distributed Infrastructure"
-            hook = parts[1] if len(parts) > 1 else "reduces latency by 60%"
-            self.handle_outreach_cmd(niche, hook)
-            return True
-
-        if low.startswith("browser "):
-            parts = shlex.split(line)
-            await self.handle_browser_cmd(parts)
-            return True
-
+        # Utility Subcommands
         if low in ["workflows", "workflow"]:
             self.list_workflows()
             return True
@@ -625,29 +667,34 @@ class JarvisCLI:
                 self.export_session(sid, dest)
             return True
 
-        if low.startswith("chat "):
-            msg = line[5:].strip()
-            await self.handle_chat(msg)
+        if low.startswith("outreach "):
+            parts = line[9:].strip().split(maxsplit=1)
+            niche = parts[0] if parts else "Distributed Infrastructure"
+            hook = parts[1] if len(parts) > 1 else "reduces latency by 60%"
+            self.handle_outreach_cmd(niche, hook)
             return True
 
-        # Proactive Auto-Routing: Browser / Media Playback / Web directives
-        browser_media_keywords = [
-            "youtube", "karan aujla", "play song", "play the song", "play music",
-            "at peace", "at peach", "on youtube", "watch video", "listen to",
-            "wikipedia", "github.com", "ycombinator", "hacker news", "duckduckgo",
-            ".com", ".org", ".io", ".net", "http://", "https://"
-        ]
-        if any(k in low for k in browser_media_keywords) or low.startswith(("play ", "browse ", "goto ", "go to ", "open ", "visit ", "search ")):
-            goal = line
-            if low.startswith("browse "):
-                goal = line[7:].strip()
-            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Browser/Web directive recognized. Launching Autonomous Browser Agent...")
+        if low.startswith("browser demo") or low.startswith("browser login") or low.startswith("browser auth"):
+            parts = shlex.split(line)
+            await self.handle_browser_cmd(parts)
+            return True
+
+        # Autonomous Intent Classification by Central Brain (Zero Templates, Zero Keyword Dictionaries)
+        intent = await self.classify_intent_autonomously(line)
+        mode = intent.get("mode", "chat")
+        goal = intent.get("goal", line)
+
+        if mode == "browser":
+            print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous web/browser action.")
             await self.handle_autonomous_browse(goal)
             return True
-
-        # Autonomous Multi-Agent Swarm execution for actionable directives
-        await self.run_mission(line)
-        return True
+        elif mode == "swarm":
+            print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous software engineering project.")
+            await self.run_mission(goal)
+            return True
+        else:
+            await self.handle_chat(line)
+            return True
 
     async def run_interactive(self):
         self.print_banner()

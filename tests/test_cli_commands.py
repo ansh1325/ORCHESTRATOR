@@ -39,11 +39,13 @@ async def test_jarvis_cli_system_directives():
     # Test Outreach command
     assert await cli.process_directive("outreach FinTech cuts_latency") is True
 
-    # Test Transcript command
-    assert await cli.process_directive("transcript https://www.instagram.com/reel/sample") is True
+    # Test Transcript command with mocked solver to avoid external network delay
+    from unittest.mock import patch, AsyncMock
+    with patch("core.autonomous_solver.CreativeProblemSolver.extract_media_transcript_without_api") as mock_solver:
+        mock_solver.return_value = {"success": True, "transcript": "Sample transcript", "deduction_log": ["Step 1"]}
+        assert await cli.process_directive("transcript https://www.instagram.com/reel/sample") is True
 
     # Test Browser directives dispatch without event loop crash
-    from unittest.mock import patch, AsyncMock
     with patch("workspaces.live_browser_demo.run_live_demo") as mock_demo:
         assert await cli.process_directive("browser demo") is True
         mock_demo.assert_called_once()

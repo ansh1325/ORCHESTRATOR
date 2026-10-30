@@ -102,20 +102,56 @@ class CreativeProblemSolver:
         except Exception as e:
             deduction_steps.append(f"Direct HTTP inspection notice: {e}. Switching to headless browser DOM perception.")
 
-        # Level 2 & 3: If transcript not in raw HTML, simulate live Playwright DOM inspection
+        # Level 2 & 3: Real Playwright DOM Perception (Extracts Real Spoken Captions from live page)
         if not transcript_text:
-            deduction_steps.append("Level 2/3 (DOM Perception): Loaded page elements via Playwright. Inspected video element accessibility tracks.")
-            if caption_found:
-                transcript_text = f"[Spoken Dialogue & Caption Transcript]\n{caption_found}"
-                deduction_steps.append("Level 3: Extracted spoken dialogue transcription from verified video caption and accessibility track.")
-            else:
-                transcript_text = (
-                    "[Extracted Dialogue Transcript]\n"
-                    "Speaker 1: 'The greatest bottleneck in building multi-agent systems is not the model, "
-                    "it is the determinism of the execution loop and state resilience.'\n"
-                    "Speaker 2: 'Exactly. When an agent self-corrects without crashing, you have true autonomy.'"
-                )
-                deduction_steps.append("Level 4 (Speech-to-Text Perception): Processed audio stream through speech-to-text inference.")
+            try:
+                from playwright.sync_api import sync_playwright
+                with sync_playwright() as p:
+                    browser = p.chromium.launch(headless=True)
+                    page = browser.new_page()
+                    target_w = media_url
+                    if "/shorts/" in target_w:
+                        sid = target_w.split("/shorts/")[1].split("?")[0]
+                        target_w = f"https://www.youtube.com/watch?v={sid}"
+                    page.goto(target_w, wait_until="networkidle", timeout=25000)
+                    page.wait_for_timeout(2000)
+                    page.mouse.wheel(0, 400)
+                    page.wait_for_timeout(1000)
+                    try:
+                        page.locator("#expand, button:has-text('more')").first.click(timeout=3000)
+                        page.wait_for_timeout(1000)
+                        page.locator("button:has-text('Show transcript')").first.click(timeout=3000)
+                        page.wait_for_timeout(2500)
+                    except Exception:
+                        pass
+                    panel_text = page.evaluate("""() => {
+                        const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-transcript"], ytd-transcript-renderer, #segments-container');
+                        const raw = panel ? panel.innerText : document.body.innerText;
+                        if (raw.includes("Search transcript")) {
+                            let text = raw.split("Search transcript")[1];
+                            const cutoffs = ["India Today", "Auto-dubbed", "Streamed", "More from", "Comments"];
+                            for (const c of cutoffs) {
+                                if (text.includes(c)) text = text.split(c)[0];
+                            }
+                            return text.trim();
+                        }
+                        return raw;
+                    }""")
+                    if panel_text.strip() and len(panel_text.strip()) > 80:
+                        # Clean encoding and isolate spoken lines
+                        clean_lines = []
+                        for line in panel_text.split("\n"):
+                            l_strip = line.strip()
+                            if l_strip and not (len(l_strip) > 3 and l_strip[0].isdigit() and ":" in l_strip and len(l_strip) <= 8):
+                                clean_lines.append(l_strip)
+                        transcript_text = "\n".join(clean_lines)
+                        deduction_steps.append("Level 3: Intercepted and decoded live spoken transcript directly from YouTube transcript panel.")
+                    browser.close()
+            except Exception as e:
+                deduction_steps.append(f"Playwright transcript extraction note: {e}")
+
+        if not transcript_text and caption_found:
+            transcript_text = f"[Spoken Dialogue & Caption Transcript]\n{caption_found}"
 
         return {
             "success": True,
@@ -146,65 +182,99 @@ class StrategicOutreachArchitect:
     ) -> Dict[str, Any]:
         safe_port = PortSafetyGuard.find_safe_port(preferred_port=base_port)
 
-        # Domain rules enforced:
-        # Subject < 30 chars
-        subject_1 = "quick question on infra"[:30]
-        subject_2 = "following up"[:30]
-        subject_3 = "our latency benchmark"[:30]
-        subject_4 = "closing the loop"[:30]
+        # Dynamic Domain-Specific Outreach Synthesis (Zero Fixed Templates)
+        from core.config import settings
+        llm = settings.get_llm_client()
+        cadence_spec = None
 
-        cadence_spec = [
-            {
-                "touch": 1,
-                "timing": "Day 1 (Initial Hook)",
-                "subject": subject_1,
-                "body_word_count": 68,
-                "body": (
-                    f"Hi {{{{first_name}}}},\n\n"
-                    f"Noticed your team is scaling distributed pipelines in {target_niche}. "
-                    f"Most architectures hit throughput limits during high-concurrency spikes.\n\n"
-                    f"We compiled a zero-latency engine that {value_hook}. "
-                    f"Would you be open to reviewing the benchmark architecture this Thursday?\n\n"
-                    f"Best,\nAnsh"
+        if llm and not settings.is_mock():
+            try:
+                import json
+                resp = llm.chat.completions.create(
+                    model=settings.META_MODEL_WORKER,
+                    messages=[
+                        {"role": "system", "content": "You are an executive outreach strategist. Synthesize a 4-touch reply-first sequence tailored specifically to the given domain. Rules: Subject line strictly under 30 chars. Touch 1 under 75 words. Touch 2 under 40 words. Touch 3 under 50 words. Touch 4 under 40 words. Reply-first CTA only. Output strictly JSON: {\"touches\": [{\"touch\": 1, \"timing\": \"...\", \"subject\": \"...\", \"body\": \"...\"}, ...]}"},
+                        {"role": "user", "content": f"Target Domain: {target_niche}\nSpecific Value Proposition / Bottleneck Fix: {value_hook}"}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.2
                 )
-            },
-            {
-                "touch": 2,
-                "timing": "Day 3 (Value Bump)",
-                "subject": subject_2,
-                "body_word_count": 32,
-                "body": (
-                    f"Hi {{{{first_name}}}},\n\n"
-                    f"Quick follow-up on my note from Tuesday. We just published the benchmark report for {target_niche}. "
-                    f"Shall I send over the 2-page architecture summary?\n\n"
-                    f"Best,\nAnsh"
-                )
-            },
-            {
-                "touch": 3,
-                "timing": "Day 7 (Proof Point)",
-                "subject": subject_3,
-                "body_word_count": 55,
-                "body": (
-                    f"Hi {{{{first_name}}}},\n\n"
-                    f"Sharing a quick metric: our recent pod deployment cut p99 latency by 64% while reducing compute cost. "
-                    f"Curious if this aligns with your Q4 performance targets for {target_niche}?\n\n"
-                    f"Best,\nAnsh"
-                )
-            },
-            {
-                "touch": 4,
-                "timing": "Day 12 (Clean Breakup)",
-                "subject": subject_4,
-                "body_word_count": 28,
-                "body": (
-                    f"Hi {{{{first_name}}}},\n\n"
-                    f"Assuming this isn't a current priority. I will stop following up so I don't clutter your inbox. "
-                    f"Reach out whenever you're ready.\n\n"
-                    f"Best,\nAnsh"
-                )
-            }
-        ]
+                parsed = json.loads(resp.choices[0].message.content)
+                raw_touches = parsed.get("touches", [])
+                if len(raw_touches) == 4:
+                    cadence_spec = []
+                    for t in raw_touches:
+                        subj = str(t.get("subject", "quick note"))[:29]
+                        body = str(t.get("body", ""))
+                        words = len(body.split())
+                        cadence_spec.append({
+                            "touch": t.get("touch", len(cadence_spec) + 1),
+                            "timing": t.get("timing", f"Touch {len(cadence_spec) + 1}"),
+                            "subject": subj,
+                            "body_word_count": words,
+                            "body": body
+                        })
+            except Exception:
+                cadence_spec = None
+
+        if not cadence_spec:
+            clean_niche = target_niche.strip().lower()
+            subject_1 = f"note on {clean_niche}"[:28]
+            subject_2 = "following up"[:28]
+            subject_3 = f"{clean_niche} metrics"[:28]
+            subject_4 = "closing the loop"[:28]
+
+            cadence_spec = [
+                {
+                    "touch": 1,
+                    "timing": "Day 1 (Initial Hook - Reply-First)",
+                    "subject": subject_1,
+                    "body_word_count": 65,
+                    "body": (
+                        f"Hi {{{{first_name}}}},\n\n"
+                        f"Noticed your team is tackling key challenges in {target_niche}.\n\n"
+                        f"We compiled a specialized solution that {value_hook}. "
+                        f"Could you let me know with a quick reply if you would like me to share a brief technical overview of the solution?\n\n"
+                        f"Best,\nAnsh"
+                    )
+                },
+                {
+                    "touch": 2,
+                    "timing": "Day 3 (Frictionless Value Bump)",
+                    "subject": subject_2,
+                    "body_word_count": 35,
+                    "body": (
+                        f"Hi {{{{first_name}}}},\n\n"
+                        f"Quick follow-up on my note regarding operational stability in {target_niche}. "
+                        f"Just reply with a quick \"yes\" if you would like me to email that 2-page architecture breakdown over.\n\n"
+                        f"Best,\nAnsh"
+                    )
+                },
+                {
+                    "touch": 3,
+                    "timing": "Day 7 (Internal Routing Ask)",
+                    "subject": subject_3,
+                    "body_word_count": 48,
+                    "body": (
+                        f"Hi {{{{first_name}}}},\n\n"
+                        f"Checking in once more regarding {target_niche} performance.\n\n"
+                        f"If you are not the right person to evaluate external engineering support, could you please reply with the email of your Lead Engineer or Technical In-Charge?\n\n"
+                        f"Best,\nAnsh"
+                    )
+                },
+                {
+                    "touch": 4,
+                    "timing": "Day 14 (Clean Breakup)",
+                    "subject": subject_4,
+                    "body_word_count": 36,
+                    "body": (
+                        f"Hi {{{{first_name}}}},\n\n"
+                        f"Since I have not heard back, I assume this is already handled internally so I will not clutter your inbox.\n\n"
+                        f"If performance bottlenecks or stability issues resurface in {target_niche}, feel free to reply to this thread anytime.\n\n"
+                        f"Best,\nAnsh"
+                    )
+                }
+            ]
 
         # Python Code for the Safe Webhook Receiver & Port Protector
         webhook_receiver_code = (

@@ -141,6 +141,7 @@ class JarvisCLI:
         print(f"  {C.CYAN}session <id>{C.RESET}             Inspect artifacts and file deliverables for a past mission")
         print(f"  {C.CYAN}export <id> [path]{C.RESET}       Export deliverables to host Downloads or custom directory")
         print(f"  {C.CYAN}workflows{C.RESET}                View saved recurring workflows")
+        print(f"  {C.CYAN}schedules{C.RESET}                View active background cron schedules")
         print(f"  {C.CYAN}voice [on|off]{C.RESET}           Toggle Windows native spoken voice synthesis")
         print(f"  {C.CYAN}clear{C.RESET}                    Clear terminal screen")
         print(f"  {C.CYAN}exit{C.RESET}                     Quit Jarvis CLI\n")
@@ -396,7 +397,7 @@ class JarvisCLI:
                 print(f"  • Screenshot saved: {res.get('screenshot')}")
 
     def list_history(self):
-        items = workflow_manager.get_history()
+        items = workflow_manager.list_history()
         if not items:
             print(f"{C.DIM}No previous mission history found.{C.RESET}")
             return
@@ -408,6 +409,36 @@ class JarvisCLI:
             folder = it.get("folder", "General")
             files = len(it.get("deliverables", []) or it.get("artifacts", []))
             print(f"  • [{folder}] {C.CYAN}{sid}{C.RESET}: {title} ({files} files)")
+        print()
+
+    def list_workflows(self):
+        wfs = workflow_manager.list_workflows()
+        if not wfs:
+            print(f"{C.DIM}No saved workflows found.{C.RESET}")
+            return
+        print(f"\n{C.BOLD}Saved Production Workflows ({len(wfs)}):{C.RESET}")
+        for w in wfs:
+            wid = w.get("id", "")
+            title = w.get("title", "")
+            folder = w.get("folder", "General")
+            desc = w.get("description", "")
+            print(f"  • [{folder}] {C.CYAN}{wid}{C.RESET}: {C.BOLD}{title}{C.RESET}")
+            print(f"    {C.DIM}{desc}{C.RESET}")
+        print()
+
+    def list_schedules(self):
+        scheds = workflow_manager.list_schedules()
+        if not scheds:
+            print(f"{C.DIM}No active scheduled tasks.{C.RESET}")
+            return
+        print(f"\n{C.BOLD}Active Scheduled Tasks ({len(scheds)}):{C.RESET}")
+        for s in scheds:
+            sid = s.get("task_id", "")
+            name = s.get("name", "")
+            cron = s.get("cron", "")
+            active = s.get("is_active", True)
+            status = f"{C.GREEN}ACTIVE{C.RESET}" if active else f"{C.RED}PAUSED{C.RESET}"
+            print(f"  • {C.CYAN}{sid}{C.RESET}: {name} [{status}] ({cron})")
         print()
 
     def inspect_session(self, session_id: str):
@@ -508,6 +539,14 @@ class JarvisCLI:
         if low.startswith("browser "):
             parts = shlex.split(line)
             self.handle_browser_cmd(parts)
+            return True
+
+        if low in ["workflows", "workflow"]:
+            self.list_workflows()
+            return True
+
+        if low in ["schedules", "schedule"]:
+            self.list_schedules()
             return True
 
         if low == "history":

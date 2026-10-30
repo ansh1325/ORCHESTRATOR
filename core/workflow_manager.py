@@ -67,6 +67,8 @@ class WorkflowAndHistoryManager:
         except Exception:
             return []
 
+    get_history = list_history
+
     def record_session(
         self,
         session_id: str,

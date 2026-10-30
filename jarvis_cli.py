@@ -436,6 +436,12 @@ class JarvisCLI:
             else:
                 print(f"\n{C.DIM}Session closed. Profile saved at: {res.get('profile_path')}{C.RESET}\n")
 
+        elif sub == "demo":
+            print(f"{C.CYAN}Launching live visible desktop browser demonstration on your screen...{C.RESET}")
+            self.speak("Launching live visible browser demonstration on your desktop screen.")
+            from workspaces.live_browser_demo import run_live_demo
+            run_live_demo()
+
     def list_history(self):
         items = workflow_manager.list_history()
         if not items:

@@ -338,10 +338,10 @@ class JarvisCLI:
         print(f"\n{C.GREEN}✓ Outreach receiver script generated: {out_dir / 'safe_webhook_receiver.py'}{C.RESET}\n")
         self.speak("Outreach infrastructure compiled. 4-touch follow-up cadence active.")
 
-    def handle_browser_cmd(self, parts: list[str]):
+    async def handle_browser_cmd(self, parts: list[str]):
         """Direct browser automation commands from terminal."""
         if len(parts) < 2:
-            print(f"{C.RED}Usage: browser <inbox|compose|open|run> [arguments]{C.RESET}")
+            print(f"{C.RED}Usage: browser <demo|inbox|compose|open|run|agent|email|login> [arguments]{C.RESET}")
             return
 
         sub = parts[1].lower()
@@ -388,7 +388,8 @@ class JarvisCLI:
                 return
             url = parts[2]
             print(f"{C.CYAN}Launching Playwright autonomous engine on:{C.RESET} {url}")
-            res = BrowserController.run_playwright_automation(
+            res = await asyncio.to_thread(
+                BrowserController.run_playwright_automation,
                 url=url,
                 headless=False,
                 actions=[
@@ -408,7 +409,7 @@ class JarvisCLI:
                 print(f"{C.RED}Usage: browser agent <goal>{C.RESET}")
                 return
             goal = " ".join(parts[2:])
-            asyncio.run(self.handle_autonomous_browse(goal))
+            await self.handle_autonomous_browse(goal)
 
         elif sub == "email":
             if len(parts) < 3:
@@ -419,7 +420,7 @@ class JarvisCLI:
             body = " ".join(parts[4:]) if len(parts) > 4 else "I am writing this email as your autonomous technical partner."
             from core.browser_agent import browser_agent
             print(f"{C.CYAN}Dispatching email autonomously to {to}...{C.RESET}")
-            res = browser_agent.send_email_autonomously(to, subject, body)
+            res = await asyncio.to_thread(browser_agent.send_email_autonomously, to, subject, body)
             print(f"{C.GREEN}✓ Dispatch Result:{C.RESET} {res.get('message')}")
             for act in res.get("actions", []):
                 print(f"  • {act}")
@@ -429,7 +430,7 @@ class JarvisCLI:
             print(f"{C.CYAN}Launching Jarvis Persistent Browser Profile (Axiom Mode)...{C.RESET}")
             print(f"{C.YELLOW}Sign in to your Google Account ONCE in the browser window that appears.\nOnce signed in, Jarvis will autonomously control Gmail, compose, and click Send forever!{C.RESET}")
             self.speak("Launching persistent browser window. Please sign in to your Google account.")
-            res = BrowserController.launch_login_session()
+            res = await asyncio.to_thread(BrowserController.launch_login_session)
             if res.get("logged_in"):
                 print(f"\n{C.GREEN}{C.BOLD}✓ Authentication session saved! Autonomous browser dispatch is now permanently active.{C.RESET}\n")
                 self.speak("Authentication saved. Autonomous dispatch active.")
@@ -440,7 +441,7 @@ class JarvisCLI:
             print(f"{C.CYAN}Launching live visible desktop browser demonstration on your screen...{C.RESET}")
             self.speak("Launching live visible browser demonstration on your desktop screen.")
             from workspaces.live_browser_demo import run_live_demo
-            run_live_demo()
+            await asyncio.to_thread(run_live_demo)
 
     def list_history(self):
         items = workflow_manager.list_history()
@@ -584,7 +585,7 @@ class JarvisCLI:
 
         if low.startswith("browser "):
             parts = shlex.split(line)
-            self.handle_browser_cmd(parts)
+            await self.handle_browser_cmd(parts)
             return True
 
         if low in ["workflows", "workflow"]:

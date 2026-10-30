@@ -1,5 +1,38 @@
 [
   {
+    "session_id": "send_3_mails_anshtiwarif17_a7cc",
+    "title": "Send 3 Mails Anshtiwarif17@gmail.com Subject",
+    "prompt": "send 3 mails to anshtiwarif17@gmail.com with subject i am jarvis and body whatever you feel for me",
+    "folder": "Personal",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-30T14:19:07.649596+00:00",
+    "artifacts": [
+      "browser_permission_granted.json",
+      "browser_send_emails.py",
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md",
+      "send_emails_smtp.py"
+    ],
+    "deliverables": [
+      "browser_permission_granted.json",
+      "browser_send_emails.py",
+      "dispatch_summary.md",
+      "emails.json",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "mail_1.md",
+      "mail_2.md",
+      "mail_3.md",
+      "send_emails_smtp.py"
+    ]
+  },
+  {
     "session_id": "sched_run_d5317e75",
     "title": "Daily 6AM Test Run",
     "prompt": "Test prompt",

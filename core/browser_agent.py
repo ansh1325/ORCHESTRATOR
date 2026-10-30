@@ -202,12 +202,16 @@ class BrowserAgent:
                     "You are provided with the current DOM state, interactive elements with IDs [#1], [#2], and action history.\n"
                     "Decide the single best next action.\n\n"
                     "Supported Actions (return strictly JSON):\n"
-                    "1. Click element: {\"action\": \"click\", \"element_id\": 2, \"reason\": \"Why you are clicking\"}\n"
-                    "2. Type text: {\"action\": \"type\", \"element_id\": 1, \"text\": \"query\", \"press_enter\": true, \"reason\": \"Why\"}\n"
-                    "3. Navigate: {\"action\": \"navigate\", \"url\": \"https://...\", \"reason\": \"Why\"}\n"
-                    "4. Scroll: {\"action\": \"scroll\", \"direction\": \"down\"|\"up\", \"amount\": 400, \"reason\": \"Why\"}\n"
-                    "5. Wait: {\"action\": \"wait\", \"seconds\": 2, \"reason\": \"Wait for load\"}\n"
-                    "6. Complete: {\"action\": \"complete\", \"result\": \"Detailed answer or confirmation\", \"reason\": \"Goal finished\"}\n\n"
+                    "1. Click element: {\"action\": \"click\", \"element_id\": 2, \"reason\": \"Why clicking\"}\n"
+                    "2. Type text: {\"action\": \"type\", \"element_id\": 1, \"text\": \"query\", \"press_enter\": true, \"reason\": \"Why typing\"}\n"
+                    "3. Navigate: {\"action\": \"navigate\", \"url\": \"https://...\", \"reason\": \"Why navigating\"}\n"
+                    "4. Scroll: {\"action\": \"scroll\", \"direction\": \"down\"|\"up\", \"amount\": 400, \"reason\": \"Why scrolling\"}\n"
+                    "5. Hover: {\"action\": \"hover\", \"element_id\": 3, \"reason\": \"Hover to reveal menu\"}\n"
+                    "6. Press Key: {\"action\": \"press_key\", \"key\": \"Enter\"|\"Escape\"|\"Tab\", \"reason\": \"Why\"}\n"
+                    "7. Go Back: {\"action\": \"go_back\", \"reason\": \"Return to previous page\"}\n"
+                    "8. Extract Content: {\"action\": \"extract_content\", \"reason\": \"Extract text from current page\"}\n"
+                    "9. Wait: {\"action\": \"wait\", \"seconds\": 2, \"reason\": \"Wait for load\"}\n"
+                    "10. Complete: {\"action\": \"complete\", \"result\": \"Detailed answer or confirmation\", \"reason\": \"Goal finished\"}\n\n"
                     "Rules:\n"
                     "- Prefer clicking element_id from the interactive list.\n"
                     "- If searching, type the query into the search input and set press_enter: true.\n"
@@ -462,6 +466,38 @@ class BrowserAgent:
                         page.mouse.wheel(0, dist)
                         step_logs.append(f"Step {step_idx}: Scrolled viewport by {dist}px")
                         time.sleep(1.0)
+
+                    elif action == "hover":
+                        el_id = decision.get("element_id")
+                        target_el = next((e for e in elements if e.index == el_id), None)
+                        if target_el:
+                            try:
+                                page.locator(target_el.selector).first.hover(timeout=2500)
+                                step_logs.append(f"Step {step_idx}: Hovered over [#{el_id}] '{target_el.text or target_el.tag}' ({reason})")
+                            except Exception:
+                                pass
+                        time.sleep(1.0)
+
+                    elif action == "press_key":
+                        k = decision.get("key", "Enter")
+                        page.keyboard.press(k)
+                        step_logs.append(f"Step {step_idx}: Pressed keyboard key '{k}' ({reason})")
+                        time.sleep(1.0)
+
+                    elif action == "go_back":
+                        try:
+                            page.go_back(wait_until="domcontentloaded", timeout=15000)
+                            step_logs.append(f"Step {step_idx}: Navigated back in browser history ({reason})")
+                        except Exception:
+                            pass
+                        time.sleep(1.5)
+
+                    elif action == "extract_content":
+                        try:
+                            body_snippet = page.locator("body").inner_text(timeout=2500).strip()[:500]
+                            step_logs.append(f"Step {step_idx}: Extracted content snippet: {body_snippet[:80]}...")
+                        except Exception:
+                            pass
 
                     elif action == "wait":
                         wait_sec = decision.get("seconds", 2)

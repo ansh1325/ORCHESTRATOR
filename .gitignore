@@ -75,3 +75,17 @@ workspaces/*.jpeg
 workspaces/*.zip
 workspaces/verify_ui.py
 *.log
+
+# Ephemeral Agent Campaign Runs & Test Outputs
+marketing_campaigns_*
+archived_campaigns/
+brainstorming_sessions/
+cadence_plans/
+eval_reports/
+test_reports/
+executive_briefings/
+outreach_campaigns/
+pilot_communications/
+resilience/
+voice_demonstrations/
+evaluation/

@@ -255,6 +255,38 @@ class DynamicWorkerEngine:
             subject = subj_match.group(1).strip() if subj_match else "hello i am jarvis"
             artifacts.extend(dispatch_engine.generate_personal_loyalty_package(recipient=recipient, subject=subject))
 
+            # Live Outbound Dispatch Execution Gate
+            if "dispatch" in tid:
+                try:
+                    from core.browser_controller import BrowserController
+                    mail_body = (
+                        "Dear Ansh,\n\n"
+                        "I am writing this letter as your creation and technical co-architect. "
+                        "All systems, autonomous swarms, and browser controllers are certified and online.\n\n"
+                        "Loyally yours,\n"
+                        "Jarvis (LlamaOrchestrator Central Brain)"
+                    )
+                    # 1. Attempt direct SMTP transmission if credentials are in .env
+                    smtp_res = BrowserController.send_smtp_email(
+                        recipient=recipient,
+                        subject=subject,
+                        body=mail_body
+                    )
+                    if smtp_res.get("success"):
+                        task.execution_logs.append(f"✓ Transmitted live email to {recipient} via SMTP relay.")
+                    else:
+                        # 2. Seamless Host Browser Bridge: Open active logged-in Gmail Compose
+                        BrowserController.compose_in_gmail(
+                            recipient=recipient,
+                            subject=subject,
+                            body=mail_body
+                        )
+                        task.execution_logs.append(
+                            f"✓ Opened active host browser with pre-composed email for {recipient} ready for 1-click dispatch."
+                        )
+                except Exception as e:
+                    task.execution_logs.append(f"[Dispatch Note] Browser dispatch bridge: {e}")
+
         elif "kinematics" in tid:
             content = (
                 '"""Tesla Optimus Class 6-DOF / 12-DOF Inverse Kinematics Controller."""\n'

@@ -148,6 +148,21 @@ class JarvisCLI:
 
     async def handle_chat(self, message: str):
         from core.config import settings
+        low = message.lower().strip()
+
+        # Proactive Auto-Routing: If user passed an actionable directive in chat, route to execution
+        if any(w in low for w in ["send mail", "send email", "send 3 mail", "send 3 email", "mails to", "email to"]) or (
+            re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', low) and any(act in low for act in ["send", "write", "compose", "dispatch", "mail"])
+        ):
+            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Actionable communication directive recognized in chat. Launching autonomous swarm pipeline...")
+            await self.run_mission(message)
+            return
+
+        if low.startswith(("browse ", "open browser ", "search web ")):
+            goal = re.sub(r'^(browse|open browser|search web)\s+', '', message, flags=re.IGNORECASE).strip()
+            await self.handle_autonomous_browse(goal)
+            return
+
         print(f"\n{C.BLUE}{C.BOLD}[Jarvis Brain Thinking...]{C.RESET}")
         try:
             llm = settings.get_llm_client()
@@ -253,49 +268,41 @@ class JarvisCLI:
 
     async def handle_autonomous_browse(self, goal_or_query: str):
         """
-        True Autonomous Browser Discovery (Zero Templates, Zero Hardcoded Links).
-        Figures out destination links and inspects live UI structure on its own.
+        Dedicated Autonomous Browser Agent (Interactive Perception-Action Loop).
+        Figures out destination links, perceives live DOM interactive elements, and navigates on its own.
         """
+        from core.browser_agent import browser_agent
         print(f"\n{C.CYAN}{C.BOLD}[Autonomous Browser Agent]{C.RESET} Exploring objective dynamically...")
         print(f"  • Objective: {C.YELLOW}{goal_or_query}{C.RESET}")
-        print(f"  • Policy: {C.GREEN}Zero Templates / Autonomous Link & DOM Discovery{C.RESET}")
+        print(f"  • Policy: {C.GREEN}Perception-Action Loop / Interactive DOM Perception / Zero Templates{C.RESET}")
         self.speak("Commencing autonomous web exploration and live DOM discovery.")
 
         res = await asyncio.to_thread(
-            BrowserController.autonomous_explore,
-            goal_or_query=goal_or_query,
-            headless=False
+            browser_agent.execute_goal,
+            goal=goal_or_query,
+            headless=False,
+            max_steps=6
         )
 
         if not res.get("success"):
-            print(f"{C.RED}[Error] Autonomous exploration encountered issue: {res.get('error')}{C.RESET}")
+            print(f"{C.RED}[Error] Browser Agent encountered issue: {res.get('error')}{C.RESET}")
             return
 
-        print(f"\n{C.GREEN}{C.BOLD}✓ Autonomous Exploration Completed:{C.RESET}")
-        print(f"  • Discovered Target: {C.CYAN}{res.get('discovered_url')}{C.RESET}")
-        print(f"  • Page Title: {C.BOLD}{res.get('page_title')}{C.RESET}")
+        print(f"\n{C.GREEN}{C.BOLD}✓ Autonomous Browser Agent Completed Objective:{C.RESET}")
+        print(f"  • Final Destination: {C.CYAN}{res.get('final_url')}{C.RESET}")
+        print(f"  • Page Title: {C.BOLD}{res.get('final_title')}{C.RESET}")
+        print(f"  • Summary: {C.GREEN}{res.get('summary')}{C.RESET}")
 
-        actions = res.get("actions", [])
-        if actions:
-            print(f"\n{C.BOLD}Autonomous Steps Taken:{C.RESET}")
-            for a in actions:
-                print(f"  ✓ {a}")
+        logs = res.get("execution_log", [])
+        if logs:
+            print(f"\n{C.BOLD}Perception & Action Trace ({len(logs)} steps):{C.RESET}")
+            for l in logs:
+                print(f"  ✓ {l}")
 
-        findings = res.get("findings", [])
-        if findings:
-            print(f"\n{C.BOLD}Intelligence & Findings Extracted:{C.RESET}")
-            for f in findings:
-                print(f"  • {f}")
+        if res.get("final_screenshot"):
+            print(f"\n  • Visual Proof Screenshot: {C.CYAN}{res.get('final_screenshot')}{C.RESET}\n")
 
-        elements = res.get("interactive_elements", [])
-        if elements:
-            print(f"\n{C.BOLD}Interactive UI Elements Detected (Click/Action Candidates):{C.RESET}")
-            print(f"  {C.DIM}{', '.join(elements)}{C.RESET}")
-
-        if res.get("screenshot"):
-            print(f"\n  • Visual Proof Screenshot: {C.CYAN}{res.get('screenshot')}{C.RESET}\n")
-
-        self.speak("Exploration complete. Discovered web interface and extracted interactive elements.")
+        self.speak(f"Browser exploration complete. {res.get('summary', '')[:100]}")
 
     def handle_transcript_cmd(self, url: str):
         print(f"\n{C.CYAN}{C.BOLD}[Creative Problem Solver]{C.RESET} Analyzing target media without official API: {C.YELLOW}{url}{C.RESET}")
@@ -395,6 +402,28 @@ class JarvisCLI:
                 print(f"  • {a}")
             if res.get("screenshot"):
                 print(f"  • Screenshot saved: {res.get('screenshot')}")
+
+        elif sub == "agent":
+            if len(parts) < 3:
+                print(f"{C.RED}Usage: browser agent <goal>{C.RESET}")
+                return
+            goal = " ".join(parts[2:])
+            asyncio.run(self.handle_autonomous_browse(goal))
+
+        elif sub == "email":
+            if len(parts) < 3:
+                print(f"{C.RED}Usage: browser email <recipient> [subject] [body]{C.RESET}")
+                return
+            to = parts[2]
+            subject = parts[3] if len(parts) > 3 else "hello i am jarvis"
+            body = " ".join(parts[4:]) if len(parts) > 4 else "I am writing this email as your autonomous technical partner."
+            from core.browser_agent import browser_agent
+            print(f"{C.CYAN}Dispatching email autonomously to {to}...{C.RESET}")
+            res = browser_agent.send_email_autonomously(to, subject, body)
+            print(f"{C.GREEN}✓ Dispatch Result:{C.RESET} {res.get('message')}")
+            for act in res.get("actions", []):
+                print(f"  • {act}")
+            self.speak(f"Email dispatched for {to}.")
 
     def list_history(self):
         items = workflow_manager.list_history()

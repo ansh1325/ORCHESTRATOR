@@ -483,6 +483,45 @@ async def email_smtp_send(req: dict = Body(...)):
     )
     return res
 
+@app.post("/api/browser/agent/execute")
+async def browser_agent_execute(req: dict = Body(...)):
+    """
+    Executes an autonomous goal using the dedicated Browser Agent.
+    Interacts with live DOM, perceives numbered interactive elements ([#1], [#2]), and navigates on its own.
+    """
+    from core.browser_agent import browser_agent
+    goal = req.get("goal", "").strip()
+    if not goal:
+        raise HTTPException(status_code=400, detail="Missing 'goal' parameter")
+    start_url = req.get("start_url")
+    max_steps = int(req.get("max_steps", 6))
+    headless = bool(req.get("headless", False))
+
+    res = await asyncio.to_thread(
+        browser_agent.execute_goal,
+        goal=goal,
+        start_url=start_url,
+        max_steps=max_steps,
+        headless=headless
+    )
+    return res
+
+@app.post("/api/browser/agent/email")
+async def browser_agent_email(req: dict = Body(...)):
+    """Specialized Browser Agent autonomous email dispatch with Host Browser session fallback."""
+    from core.browser_agent import browser_agent
+    recipient = req.get("recipient", "anshtiwarisocial@gmail.com")
+    subject = req.get("subject", "hello i am jarvis")
+    body = req.get("body", "I am writing this email as your autonomous technical partner.")
+
+    res = await asyncio.to_thread(
+        browser_agent.send_email_autonomously,
+        recipient=recipient,
+        subject=subject,
+        body=body
+    )
+    return res
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=False)

@@ -803,15 +803,24 @@ class MetaOrchestrator:
 
     def compile_dag_and_synthesize_workers(self, session: SessionState) -> DAGPlan:
         """Stage 3: DAG Task Decomposition & Dynamic Worker Synthesis."""
-        # Dynamic LLM compilation first
-        if self.llm_client and not settings.is_mock():
+        analysis = session.intent_analysis
+        track = analysis.track_type if analysis else "technical_software"
+
+        # Email Communication Guarantee: Never let an unconstrained LLM hallucinate AWS CDK for email missions
+        raw_vision = getattr(session, "vision", "") or ""
+        is_email_mission = (
+            track == "communication_assistant"
+            or bool(re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', raw_vision))
+        )
+
+        if not is_email_mission and self.llm_client and not settings.is_mock():
             dynamic_plan = self._llm_compile_dag(session)
             if dynamic_plan:
                 session.dag_plan = dynamic_plan
                 return dynamic_plan
 
-        analysis = session.intent_analysis
-        track = analysis.track_type if analysis else "technical_software"
+        if is_email_mission:
+            track = "communication_assistant"
 
         if track == "robotics_humanoid":
             nodes = [

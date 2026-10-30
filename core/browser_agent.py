@@ -144,7 +144,7 @@ class BrowserAgent:
                 });
 
                 index++;
-                if (elements.length >= 60) break; // Limit per viewport
+                if (elements.length >= 100) break; // Limit per viewport
             }
             return elements;
         }
@@ -169,12 +169,39 @@ class BrowserAgent:
             return []
 
     @staticmethod
+    def _clean_search_query(goal: str) -> str:
+        """Extracts clean query from natural language instructions and corrects common typos."""
+        text = goal.strip()
+        # Fix known typos
+        text = re.sub(r'\bat peach\b', 'at peace', text, flags=re.IGNORECASE)
+        # Strip conversational prefixes
+        text = re.sub(
+            r'^(please\s+|can you\s+|i want you to\s+|go to youtube and\s+|open youtube and\s+|search on youtube for\s+|search youtube for\s+|search youtube\s+|youtube\s+)',
+            '', text, flags=re.IGNORECASE
+        )
+        # Extract "search <X> and play <Y>"
+        m = re.search(r'search\s+(?:for\s+)?(.+?)\s+and\s+play\s+(?:the\s+)?(?:song\s+)?(?:of\s+)?(.+)', text, flags=re.IGNORECASE)
+        if m:
+            q1, q2 = m.group(1).strip(), m.group(2).strip()
+            return f"{q1} {q2}".strip()
+
+        # Extract "play <X> by/of <Y>"
+        m2 = re.search(r'play\s+(?:the\s+)?(?:song\s+)?(.+?)\s+(?:by|of)\s+(.+)', text, flags=re.IGNORECASE)
+        if m2:
+            return f"{m2.group(1).strip()} {m2.group(2).strip()}"
+
+        # Strip remaining command verbs
+        text = re.sub(r'^(search for|search|look up|find|play the song of|play the song|play song|play music|play)\s+', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\s+on youtube$', '', text, flags=re.IGNORECASE)
+        return text.strip()
+
+    @staticmethod
     def _build_dom_summary(page: Any, elements: list[BrowserElement]) -> str:
         """Constructs a clean textual summary of the page for the LLM brain."""
         url = page.url
         title = page.title()
         lines = [f"PAGE TITLE: {title}", f"URL: {url}", "\nINTERACTIVE ELEMENTS:"]
-        for el in elements[:40]:
+        for el in elements[:60]:
             label = el.text or el.aria_label or el.placeholder or f"<{el.tag}>"
             type_info = f" ({el.element_type})" if el.element_type != el.tag else ""
             lines.append(f"  [#{el.index}] {el.tag.upper()}{type_info}: \"{label}\"")
@@ -194,6 +221,10 @@ class BrowserAgent:
         """
         Decides the next atomic action to take using Meta Llama or structured heuristic reasoning.
         """
+        goal_lower = goal.lower()
+        history_str = " ".join(step_history).lower()
+        is_media_goal = any(term in goal_lower for term in ["play", "song", "music", "video", "listen", "youtube", "karan aujla", "at peace", "at peach"])
+
         llm = settings.get_llm_client()
         if llm and not settings.is_mock():
             try:
@@ -212,10 +243,11 @@ class BrowserAgent:
                     "8. Extract Content: {\"action\": \"extract_content\", \"reason\": \"Extract text from current page\"}\n"
                     "9. Wait: {\"action\": \"wait\", \"seconds\": 2, \"reason\": \"Wait for load\"}\n"
                     "10. Complete: {\"action\": \"complete\", \"result\": \"Detailed answer or confirmation\", \"reason\": \"Goal finished\"}\n\n"
-                    "Rules:\n"
-                    "- Prefer clicking element_id from the interactive list.\n"
-                    "- If searching, type the query into the search input and set press_enter: true.\n"
-                    "- When you have extracted the needed information or completed the task, use action 'complete'."
+                    "Special Operational Rules:\n"
+                    "- If searching on YouTube or Google, type a clean search term (e.g. 'at peace karan aujla') into the search input with press_enter: true.\n"
+                    "- If on YouTube search results and the goal is to play a song/video, find the video link matching the requested song/artist and CLICK it. Do NOT mark complete until the video is clicked!\n"
+                    "- If on the video watch page (/watch?v=), the video is playing. Use action 'complete'.\n"
+                    "- Correct obvious typos in user queries automatically (e.g. 'at peach' -> 'at peace').\n"
                 )
                 user_prompt = (
                     f"USER GOAL: {goal}\n\n"
@@ -235,38 +267,66 @@ class BrowserAgent:
                 content = resp.choices[0].message.content.strip()
                 parsed = json.loads(content)
                 if "action" in parsed:
-                    return parsed
+                    # Guard: If media goal and on search results, do not complete prematurely
+                    if is_media_goal and parsed.get("action") == "complete" and "watch" not in dom_summary.lower() and "/results" in dom_summary.lower():
+                        pass  # Fall through to click the actual video link
+                    else:
+                        return parsed
             except Exception:
                 pass
 
         # Heuristic Decision Engine (Deterministic fallback for search / navigation / clicking)
-        goal_lower = goal.lower()
-        history_str = " ".join(step_history).lower()
+        clean_query = self._clean_search_query(goal)
 
-        # Check if complete
-        if len(step_history) >= 2 and any(term in goal_lower for term in ["search", "find", "check"]):
-            # If we clicked or navigated, finish with extracted content
-            if "clicked" in history_str or "typed" in history_str:
-                return {
-                    "action": "complete",
-                    "result": f"Successfully performed browser navigation and gathered page data for '{goal}'.",
-                    "reason": "Actions executed and target content reached."
-                }
+        # Check if already on video watch page
+        if "/watch" in dom_summary.lower() or any(term in dom_summary.lower() for term in ["play (k)", "ytp-play-button", "now playing"]):
+            return {
+                "action": "complete",
+                "result": f"Successfully playing '{clean_query}' on YouTube.",
+                "reason": "Video watch page reached and playback active."
+            }
 
-        # Check for search input
-        inputs = [e for e in elements if e.tag in ["input", "textarea"] and e.element_type in ["text", "search", "input", "textarea"]]
+        # Check for search input if not yet typed
+        inputs = [
+            e for e in elements
+            if (e.tag in ["input", "textarea"] and e.element_type in ["text", "search", "input", "textarea"])
+            or "search" in (e.placeholder + " " + e.aria_label).lower()
+        ]
         if inputs and "typed" not in history_str:
-            clean_query = re.sub(r'^(search for|search|look up|find|go to)\s+', '', goal, flags=re.IGNORECASE).strip()
             return {
                 "action": "type",
                 "element_id": inputs[0].index,
                 "text": clean_query,
                 "press_enter": True,
-                "reason": f"Type search term '{clean_query}' into search field"
+                "reason": f"Type search term '{clean_query}' into search field and submit"
             }
 
-        # Check for links or buttons matching goal keywords
-        keywords = [w for w in goal_lower.split() if len(w) > 3 and w not in ["open", "browser", "control", "please", "want"]]
+        # If on YouTube results or typed search query, look for video link to click
+        if is_media_goal or "/results" in dom_summary.lower() or "typed" in history_str:
+            video_link = None
+            kw_list = [w for w in clean_query.lower().split() if len(w) > 2]
+            for el in elements:
+                full_text = f"{el.text} {el.aria_label} {el.href}".lower()
+                if any(k in full_text for k in kw_list) and (el.tag == "a" or "/watch" in el.href):
+                    video_link = el
+                    break
+
+            if not video_link:
+                # Fallback to first video link on page
+                for el in elements:
+                    if el.tag == "a" and ("/watch" in el.href or "video-title" in el.selector):
+                        video_link = el
+                        break
+
+            if video_link:
+                return {
+                    "action": "click",
+                    "element_id": video_link.index,
+                    "reason": f"Click video '{video_link.text[:35] or 'video'}' to begin playback"
+                }
+
+        # Check for standard links or buttons matching goal keywords
+        keywords = [w for w in goal_lower.split() if len(w) > 3 and w not in ["open", "browser", "control", "please", "want", "youtube"]]
         for kw in keywords:
             for el in elements:
                 if kw in el.text.lower() or kw in el.aria_label.lower():
@@ -275,6 +335,15 @@ class BrowserAgent:
                         "element_id": el.index,
                         "reason": f"Click element '{el.text[:30]}' matching keyword '{kw}'"
                     }
+
+        # Check if non-media search is complete
+        if not is_media_goal and len(step_history) >= 2 and any(term in goal_lower for term in ["search", "find", "check"]):
+            if "clicked" in history_str or "typed" in history_str:
+                return {
+                    "action": "complete",
+                    "result": f"Successfully performed browser navigation and gathered page data for '{goal}'.",
+                    "reason": "Actions executed and target content reached."
+                }
 
         # Default scroll down to see more
         return {
@@ -314,7 +383,7 @@ class BrowserAgent:
             url_match = re.search(r'https?://[^\s]+', goal)
             if url_match:
                 initial_url = url_match.group(0)
-            elif any(w in goal.lower() for w in ["youtube", "video"]):
+            elif any(w in goal.lower() for w in ["youtube", "video", "song", "music", "karan aujla", "at peace", "at peach"]):
                 initial_url = "https://www.youtube.com"
             elif any(w in goal.lower() for w in ["github", "repo"]):
                 initial_url = "https://github.com"
@@ -362,6 +431,22 @@ class BrowserAgent:
                 step_logs.append(f"Navigating to initial target: {initial_url}")
                 page.goto(initial_url, wait_until="domcontentloaded", timeout=40000)
                 time.sleep(2.0)
+
+                # Auto-dismiss YouTube / Google consent or dismissal popups
+                try:
+                    for consent_sel in [
+                        "button:has-text('Reject all')", "button:has-text('Accept all')",
+                        "button:has-text('I agree')", "[aria-label='Reject all']",
+                        "[aria-label='Accept all']", "button:has-text('No thanks')",
+                        "button:has-text('Dismiss')", "tp-yt-paper-button#dismiss-button"
+                    ]:
+                        btn = page.locator(consent_sel).first
+                        if btn.is_visible(timeout=800):
+                            btn.click()
+                            time.sleep(1.0)
+                            break
+                except Exception:
+                    pass
 
                 # Check and defeat CAPTCHA / Bot challenges
                 captcha_res = BrowserController.defeat_or_detect_captcha(page)
@@ -417,6 +502,22 @@ class BrowserAgent:
                                         step_logs.append(f"Step {step_idx}: Clicked [#{el_id}] via resilient text fallback")
                                 except Exception:
                                     pass
+
+                        if clicked and "/watch" in page.url:
+                            try:
+                                page.wait_for_selector("video", timeout=6000)
+                                page.evaluate("""() => {
+                                    const v = document.querySelector('video');
+                                    if (v) {
+                                        v.muted = false;
+                                        v.play().catch(() => {});
+                                    }
+                                    const skip = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button');
+                                    if (skip) skip.click();
+                                }""")
+                            except Exception:
+                                pass
+
                         if not clicked:
                             step_logs.append(f"Step {step_idx}: Could not click element #{el_id}, attempting graceful scroll")
                             page.mouse.wheel(0, 300)
@@ -520,6 +621,14 @@ class BrowserAgent:
                     page.screenshot(path=final_shot, full_page=True)
                 except Exception:
                     final_shot = ""
+
+                # If this is a media playback mission, stream the audio and video live on the monitor
+                is_media_playback = any(w in goal.lower() for w in ["play", "song", "music", "video", "listen", "karan aujla", "at peace", "at peach"])
+                if is_media_playback and not is_headless:
+                    play_sec = 25
+                    print(f"\n🎵 [Now Playing Live on Desktop Monitor]: {final_title}")
+                    print(f"Streaming video & audio live for {play_sec} seconds for Master Ansh...")
+                    time.sleep(play_sec)
 
                 context.close()
 

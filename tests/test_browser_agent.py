@@ -86,6 +86,46 @@ def test_browser_agent_email_dispatch_bridge():
         assert mock_compose.called
 
 
+def test_clean_search_query_and_typo_correction():
+    """Verify natural language cleaning and typo correction (e.g. 'at peach' -> 'at peace')."""
+    agent = BrowserAgent(headless=True)
+
+    # Typo correction and extraction
+    q1 = agent._clean_search_query("go to youtube and search at peach and play the song of karan aujla")
+    assert "at peace" in q1.lower()
+    assert "karan aujla" in q1.lower()
+
+    # Pattern: play <song> by <artist>
+    q2 = agent._clean_search_query("play at peace by karan aujla on youtube")
+    assert "at peace" in q2.lower()
+    assert "karan aujla" in q2.lower()
+
+    # Standard query
+    q3 = agent._clean_search_query("search for distributed systems on youtube")
+    assert "distributed systems" in q3.lower()
+
+
+def test_youtube_video_selection_heuristic():
+    """Verify that search results page clicks the video rather than exiting early."""
+    agent = BrowserAgent(headless=True)
+    elements = [
+        BrowserElement(1, "input", "search", "at peace karan aujla", "input#search"),
+        BrowserElement(2, "a", "link", "At Peace (Official Video) Karan Aujla", "a#video-title", href="/watch?v=123")
+    ]
+    summary = "PAGE TITLE: at peace karan aujla - YouTube\nURL: https://www.youtube.com/results?search_query=at+peace+karan+aujla"
+
+    # With search and play goal
+    decision = agent._decide_next_action(
+        "go to youtube and search at peace and play the song of karan aujla",
+        summary,
+        elements,
+        ["Navigated to https://www.youtube.com", "Typed 'at peace karan aujla' into search field and submit"]
+    )
+    assert decision["action"] == "click"
+    assert decision["element_id"] == 2
+    assert "karan aujla" in decision["reason"].lower() or "video" in decision["reason"].lower()
+
+
 def test_browser_agent_fastapi_endpoints():
     """Verify REST API endpoints for Browser Agent."""
     client = TestClient(app)

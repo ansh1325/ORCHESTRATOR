@@ -43,10 +43,15 @@ async def test_jarvis_cli_system_directives():
     assert await cli.process_directive("transcript https://www.instagram.com/reel/sample") is True
 
     # Test Browser directives dispatch without event loop crash
-    from unittest.mock import patch
+    from unittest.mock import patch, AsyncMock
     with patch("workspaces.live_browser_demo.run_live_demo") as mock_demo:
         assert await cli.process_directive("browser demo") is True
         mock_demo.assert_called_once()
+
+    # Test Media / YouTube directive auto-routing in CLI
+    with patch.object(cli, "handle_autonomous_browse", new_callable=AsyncMock) as mock_browse:
+        assert await cli.process_directive("go to youtube and search at peach and play the song of karan aujla") is True
+        mock_browse.assert_called_once()
 
     # Test Exit directive
     assert await cli.process_directive("exit") is False

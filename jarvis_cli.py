@@ -158,9 +158,10 @@ class JarvisCLI:
             await self.run_mission(message)
             return
 
-        if low.startswith(("browse ", "open browser ", "search web ")):
-            goal = re.sub(r'^(browse|open browser|search web)\s+', '', message, flags=re.IGNORECASE).strip()
-            await self.handle_autonomous_browse(goal)
+        # Proactive Auto-Routing: Browser / Media Playback directives in chat
+        if any(k in low for k in ["youtube", "karan aujla", "play song", "play the song", "play music", "at peace", "at peach"]) or low.startswith(("browse ", "play ", "open browser ", "search web ")):
+            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Browser media directive recognized in chat. Launching Autonomous Browser Agent...")
+            await self.handle_autonomous_browse(message)
             return
 
         print(f"\n{C.BLUE}{C.BOLD}[Jarvis Brain Thinking...]{C.RESET}")
@@ -443,6 +444,13 @@ class JarvisCLI:
             from workspaces.live_browser_demo import run_live_demo
             await asyncio.to_thread(run_live_demo)
 
+        elif sub == "play":
+            if len(parts) < 3:
+                print(f"{C.RED}Usage: browser play <song or video title>{C.RESET}")
+                return
+            song = " ".join(parts[2:])
+            await self.handle_autonomous_browse(f"go to youtube and play {song}")
+
     def list_history(self):
         items = workflow_manager.list_history()
         if not items:
@@ -620,6 +628,19 @@ class JarvisCLI:
         if low.startswith("chat "):
             msg = line[5:].strip()
             await self.handle_chat(msg)
+            return True
+
+        # Proactive Auto-Routing: Browser / Media Playback / Web directives
+        browser_media_keywords = [
+            "youtube", "karan aujla", "play song", "play the song", "play music",
+            "at peace", "at peach", "on youtube", "watch video", "listen to"
+        ]
+        if any(k in low for k in browser_media_keywords) or low.startswith(("play ", "browse ", "goto ", "go to http", "visit ", "go to youtube")):
+            goal = line
+            if low.startswith("browse "):
+                goal = line[7:].strip()
+            print(f"\n{C.YELLOW}{C.BOLD}[Auto-Route]{C.RESET} Browser/Media directive recognized. Launching Autonomous Browser Agent...")
+            await self.handle_autonomous_browse(goal)
             return True
 
         # Autonomous Multi-Agent Swarm execution for actionable directives

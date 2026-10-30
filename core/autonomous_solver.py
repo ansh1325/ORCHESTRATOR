@@ -249,3 +249,4 @@ class StrategicOutreachArchitect:
             "cadence": cadence_spec,
             "webhook_receiver_code": webhook_receiver_code
         }
+

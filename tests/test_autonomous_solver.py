@@ -64,3 +64,4 @@ def test_strategic_outreach_architect_domain_constraints():
     # Verify safe webhook receiver code is compiled
     assert "TARGET_PORT" in suite["webhook_receiver_code"]
     assert str(suite["allocated_port"]) in suite["webhook_receiver_code"]
+

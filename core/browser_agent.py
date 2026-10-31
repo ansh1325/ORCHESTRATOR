@@ -2131,11 +2131,9 @@ class BrowserAgent:
                                     f"You are a competitive programming world finalist.\n"
                                     f"Write an optimal, bug-free, production-grade {target_lang} class Solution for this problem.\n"
                                     f"CRITICAL REQUIREMENTS:\n"
-                                    f"1. You must strictly write the solution in {target_lang} and adhere 100% to the starter stub method signature.\n"
-                                    f"2. Return ONLY the code inside ```{code_tag} ``` or ``` ``` blocks.\n"
-                                    f"3. Output ONLY clean, production-grade, compilable {target_lang} code.\n"
-                                    f"4. Absolutely ZERO comments, ZERO thinking steps, ZERO scratchpads (e.g. no '# Let\\'s think...', no '// Let\\'s think...'), and NO conversational text.\n"
-                                    f"5. The code must be 100% self-contained and immediately pass all LeetCode test cases."
+                                    f"1. Adhere strictly to {target_lang} syntax and the starter stub method signature.\n"
+                                    f"2. You may analyze the approach first, but output the final, self-contained solution inside a single ```{code_tag} ``` markdown code fence.\n"
+                                    f"3. The code block must contain ONLY valid, compilable {target_lang} code. Do NOT embed internal thought monologues, scratchpad reasoning, or stream-of-consciousness inside the code fence."
                                 )
                             },
                             {"role": "user", "content": prompt_user}
@@ -2143,17 +2141,18 @@ class BrowserAgent:
                         temperature=0.1
                     )
                     raw_ans = resp.choices[0].message.content or ""
-                    fence_match = re.search(r'```(?:[a-zA-Z0-9_+#.-]*\n)?(.*?)```', raw_ans, re.DOTALL)
+                    fence_match = re.search(r'```(?:' + re.escape(code_tag) + r'|[a-zA-Z0-9_+#.-]*)?\n(.*?)```', raw_ans, re.DOTALL)
                     if fence_match:
                         code_to_inject = fence_match.group(1).strip()
                     else:
                         code_to_inject = raw_ans.strip()
 
-                    # Strip any lingering scratchpad thought or reflection lines
+                    # Universal architectural cleanup: Remove full-line conversational scratchpad comments without brittle word blacklists
                     cleaned_lines = []
                     for line in code_to_inject.splitlines():
                         stripped = line.strip()
-                        if re.match(r'^(?:#|//|\*)\s*(?:let\'?s|we\s+need|thinking|scratchpad|consider|approach|note\s+that|step\s+\d|state\s+as|robot\s+moves|the\s+robot|we\s+can|suppose)', stripped, re.I):
+                        # Generic rule: Strip full-line comments that start with conversational / meta-cognitive prefixes
+                        if re.match(r'^(?:#|//|\*)\s*(?:let\'?s|we\s+need|thinking\b|scratchpad|let\s+me|my\s+approach|note\s+that)', stripped, re.I):
                             continue
                         cleaned_lines.append(line)
                     code_to_inject = "\n".join(cleaned_lines).strip()

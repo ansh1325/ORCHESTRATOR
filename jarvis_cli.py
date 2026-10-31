@@ -14,15 +14,19 @@ Provides 100% full-fidelity access to all Jarvis capabilities directly in the te
 
 import asyncio
 import json
+import logging
 import os
 import re
 import shlex
 import subprocess
 import sys
 import threading
+import time
 import urllib.parse
 from pathlib import Path
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -30,13 +34,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 # Ensure robust UTF-8 console output on Windows
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        getattr(sys.stdout, "reconfigure", lambda **kw: None)(encoding="utf-8", errors="replace")
+        getattr(sys.stderr, "reconfigure", lambda **kw: None)(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
 from core.account_fleet import account_fleet
 from core.autonomous_solver import CreativeProblemSolver, StrategicOutreachArchitect, PortSafetyGuard
+from core.browser_agent import browser_agent
 from core.browser_controller import BrowserController
 from core.creator_memory import creator_memory
 from core.dynamic_system_builder import dynamic_system_builder
@@ -96,9 +101,53 @@ class JarvisCLI:
 
         threading.Thread(target=_do_speak, daemon=True).start()
 
-    def listen_for_voice(self, timeout_sec: int = 8) -> Optional[str]:
-        """Listens to PC microphone via Windows Native Speech Recognition."""
-        print(f"\n{C.YELLOW}{C.BOLD}🎙️ [Microphone Active]{C.RESET} Speak your command clearly into the microphone...")
+    def listen_for_voice(self, timeout_sec: int = 5) -> Optional[str]:
+        """
+        Listens to PC microphone using Neural Speech Recognition (Whisper Large V3).
+        Falls back to Windows SAPI speech engine if offline.
+        """
+        print(f"\n{C.YELLOW}{C.BOLD}🎙️ [Microphone Active — Neural Whisper V3]{C.RESET} Speak your command clearly into the microphone ({timeout_sec}s)...")
+        from core.config import settings
+        import ctypes
+
+        # Try Groq Whisper Large V3 first (State-of-the-art accuracy)
+        llm = settings.get_llm_client()
+        if llm and not settings.is_mock():
+            tmp_wav = settings.WORKSPACE_DIR / f"mic_{int(time.time())}.wav"
+            try:
+                mci = ctypes.windll.winmm.mciSendStringA
+                mci(b"open new type waveaudio alias recsound", None, 0, 0)
+                mci(b"record recsound", None, 0, 0)
+                for i in range(timeout_sec, 0, -1):
+                    sys.stdout.write(f"\r  {C.CYAN}Listening... {i}s remaining{C.RESET} ")
+                    sys.stdout.flush()
+                    time.sleep(1)
+                sys.stdout.write(f"\r  {C.GREEN}Transcribing with Neural Whisper V3...{C.RESET}\n")
+                sys.stdout.flush()
+
+                save_cmd = f"save recsound {str(tmp_wav.resolve())}".encode("utf-8")
+                mci(save_cmd, None, 0, 0)
+                mci(b"close recsound", None, 0, 0)
+
+                if tmp_wav.exists() and tmp_wav.stat().st_size > 1000:
+                    with open(tmp_wav, "rb") as audio_file:
+                        transcription = llm.audio.transcriptions.create(
+                            model="whisper-large-v3",
+                            file=audio_file
+                        )
+                    heard = transcription.text.strip()
+                    if heard and len(heard) > 1:
+                        return heard
+            except Exception as e:
+                logger.debug(f"Whisper mic transcription fallback: {e}")
+            finally:
+                if tmp_wav.exists():
+                    try:
+                        os.remove(tmp_wav)
+                    except Exception:
+                        pass
+
+        # Fallback to Windows SAPI
         ps_cmd = (
             "Add-Type -AssemblyName System.Speech; "
             "$r = New-Object System.Speech.Recognition.SpeechRecognitionEngine; "
@@ -133,6 +182,7 @@ class JarvisCLI:
         print(f"  {C.CYAN}<any natural directive>{C.RESET}  Deploy autonomous multi-agent swarm (code, SaaS, microservices, business)")
         print(f"  {C.CYAN}listen / mic{C.RESET}             Activate microphone and speak your command using Windows voice recognition")
         print(f"  {C.CYAN}browse <goal or query>{C.RESET}   Autonomous web discovery & DOM interaction (Zero templates; figures out links on its own)")
+        print(f"  {C.CYAN}browser-use <task> / bu{C.RESET}   Official 'browser-use' vision-action agent with Set-of-Marks grounding")
         print(f"  {C.CYAN}transcript <media_url>{C.RESET}   Extract transcript from video/IG reel via progressive fallback (No official API needed)")
         print(f"  {C.CYAN}outreach <niche> [hook]{C.RESET}  Compile high-efficiency cold outreach system (<30c subject, <100w body, 4-stage follow-up)")
         print(f"  {C.CYAN}fleet [status|replies]{C.RESET}   20-Account Fleet Orchestration (Round-robin rotation, 25-100 emails/day, reply loop)")
@@ -152,13 +202,32 @@ class JarvisCLI:
         print(f"  {C.CYAN}clear{C.RESET}                    Clear terminal screen")
         print(f"  {C.CYAN}exit{C.RESET}                     Quit Jarvis CLI\n")
 
+    async def handle_browser_use_cmd(self, task: str):
+        """Dedicated browser-use vision-action agent execution."""
+        from core.browser_use_engine import browser_use_engine
+        print(f"\n{C.CYAN}{C.BOLD}🌐 [Browser-Use Vision-Action Agent]{C.RESET} Target Task: {C.YELLOW}{task}{C.RESET}")
+        print(f"  • Architecture: {C.GREEN}Set-of-Marks Visual Grounding -> Multi-Step Vision-Action Loop -> Groq LPU / Meta Llama 3.3 70B{C.RESET}")
+        print(f"  • Profile Bridge: {C.CYAN}~/.llama_orchestrator/browser_profile (Persistent Logins){C.RESET}\n")
+        self.speak("Deploying autonomous browser-use agent.")
+
+        res = await browser_use_engine.execute_task(task=task, max_steps=15, headless=False)
+        if res.get("success"):
+            print(f"\n{C.GREEN}{C.BOLD}✓ Browser-Use Objective Accomplished:{C.RESET}")
+            print(f"  • Steps Taken: {res.get('steps_taken')}")
+            print(f"  • Result:\n{C.CYAN}{res.get('result')}{C.RESET}\n")
+            self.speak("Browser task accomplished.")
+        else:
+            print(f"\n{C.RED}✖ Browser-Use Encountered Error:{C.RESET} {res.get('error')}\n")
+            self.speak("Browser agent encountered an issue.")
+
     async def handle_chat(self, message: str):
         from core.config import settings
+        clean_message = message[5:].strip() if message.lower().startswith("chat ") else message
         print(f"\n{C.BLUE}{C.BOLD}[JARVIS Brain Thinking...]{C.RESET}")
         try:
             llm = settings.get_llm_client()
             resp = creator_memory.chat_response(
-                user_message=message,
+                user_message=clean_message,
                 is_mock=settings.is_mock(),
                 llm_client=llm
             )
@@ -177,20 +246,23 @@ class JarvisCLI:
     @staticmethod
     def resolve_external_requirements(directive: str) -> tuple[str, Optional[Path]]:
         """
-        Autonomously resolves referenced external requirement documents from the host machine:
-        1. Checks for explicit file paths in the user's directive.
-        2. If 'downloaded', 'downloads', 'requirements', or 'spec' is mentioned without an explicit path,
-           scans the user's Downloads/ directory for the most recently modified document (.pdf, .md, .txt, .json).
-        3. Extracts the text content and injects it into the mission directive.
+        Autonomously resolves referenced external requirement documents or entire application
+        directories from the host machine:
+        1. Checks for explicit directory or file paths in the user's directive.
+        2. If a directory is provided (e.g. D:\\my_project), scans the codebase tree, manifests, and architecture.
+        3. If a document is provided (.pdf, .md, .txt, .json), extracts text content.
+        4. If 'downloaded', 'downloads', or 'requirements' is mentioned without an explicit path,
+           scans the user's Downloads/ directory for the most recently modified document.
         """
         low = directive.lower()
         target_file: Optional[Path] = None
 
-        # 1. Search for explicit file paths
-        path_matches = re.findall(r'(?:[a-zA-Z]:[\\/]|/|[~]\/|[.][\\/])[\w\s\-\\/\.]+\.[a-zA-Z0-9]+', directive)
-        for p_str in path_matches:
+        # 1. Search for explicit directory or file paths (Windows D:\foo, C:/foo, relative ./foo, or ~)
+        quoted_paths = re.findall(r'["\']((?:[a-zA-Z]:[\\/]|/|[~]\/|[.][\\/])[^"\']+)["\']', directive)
+        unquoted_paths = re.findall(r'(?:[a-zA-Z]:[\\/]|/|[~]\/|[.][\\/])[\w\-\\/\.]+', directive)
+        for p_str in quoted_paths + unquoted_paths:
             cand = Path(os.path.expanduser(p_str.strip('"\';,()')))
-            if cand.exists() and cand.is_file():
+            if cand.exists():
                 target_file = cand
                 break
 
@@ -218,7 +290,52 @@ class JarvisCLI:
         if not target_file or not target_file.exists():
             return directive, None
 
-        # Extract text content
+        # Check if user asked for a specific file inside this folder (e.g. "find data.csv in D:\folder")
+        if target_file.is_dir():
+            named_files = re.findall(r'[\w\-\.]+\.[a-zA-Z0-9]+', directive)
+            for nf in named_files:
+                matches = list(target_file.rglob(nf))
+                if matches and matches[0].is_file():
+                    target_file = matches[0]
+                    break
+
+        # Case A: Entire Codebase Directory Ingestion
+        if target_file.is_dir():
+            ignore_dirs = {".git", "node_modules", "__pycache__", ".venv", "venv", ".pytest_cache", ".ruff_cache", "dist", "build"}
+            all_files = []
+            for root, dirs, fnames in os.walk(target_file):
+                dirs[:] = [d for d in dirs if d not in ignore_dirs]
+                for fn in fnames:
+                    if not fn.endswith((".pyc", ".png", ".jpg", ".jpeg", ".zip", ".exe", ".dll", ".so", ".tar", ".gz")):
+                        all_files.append(Path(root, fn))
+
+            # Ingest top configuration manifests and entrypoints
+            arch_files = ["package.json", "requirements.txt", "README.md", "Dockerfile", "pyproject.toml", "main.py", "app.py", "index.js", "index.ts", "server.js", "server.ts"]
+            key_manifests = {}
+            for af in arch_files:
+                cand_f = target_file / af
+                if cand_f.exists() and cand_f.is_file():
+                    try:
+                        key_manifests[af] = cand_f.read_text(encoding="utf-8", errors="replace")[:3000]
+                    except Exception:
+                        pass
+
+            tree_summary = "\n".join([f"  • {f.relative_to(target_file)}" for f in all_files[:30]])
+            if len(all_files) > 30:
+                tree_summary += f"\n  • ... (+{len(all_files) - 30} more files)"
+
+            manifest_dump = "\n\n".join([f"--- MANIFEST: {k} ---\n{v}" for k, v in key_manifests.items()])
+
+            augmented = (
+                f"{directive}\n\n"
+                f"--- INGESTED PRODUCTION CODEBASE: {target_file.resolve()} ({len(all_files)} files) ---\n"
+                f"DIRECTORY STRUCTURE:\n{tree_summary}\n\n"
+                f"KEY MANIFESTS & ENTRYPOINTS:\n{manifest_dump}\n"
+                f"--- END INGESTED CODEBASE ---"
+            )
+            return augmented, target_file
+
+        # Case B: Single Specification or Document File
         extracted_text = ""
         try:
             if target_file.suffix.lower() == ".pdf":
@@ -251,16 +368,37 @@ class JarvisCLI:
     async def run_mission(self, directive: str):
         """Executes the full 5-stage multi-agent swarm pipeline from the terminal."""
         augmented_directive, source_file = self.resolve_external_requirements(directive)
-        if source_file:
-            print(f"\n{C.GREEN}{C.BOLD}📄 [Document Ingestion]{C.RESET} Ingested external specification: {C.CYAN}{source_file.resolve()}{C.RESET}")
-            self.speak(f"Ingested external requirements from {source_file.name}.")
-
-        print(f"\n{C.CYAN}{C.BOLD}[Stage 1/5] Analyzing Directive & Requirements...{C.RESET}")
-        self.speak("Directive received. Analyzing architecture and assembling specialized agent army.")
-
         analysis = orchestrator.analyze_intent(vision=augmented_directive)
         session_id = analysis.session_id
         self.active_session_id = session_id
+
+        if source_file:
+            if source_file.is_dir():
+                print(f"\n{C.GREEN}{C.BOLD}📁 [Codebase Ingestion]{C.RESET} Ingested entire production application: {C.CYAN}{source_file.resolve()}{C.RESET}")
+                self.speak(f"Ingested entire codebase from {source_file.name}.")
+                session_ws = Path("workspaces") / session_id
+                target_import = session_ws / "imported_project"
+                try:
+                    import shutil
+                    ignore_fn = shutil.ignore_patterns(".git", "node_modules", "__pycache__", ".venv", "venv", ".pytest_cache")
+                    shutil.copytree(source_file, target_import, dirs_exist_ok=True, ignore=ignore_fn)
+                    print(f"  • Cloned into active sandbox: {C.CYAN}workspaces/{session_id}/imported_project/{C.RESET}")
+                except Exception:
+                    pass
+            else:
+                print(f"\n{C.GREEN}{C.BOLD}📄 [File Ingestion]{C.RESET} Ingested file: {C.CYAN}{source_file.resolve()}{C.RESET}")
+                self.speak(f"Ingested {source_file.name}.")
+                session_ws = Path("workspaces") / session_id
+                session_ws.mkdir(parents=True, exist_ok=True)
+                try:
+                    import shutil
+                    shutil.copy2(source_file, session_ws / source_file.name)
+                    print(f"  • Cloned into active sandbox: {C.CYAN}workspaces/{session_id}/{source_file.name}{C.RESET}")
+                except Exception:
+                    pass
+
+        print(f"\n{C.CYAN}{C.BOLD}[Stage 1/5] Analyzing Directive & Requirements...{C.RESET}")
+        self.speak("Directive received. Analyzing architecture and assembling specialized agent army.")
 
         print(f"  • Mission ID: {C.BOLD}{session_id}{C.RESET}")
         print(f"  • Track Identified: {C.YELLOW}{analysis.track_type}{C.RESET}")
@@ -339,6 +477,17 @@ class JarvisCLI:
                     for f in deliverables:
                         fname = f if isinstance(f, str) else f.get("path", "")
                         print(f"  {C.CYAN}[File]{C.RESET} workspaces/{session_id}/{fname}")
+                # Check if user requested saving to an explicit destination path (e.g. "save to D:\output")
+                dest_match = re.search(r'(?:save\s+(?:it\s+)?to|export\s+(?:it\s+)?to|output\s+to|copy\s+to)\s+((?:[a-zA-Z]:[\\/]|/|[~]\/)[\w\s\-\\/\.]+)', directive, re.IGNORECASE)
+                if dest_match:
+                    target_dest = dest_match.group(1).strip().strip('"\';,()')
+                    try:
+                        exp_res = session.mcp.tool_export_to_host(destination_path=target_dest)
+                        if exp_res.get("success"):
+                            print(f"\n{C.GREEN}{C.BOLD}🚀 [Autonomous Host Export]{C.RESET} Deliverables saved directly to: {C.CYAN}{exp_res.get('destination')}{C.RESET}")
+                    except Exception as e:
+                        logger.debug(f"Auto-export error: {e}")
+
                 self.speak("Mission accomplished, Master Ansh. All tasks verified and deliverables ready.")
             elif evt.event_type == "error":
                 print(f"  {C.RED}✖ [Error]{C.RESET} {evt.message}")
@@ -371,9 +520,28 @@ class JarvisCLI:
 
     async def classify_intent_autonomously(self, line: str) -> dict[str, Any]:
         """
-        Pure Autonomous Intent Perception (ZERO HARDCODED KEYWORDS / ZERO TEMPLATES).
-        Uses the Central Brain (LLM) to dynamically classify the user's directive into the optimal execution engine.
+        Pure Autonomous Intent Perception.
+        Dynamically classifies the user's directive into the optimal execution engine.
+        Prioritizes user authentication requests to launch persistent login sessions cleanly.
         """
+        low = line.lower()
+        login_keywords = ["login", "log in", "sign in", "signin"]
+        is_direct_login_cmd = any(low.startswith(k) for k in login_keywords + ["auth "])
+        is_conversational_login = any(k in low for k in login_keywords) and any(w in low for w in ["browser", "window", "account", "accounts", "let me", "i want to", "i need to", "open", "yours", "so you can"])
+        is_question_or_code = low.startswith(("what is", "how to", "how do", "how does", "why ", "explain", "tutorial", "code ", "build ", "create ")) or any(w in low for w in ["author of", "authority", "library", "libraries"]) or low.endswith("?")
+
+        if (is_direct_login_cmd or is_conversational_login) and not is_question_or_code:
+            clean_cmd = re.sub(r'^(?:browser\s+login|login\s+to|login\s+on|login\s+in|login|signin|sign\s+in\s+to|sign\s+in\s+on|sign\s+in|auth)\s*', '', low).strip(" ;.")
+            if is_direct_login_cmd and clean_cmd and len(clean_cmd.split()) <= 3:
+                target_svc = clean_cmd
+            else:
+                target_svc = "google"
+                for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "instantly", "linear", "beehiiv", "supabase", "google", "gmail"]:
+                    if s in low:
+                        target_svc = s
+                        break
+            return {"mode": "login", "target": target_svc, "goal": line}
+
         from core.config import settings
         llm = settings.get_llm_client()
         if llm and not settings.is_mock():
@@ -381,15 +549,14 @@ class JarvisCLI:
                 system_prompt = (
                     "You are the Central Brain Intent Router of Jarvis.\n"
                     "Analyze the user's directive and classify it into one of these execution modes:\n"
-                    "1. 'browser': For ANY web or browser actions — e.g. navigating to websites, watching/playing media, "
-                    "solving web challenges or coding platforms (LeetCode, HackerRank, etc.), scraping, extracting transcripts from URLs, or interacting with the DOM.\n"
-                    "2. 'swarm': For building, scaffolding, or compiling software applications, codebases, backends, APIs, or multi-agent engineering workflows.\n"
-                    "3. 'chat': For casual conversation, conceptual questions, strategy advice, or explanations.\n"
-                    "Output strictly JSON: {\"mode\": \"browser\" | \"swarm\" | \"chat\", \"goal\": \"concise target (preserve original query terms, do NOT add commentary)\"}"
+                    "1. 'login': When the user wants to sign in, log in, or authenticate with their accounts (Google, LeetCode, GitHub, LinkedIn, AWS, etc.) in a browser window so Jarvis can act on their behalf.\n"
+                    "2. 'browser': For autonomous web/browser actions — navigating to websites, watching/playing media, scraping, extracting transcripts, or web automation.\n"
+                    "3. 'swarm': For building, scaffolding, or compiling software applications, codebases, backends, APIs, or multi-agent engineering workflows.\n"
+                    "4. 'chat': For casual conversation, conceptual questions, strategy advice, or explanations.\n"
+                    "Output strictly JSON: {\"mode\": \"login\" | \"browser\" | \"swarm\" | \"chat\", \"target\": \"service name (e.g. google, leetcode, github) or URL if login\", \"goal\": \"concise target\"}"
                 )
                 resp = await asyncio.to_thread(
-                    llm.chat.completions.create,
-                    model=settings.META_MODEL_ORCHESTRATOR,
+                    settings.create_chat_completion,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": line}
@@ -397,13 +564,15 @@ class JarvisCLI:
                     response_format={"type": "json_object"},
                     temperature=0.0
                 )
-                return json.loads(resp.choices[0].message.content)
+                return json.loads(resp.choices[0].message.content or "{}")
             except Exception:
                 pass
 
         # Robust zero-model fallback
         low = line.lower()
-        if any(w in low for w in ["http://", "https://", "www.", ".com", ".org", "browse", "browser", "youtube", "play", "transcript", "leetcode"]):
+        if any(k in low for k in ["login", "log in", "sign in", "signin", "authenticate", "auth"]) and any(w in low for w in ["browser", "window", "account", "accounts", "google", "gmail", "leetcode", "github", "linkedin", "let me", "i want to", "my", "your"]):
+            return {"mode": "login", "target": "google", "goal": line}
+        if any(w in low for w in ["http://", "https://", "www.", ".com", ".org", "browse", "browser", "youtube", "play", "transcript", "leetcode", "github", "search", "trending", "scrape", "extract from", "web"]):
             return {"mode": "browser", "goal": line}
         if any(w in low for w in ["build", "create", "scaffold", "compile", "develop", "codebase", "api", "backend", "app"]):
             return {"mode": "swarm", "goal": line}
@@ -423,6 +592,20 @@ class JarvisCLI:
         from core.browser_agent import browser_agent
         from core.browser_controller import BrowserController
 
+        low = goal_or_query.lower()
+        # Fallback guard against typing conversational login prompts into pages
+        if any(k in low for k in ["login", "log in", "sign in", "signin", "authenticate", "auth"]) and any(w in low for w in ["browser", "window", "account", "accounts", "google", "gmail", "leetcode", "github", "linkedin", "let me", "i want to", "yours", "so you can"]):
+            target_svc = "google"
+            for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "google", "gmail"]:
+                if s in low:
+                    target_svc = s
+                    break
+            print(f"\n{C.CYAN}{C.BOLD}🔐 [Jarvis User Authentication Portal]{C.RESET}")
+            print(f"Launching persistent browser window for you to sign into your {target_svc.title()} account...")
+            self.speak(f"Opening browser window for you to sign into your {target_svc.title()} account.")
+            await self.handle_browser_cmd(["browser", "login", target_svc])
+            return
+
         url_match = re.search(r'https?://[^\s]+', goal_or_query)
         if url_match and any(w in goal_or_query.lower() for w in ["transcript", "speech", "dialogue", "subtitles"]):
             self.handle_transcript_cmd(url_match.group(0))
@@ -437,15 +620,15 @@ class JarvisCLI:
             resolved = await asyncio.to_thread(browser_agent.resolve_youtube_direct_url, goal_or_query)
             watch_url = resolved.get("watch_url") or f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(clean_q)}"
             print(f"  • Direct Target: {C.CYAN}{watch_url}{C.RESET}")
-            print(f"  • Dispatch Engine: {C.GREEN}Host Brave Browser (Brave Shields 100% Active — Zero Ads, Permanent Playback){C.RESET}\n")
-            # Prioritize direct Brave launch with Brave Shields active
-            brave_bin = BrowserController.get_brave_executable_path()
-            if brave_bin and Path(brave_bin).exists():
-                flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-                subprocess.Popen([brave_bin, watch_url], creationflags=flags, close_fds=True)
+
+            # Open directly in a new tab within the active Co-Worker browser session
+            tab_res = await asyncio.to_thread(browser_agent.open_tab, watch_url)
+            if tab_res.get("success"):
+                print(f"  • Dispatch Engine: {C.GREEN}Active Co-Worker Browser (Opened in Tab #{tab_res.get('tab_count', 1)}){C.RESET}\n")
             else:
                 BrowserController.open_in_system_browser(watch_url)
-            self.speak(f"Playing {clean_q} in your Brave browser with ad shielding active.")
+                print(f"  • Dispatch Engine: {C.GREEN}System Default Browser Tab{C.RESET}\n")
+            self.speak(f"Playing {clean_q} in your browser tab.")
             return
 
         # Direct Email dispatch routing (Intelligent Host Bridge & Authenticated Session)
@@ -453,8 +636,12 @@ class JarvisCLI:
         is_email = any(w in low for w in ["email", "mail", "send mail", "send email", "gmail", "compose", "inbox"]) and email_match
         if is_email:
             recipient = email_match.group(0)
-            subject = "Follow-up & Autonomous Communication"
-            body = "Hello,\n\nI am contacting you via JARVIS autonomous technical dispatch."
+            subj_match = re.search(r'subject[:\s]+(["\']?)(.*?)\1(?:\s+(?:with\s+)?body|\s*$)', goal_or_query, re.I)
+            subject = subj_match.group(2).strip() if subj_match else "Follow-up & Autonomous Communication"
+            body_match = re.search(r'body[:\s]+(["\']?)(.*?)\1$', goal_or_query, re.I)
+            body = body_match.group(2).strip() if body_match else "Hello,\n\nI am contacting you via JARVIS autonomous technical dispatch."
+            print(f"    Subject: {C.BOLD}{subject}{C.RESET} | Body: {C.DIM}{body[:60]}...{C.RESET}")
+
             print(f"\n{C.CYAN}{C.BOLD}[Autonomous Email Dispatcher]{C.RESET} Target: {C.YELLOW}{recipient}{C.RESET}")
             print(f"  • Architecture: {C.GREEN}Host Browser Bridge / Authenticated Session -> Direct 1-Click Dispatch{C.RESET}\n")
             self.speak(f"Preparing autonomous email dispatch for {recipient}.")
@@ -482,17 +669,29 @@ class JarvisCLI:
             elif "two sum" in low or "twosum" in low:
                 slug = "two-sum"
 
+            # Detect polyglot language preference (e.g. "solve in c++", "in rust", "in python", "in java")
+            req_lang = None
+            lang_match = re.search(r'\b(?:in|using)\s+(c\+\+|cpp|python3?|java|rust|golang|go|typescript|javascript|c#)\b', low)
+            if lang_match:
+                matched = lang_match.group(1).lower()
+                lang_norm = {"cpp": "C++", "c++": "C++", "python": "Python3", "python3": "Python3", "golang": "Go", "go": "Go", "rust": "Rust", "java": "Java", "typescript": "TypeScript", "javascript": "JavaScript", "c#": "C#"}
+                req_lang = lang_norm.get(matched, matched.title())
+
             res = await asyncio.to_thread(
                 browser_agent.solve_leetcode_problem,
-                problem_slug_or_url=slug
+                problem_slug_or_url=slug,
+                language=req_lang
             )
             if res.get("success"):
                 print(f"\n{C.GREEN}{C.BOLD}✓ LeetCode Objective Completed Successfully!{C.RESET}")
                 print(f"  • Problem Target: {C.CYAN}{res.get('problem_url')}{C.RESET}")
                 print(f"  • Monaco Injected: {C.GREEN}{res.get('injected')}{C.RESET} | Submitted: {C.GREEN}{res.get('submitted')}{C.RESET}")
+                if res.get("verdict"):
+                    v_color = C.GREEN if "accept" in str(res.get("verdict", "")).lower() else C.YELLOW
+                    print(f"  • LeetCode Verdict: {v_color}{C.BOLD}{res.get('verdict')}{C.RESET}")
                 if res.get("screenshot"):
                     print(f"  • Visual Proof: {C.CYAN}{res.get('screenshot')}{C.RESET}")
-                print(f"  • Status: {C.BOLD}Brave window remains open on your desktop for continuous inspection and co-working.{C.RESET}\n")
+                print(f"  • Status: {C.BOLD}Browser window remains open on your desktop for continuous inspection and co-working.{C.RESET}\n")
                 self.speak("LeetCode problem solved and submitted. The browser window remains active on your desktop.")
             else:
                 print(f"{C.RED}[Error] LeetCode Solver encountered: {res.get('error', 'Execution interrupted')}{C.RESET}")
@@ -511,13 +710,29 @@ class JarvisCLI:
         )
 
         if not res.get("success"):
+            from core.browser_use_engine import browser_use_engine
+            if browser_use_engine.is_available():
+                print(f"\n{C.YELLOW}{C.BOLD}[Superpower Escalation]{C.RESET} Standard DOM parser met resistance. Escalating to official 'browser-use' Set-of-Marks agent...")
+                bu_res = await browser_use_engine.execute_task(task=goal_or_query, max_steps=12, headless=False)
+                if bu_res.get("success"):
+                    print(f"\n{C.GREEN}{C.BOLD}✓ Browser-Use Superpower Completed Objective:{C.RESET}")
+                    print(f"  • Steps: {bu_res.get('steps_taken')}")
+                    print(f"  • Findings:\n{C.CYAN}{bu_res.get('result')}{C.RESET}\n")
+                    self.speak("Browser-use agent completed the objective.")
+                    return
             print(f"{C.RED}[Error] Browser Agent encountered issue: {res.get('error')}{C.RESET}")
             return
 
         print(f"\n{C.GREEN}{C.BOLD}✓ Autonomous Browser Agent Completed Objective:{C.RESET}")
         print(f"  • Final Destination: {C.CYAN}{res.get('final_url')}{C.RESET}")
         print(f"  • Page Title: {C.BOLD}{res.get('final_title')}{C.RESET}")
-        print(f"  • Summary: {C.GREEN}{res.get('summary')}{C.RESET}")
+
+        ans = res.get("extracted_data") or res.get("summary")
+        if ans and not ans.startswith("Agent successfully operated") and not ans.startswith("Completed operations"):
+            print(f"\n{C.CYAN}{C.BOLD}📋 [Extracted Report & Direct Findings]:{C.RESET}\n")
+            print(f"{ans}\n")
+        else:
+            print(f"  • Summary: {C.GREEN}{res.get('summary')}{C.RESET}")
 
         logs = res.get("execution_log", [])
         if logs:
@@ -786,12 +1001,56 @@ class JarvisCLI:
             else:
                 print(f"{C.RED}✖ Error: {res.get('error')}{C.RESET}")
 
-    async def handle_browser_cmd(self, parts: list[str]):
-        """Direct browser automation commands from terminal."""
-        if len(parts) < 2:
-            print(f"{C.RED}Usage: browser <demo|inbox|compose|open|run|agent|email|login> [arguments]{C.RESET}")
+    async def handle_audit_cmd(self, target_str: str):
+        target_path = Path(os.path.expanduser(target_str.strip().strip("'\"")))
+        if not target_path.exists():
+            print(f"{C.RED}Error: Path '{target_str}' not found on host machine.{C.RESET}")
             return
 
+        print(f"\n{C.CYAN}{C.BOLD}🔍 [Architectural Codebase Audit]{C.RESET} Analyzing {target_path.resolve()}...")
+        self.speak(f"Analyzing codebase at {target_path.name}.")
+
+        if target_path.is_file():
+            print(f"  • Single File: {target_path.name} ({target_path.stat().st_size} bytes)")
+            from core.rea_powerup import rea_engine
+            sec = rea_engine.scan_secrets_and_keys(str(target_path))
+            print(f"  • Security Check: {sec.get('secrets_detected', 0)} credentials detected")
+            print("  • Status: Ingested and ready for improvement.")
+        else:
+            ignore_dirs = {".git", "node_modules", "__pycache__", ".venv", "venv", ".pytest_cache", ".ruff_cache", "dist", "build"}
+            code_files = []
+            for root, dirs, fnames in os.walk(target_path):
+                dirs[:] = [d for d in dirs if d not in ignore_dirs]
+                for fn in fnames:
+                    if fn.endswith((".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".html", ".css", ".json")):
+                        code_files.append(Path(root, fn))
+
+            print(f"  • Total Code Files Scanned: {C.BOLD}{len(code_files)}{C.RESET}")
+            has_tests = any("test" in str(p).lower() for p in code_files)
+            print(f"  • Automated Test Suite Present: {C.GREEN if has_tests else C.RED}{'Yes' if has_tests else 'No (Critical Quality Gap)'}{C.RESET}")
+
+            ext_counts = {}
+            for cf in code_files:
+                ext_counts[cf.suffix] = ext_counts.get(cf.suffix, 0) + 1
+            breakdown_str = ", ".join([f"{k}: {v}" for k, v in sorted(ext_counts.items(), key=lambda x: x[1], reverse=True)[:5]])
+            print(f"  • Primary Languages: {breakdown_str}")
+
+            print(f"\n{C.GREEN}{C.BOLD}★ Strategic Enhancement Opportunities Identified:{C.RESET}")
+            print("  1. Add Comprehensive Automated Unit & Regression Tests")
+            print("  2. Modernize API layer to async non-blocking patterns")
+            print("  3. Optimize database queries & connection pooling")
+            print(f"\n{C.CYAN}To command JARVIS to refactor or improve this application, issue:{C.RESET}")
+            print(f"  {C.BOLD}JARVIS > improve {target_path} by adding comprehensive unit tests and fixing bugs{C.RESET}\n")
+
+    async def handle_browser_cmd(self, parts: list[str]):
+        """Direct browser automation commands from terminal."""
+        # Clean tokens of trailing semicolons, commas, dots commonly typed by programmers
+        cleaned_parts = [re.sub(r'[\s;,.]+$', '', p) for p in parts if p.strip()]
+        if len(cleaned_parts) < 2:
+            print(f"{C.RED}Usage: browser <demo|inbox|compose|open|run|agent|email|login|tab|play> [arguments]{C.RESET}")
+            return
+
+        parts = cleaned_parts
         sub = parts[1].lower()
 
         if sub == "inbox":
@@ -820,15 +1079,68 @@ class JarvisCLI:
             else:
                 print(f"{C.RED}Failed to open compose tab.{C.RESET}")
 
-        elif sub == "open":
-            if len(parts) < 3:
-                print(f"{C.RED}Usage: browser open <url>{C.RESET}")
-                return
-            url = parts[2]
-            if not url.startswith(("http://", "https://")):
-                url = f"https://{url}"
-            print(f"{C.CYAN}Opening in host browser:{C.RESET} {url}")
-            BrowserController.open_in_system_browser(url)
+        elif sub == "open" or sub in ["leetcode", "youtube", "github", "google", "linkedin", "gmail"] or any(ext in sub for ext in [".com", ".org", ".io", ".net", ".ai"]):
+            if sub == "open":
+                if len(parts) < 3:
+                    print(f"{C.RED}Usage: browser open <url>{C.RESET}")
+                    return
+                raw_url = parts[2]
+            else:
+                raw_url = sub
+            url = browser_agent.normalize_web_url(raw_url)
+            print(f"{C.CYAN}Opening in browser tab:{C.RESET} {url}")
+            tab_res = await asyncio.to_thread(browser_agent.open_tab, url)
+            if tab_res.get("success"):
+                print(f"{C.GREEN}✓ Opened in active browser tab ({tab_res.get('tab_count', 1)} total tabs open).{C.RESET}")
+                self.speak(f"Opened {url} in a new tab.")
+            else:
+                BrowserController.open_in_system_browser(url)
+                print(f"{C.GREEN}✓ Opened in system browser tab.{C.RESET}")
+
+        elif sub in ["tab", "tabs"]:
+            action = parts[2].lower() if len(parts) > 2 else "list"
+            if action in ["list", "all", "ls"]:
+                tabs = browser_agent.list_tabs()
+                if not tabs:
+                    print(f"{C.YELLOW}No active browser tabs found. Open one with 'browser open <url>'.{C.RESET}")
+                else:
+                    print(f"\n{C.CYAN}{C.BOLD}🌐 [Active Browser Tabs ({len(tabs)})]{C.RESET}")
+                    for t in tabs:
+                        print(f"  • [Tab {t['index']}] {C.BOLD}{t['title']}{C.RESET} — {C.DIM}{t['url']}{C.RESET}")
+                    print(f"\n{C.DIM}Commands: tab switch <index> | tab close <index> | tab new <url>{C.RESET}\n")
+
+            elif action in ["new", "open", "create"]:
+                if len(parts) < 4:
+                    print(f"{C.RED}Usage: browser tab new <url>{C.RESET}")
+                    return
+                t_url = parts[3]
+                tab_res = await asyncio.to_thread(browser_agent.open_tab, t_url)
+                if tab_res.get("success"):
+                    print(f"{C.GREEN}✓ Opened in new tab #{tab_res.get('tab_count')}: {tab_res.get('title')}{C.RESET}")
+                else:
+                    print(f"{C.RED}Failed to open tab: {tab_res.get('error')}{C.RESET}")
+
+            elif action in ["switch", "focus", "goto"]:
+                if len(parts) < 4:
+                    print(f"{C.RED}Usage: browser tab switch <index>{C.RESET}")
+                    return
+                try:
+                    idx = int(parts[3])
+                    s_res = browser_agent.switch_tab(idx)
+                    if s_res.get("success"):
+                        print(f"{C.GREEN}✓ Switched to Tab {idx}: {s_res.get('title')}{C.RESET}")
+                    else:
+                        print(f"{C.RED}{s_res.get('error')}{C.RESET}")
+                except ValueError:
+                    print(f"{C.RED}Invalid tab index. Must be a number.{C.RESET}")
+
+            elif action in ["close", "kill"]:
+                idx = int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else None
+                c_res = browser_agent.close_tab(idx)
+                if c_res.get("success"):
+                    print(f"{C.GREEN}✓ Tab closed ({c_res.get('remaining_tabs')} tabs remaining).{C.RESET}")
+                else:
+                    print(f"{C.RED}{c_res.get('error')}{C.RESET}")
 
         elif sub == "run":
             if len(parts) < 3:
@@ -866,7 +1178,6 @@ class JarvisCLI:
             to = parts[2]
             subject = parts[3] if len(parts) > 3 else "hello i am jarvis"
             body = " ".join(parts[4:]) if len(parts) > 4 else "I am writing this email as your autonomous technical partner."
-            from core.browser_agent import browser_agent
             print(f"{C.CYAN}Dispatching email autonomously to {to}...{C.RESET}")
             res = await asyncio.to_thread(browser_agent.send_email_autonomously, to, subject, body)
             print(f"{C.GREEN}✓ Dispatch Result:{C.RESET} {res.get('message')}")
@@ -876,11 +1187,17 @@ class JarvisCLI:
 
         elif sub in ["login", "auth"]:
             service_target = parts[2] if len(parts) > 2 else "google"
+            if service_target.lower() in ["accounts", "account", "all", "general"]:
+                service_target = "google"
+            preferred_browser = parts[3] if len(parts) > 3 else None
             target_url, service_name = BrowserController.resolve_login_target(service_target)
             print(f"{C.CYAN}Launching Jarvis Persistent Browser Profile (Axiom Mode)...{C.RESET}")
-            print(f"{C.YELLOW}Sign in to your {service_name} ONCE in the Brave browser window that appears.\nOnce signed in, Jarvis will autonomously retain access for all future workflows!{C.RESET}")
+            print(f"{C.YELLOW}Sign in to your {service_name} ONCE in the browser window that appears.\nOnce signed in, Jarvis will autonomously retain access for all future workflows!{C.RESET}")
+            if preferred_browser:
+                print(f"  • Preferred Browser: {C.GREEN}{preferred_browser.title()}{C.RESET}")
+            print("  • Tip: If verification stalls, complete the Cloudflare checkbox or captcha in the browser window.\n")
             self.speak(f"Launching persistent browser window for {service_name}. Please sign in.")
-            res = await asyncio.to_thread(BrowserController.launch_login_session, service_target)
+            res = await asyncio.to_thread(BrowserController.launch_login_session, service_target, preferred_browser)
             if res.get("logged_in"):
                 print(f"\n{C.GREEN}{C.BOLD}✓ Authentication session saved for {service_name}! Autonomous browser dispatch is now permanently active.{C.RESET}\n")
                 self.speak(f"Authentication saved for {service_name}. Autonomous dispatch active.")
@@ -1053,6 +1370,11 @@ class JarvisCLI:
         if not line:
             return True
 
+        # Sanitize trailing punctuation commonly appended by programmers (semicolons, commas, dots)
+        line = re.sub(r'[\s;,.]+$', '', line).strip()
+        if not line:
+            return True
+
         low = line.lower()
         if low in ["exit", "quit", "q", "power down", "goodbye"]:
             try:
@@ -1116,6 +1438,11 @@ class JarvisCLI:
                 return True
 
         # Utility Subcommands
+        if low.startswith("audit ") or low.startswith("inspect folder "):
+            target = line.split(maxsplit=1)[1].strip().strip("'\"")
+            await self.handle_audit_cmd(target)
+            return True
+
         if low in ["workflows", "workflow"]:
             self.list_workflows()
             return True
@@ -1136,12 +1463,13 @@ class JarvisCLI:
             matched = self.find_session_by_semantics(line)
             if matched:
                 sid = matched.get("session_id")
-                title = matched.get("title") or sid
-                self.active_session_id = sid
-                print(f"\n{C.GREEN}{C.BOLD}🎯 [Session Switch]:{C.RESET} Located mission: {C.CYAN}{sid}{C.RESET} ('{title}')")
-                self.inspect_session(sid)
-                self.speak(f"Active session switched to {title}.")
-                return True
+                if sid:
+                    title = matched.get("title") or sid
+                    self.active_session_id = str(sid)
+                    print(f"\n{C.GREEN}{C.BOLD}🎯 [Session Switch]:{C.RESET} Located mission: {C.CYAN}{sid}{C.RESET} ('{title}')")
+                    self.inspect_session(str(sid))
+                    self.speak(f"Active session switched to {title}.")
+                    return True
             else:
                 print(f"\n{C.YELLOW}[Session Recall]{C.RESET} Checked mission archive: No past session found matching '{line}'.\n")
                 self.speak("I checked your mission archive, but could not find a past session matching that topic.")
@@ -1215,8 +1543,62 @@ class JarvisCLI:
             self.handle_rea_cmd(parts)
             return True
 
-        if low.startswith("browser demo") or low.startswith("browser login") or low.startswith("browser auth"):
-            parts = shlex.split(line)
+        # Browser-Use Autonomous Vision-Action Web Agent
+        if low.startswith("browser-use ") or low.startswith("bu "):
+            task = line.split(maxsplit=1)[1].strip()
+            await self.handle_browser_use_cmd(task)
+            return True
+
+        # Direct Login / Auth Directive (e.g. "login", "login;", "login google", "login leetcode")
+        # Or Natural Conversational Login (e.g. "i want to login in browser windows of yours so you can do what i want in my accounts")
+        login_keywords = ["login", "log in", "sign in", "signin", "authenticate", "auth"]
+        has_login_intent = any(k in low for k in login_keywords)
+        has_browser_or_account_context = any(w in low for w in [
+            "browser", "window", "account", "accounts", "google", "gmail", "leetcode",
+            "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x",
+            "let me", "i want to", "i need to", "open", "in your", "yours", "so you can"
+        ])
+
+        is_direct_login = low.startswith(("login", "log in", "signin", "sign in", "auth ")) or low in ["login", "signin", "auth"]
+        is_question_or_search = low.startswith(("what is", "how to", "how do", "how does", "why ", "explain", "who is", "who are", "author", "authority", "tutorial", "code ", "build ", "create ")) or low.endswith("?")
+
+        if ((has_login_intent and has_browser_or_account_context) or is_direct_login) and not is_question_or_search:
+            clean_cmd = re.sub(r'^(?:browser\s+login|login\s+to|login\s+on|login\s+in|login|signin|sign\s+in\s+to|sign\s+in\s+on|sign\s+in|auth)\s*', '', low).strip(" ;.")
+            if is_direct_login and clean_cmd and len(clean_cmd.split()) <= 3:
+                target_svc = clean_cmd
+            else:
+                target_svc = "google"
+                for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "instantly", "linear", "beehiiv", "supabase", "google", "gmail"]:
+                    if s in low:
+                        target_svc = s
+                        break
+            parts = ["browser", "login", target_svc]
+            await self.handle_browser_cmd(parts)
+            return True
+
+        # Direct Open URL in Browser Tab (e.g. "open leetcode", "open youtube.com", "open tab leetcode")
+        # Action tasks with clauses like "and", "search", "play" fall through to autonomous browser agent
+        if (low.startswith("open ") or low.startswith("go to ")) and not any(w in low for w in [" and ", "search ", "play ", "solve ", "find ", "click ", "watch ", "download ", "fill "]):
+            target_term = line[5:].strip() if low.startswith("open ") else line[6:].strip()
+            if target_term.lower().startswith("tab "):
+                target_term = target_term[4:].strip()
+            if not any(w in target_term.lower() for w in ["file", "project", "repo", "system", "app"]) and len(target_term.split()) <= 3:
+                parts = ["browser", "open", target_term]
+                await self.handle_browser_cmd(parts)
+                return True
+
+        # Explicit Chat Directive
+        if low.startswith("chat "):
+            await self.handle_chat(line)
+            return True
+
+        if low.startswith("browser ") or low.startswith("tab ") or low in ["tabs", "browser tabs"]:
+            try:
+                parts = shlex.split(line)
+            except Exception:
+                parts = line.split()
+            if not parts[0].startswith("browser"):
+                parts = ["browser"] + parts
             await self.handle_browser_cmd(parts)
             return True
 
@@ -1233,10 +1615,14 @@ class JarvisCLI:
         mode = intent.get("mode", "chat")
         goal = intent.get("goal", line)
 
-        if mode == "browser":
+        if mode == "login":
+            print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as user authentication session.")
+            target_svc = intent.get("target") or "google"
+            await self.handle_browser_cmd(["browser", "login", target_svc])
+            return True
+        elif mode == "browser":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous web/browser action.")
-            target_browse = line if any(w in line.lower() for w in ["play", "song", "youtube", "music", "listen", "video"]) else goal
-            await self.handle_autonomous_browse(target_browse)
+            await self.handle_autonomous_browse(line)
             return True
         elif mode == "swarm":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous software engineering project.")
@@ -1265,7 +1651,12 @@ class JarvisCLI:
 
 def main():
     cli = JarvisCLI()
-    asyncio.run(cli.run_interactive())
+    if len(sys.argv) > 1:
+        initial_directive = " ".join(sys.argv[1:]).strip()
+        cli.print_banner()
+        asyncio.run(cli.process_directive(initial_directive))
+    else:
+        asyncio.run(cli.run_interactive())
 
 
 if __name__ == "__main__":

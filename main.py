@@ -522,6 +522,53 @@ async def browser_agent_email(req: dict = Body(...)):
     )
     return res
 
+@app.post("/api/browser/login")
+async def browser_login_portal(req: dict = Body(...)):
+    """
+    Launches visible persistent browser session for user to authenticate to any SaaS platform or service.
+    Tokens & cookies are saved permanently in ~/.llama_orchestrator/browser_profile (Axiom Mode).
+    """
+    target = req.get("target") or req.get("service") or "google"
+    browser = req.get("browser")
+    res = await asyncio.to_thread(
+        BrowserController.launch_login_session,
+        target_url=target,
+        preferred_browser=browser
+    )
+    return res
+
+@app.post("/api/browser/leetcode")
+async def browser_leetcode_solve(req: dict = Body(...)):
+    """
+    Autonomously navigates to LeetCode, extracts DOM problem stub, synthesizes polyglot algorithm,
+    and submits directly to Monaco Editor.
+    """
+    from core.browser_agent import browser_agent
+    slug = req.get("slug") or req.get("problem") or "daily"
+    language = req.get("language")
+    headless = req.get("headless", False)
+    res = await asyncio.to_thread(
+        browser_agent.solve_leetcode_problem,
+        problem_slug_or_url=slug,
+        language=language,
+        headless=headless
+    )
+    return res
+
+@app.post("/api/browser/browser-use")
+async def browser_use_agent_task(req: dict = Body(...)):
+    """
+    Executes a high-level vision-action web browsing task using the browser-use engine
+    powered by Groq (Meta Llama 3.3 70B) and persistent browser profile.
+    """
+    from core.browser_use_engine import browser_use_engine
+    task = req.get("task", "").strip()
+    if not task:
+        raise HTTPException(status_code=400, detail="Missing 'task' parameter")
+    max_steps = int(req.get("max_steps", 15))
+    headless = bool(req.get("headless", False))
+    return await browser_use_engine.execute_task(task=task, max_steps=max_steps, headless=headless)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=False)

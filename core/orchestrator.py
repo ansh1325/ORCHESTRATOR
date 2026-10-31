@@ -35,7 +35,10 @@ except ImportError:
         TaskNode,
     )
 import json
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 
 def robust_json_loads(raw: str | None) -> dict:
@@ -189,8 +192,7 @@ class MetaOrchestrator:
                 '  "socratic_dialogue": "Conversational, polite, sharp explanation from Jarvis directly addressing Master Ansh explaining what was detected and asking for clarification before assembling the swarm."\n'
                 "}"
             )
-            resp = self.llm_client.chat.completions.create(
-                model=settings.META_MODEL_ORCHESTRATOR,
+            resp = settings.create_chat_completion(
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": f"User Vision:\n{vision}"}
@@ -198,7 +200,7 @@ class MetaOrchestrator:
                 response_format={"type": "json_object"},
                 temperature=0.2
             )
-            raw = resp.choices[0].message.content
+            raw = resp.choices[0].message.content or "{}"
             data = robust_json_loads(raw)
 
             v_low = vision.lower()
@@ -724,10 +726,11 @@ class MetaOrchestrator:
             kb_str = json.dumps(session.knowledge_base.model_dump(), indent=2) if session.knowledge_base else "{}"
 
             combat_tier = session.intent_analysis.combat_tier if session.intent_analysis else "tactical_squad"
-            target_scale = "an unbounded army of specialized autonomous tasks (scale dynamically to 5-15+ nodes as required by mission complexity)" if combat_tier == "swarm_army" else "3 to 6 discrete, executable engineering, marketing, or business tasks"
+            target_scale = "an unbounded army of specialized autonomous tasks (scale dynamically to 5-15+ nodes as required by mission complexity)" if combat_tier == "swarm_army" else "at least 3 to 6 discrete, executable engineering, marketing, or business tasks (never fewer than 3)"
             system_msg = (
                 f"You are LlamaOrchestrator Central Brain. Decompose the user's vision into a Directed Acyclic Graph (DAG) "
                 f"of {target_scale}.\n"
+                f"You MUST generate at least 3 discrete, progressive task nodes (e.g. Architecture/Design, Implementation/Core Logic, and Sandboxed Pytest Verification).\n"
                 f"There is NO arbitrary limit to how many agents you can spawn: synthesize as many specialized worker sub-agents as the architecture and domain demand.\n"
                 f"For EACH task, synthesize a dedicated sub-agent with its specific role, system directives, and assigned tools.\n"
                 f"Return JSON format:\n"
@@ -755,8 +758,7 @@ class MetaOrchestrator:
                 f"Knowledge Base Intelligence: {kb_str}\n"
                 "Decompose this into executable task nodes and synthesize the specialized sub-agents now."
             )
-            resp = self.llm_client.chat.completions.create(
-                model=settings.META_MODEL_ORCHESTRATOR,
+            resp = settings.create_chat_completion(
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_msg}
@@ -764,7 +766,7 @@ class MetaOrchestrator:
                 response_format={"type": "json_object"},
                 temperature=0.2
             )
-            raw = resp.choices[0].message.content
+            raw = resp.choices[0].message.content or "{}"
             data = robust_json_loads(raw)
 
             nodes = []
@@ -788,6 +790,46 @@ class MetaOrchestrator:
                 ))
 
             if nodes:
+                # Ensure at least 3 discrete tasks for robust multi-agent execution & QA
+                while len(nodes) < 3:
+                    has_test = any("test" in n.id.lower() or "test" in n.title.lower() or "verify" in n.title.lower() for n in nodes)
+                    if not has_test:
+                        test_agent_type = "VerificationTestAgent"
+                        session.synthesized_specs[test_agent_type] = SubAgentSpec(
+                            agent_id="agent_verification_test",
+                            name="Verification & Quality Engineer",
+                            role="Autonomous Test & Quality Assurance Specialist",
+                            system_prompt="You write and execute comprehensive pytest test suites verifying all prior deliverables.",
+                            allowed_tools=["run_command", "file_write", "file_read"],
+                            model=settings.META_MODEL_WORKER
+                        )
+                        nodes.append(TaskNode(
+                            id=f"task_{len(nodes)+1}",
+                            title="Sandboxed Pytest Verification & Quality Assurance",
+                            agent_type=test_agent_type,
+                            description="Compile and execute sandboxed pytest suite to certify the codebase meets all specifications.",
+                            dependencies=[nodes[-1].id],
+                            assigned_tools=["run_command", "file_write", "file_read"]
+                        ))
+                    else:
+                        doc_agent_type = "DocumentationAgent"
+                        session.synthesized_specs[doc_agent_type] = SubAgentSpec(
+                            agent_id="agent_docs",
+                            name="System Documentation Specialist",
+                            role="Technical Documentation & Integration Architect",
+                            system_prompt="You compile clear, production-grade technical READMEs and architecture manifests.",
+                            allowed_tools=["file_write", "file_read"],
+                            model=settings.META_MODEL_WORKER
+                        )
+                        nodes.append(TaskNode(
+                            id=f"task_{len(nodes)+1}",
+                            title="Production Documentation & Deployment Blueprint",
+                            agent_type=doc_agent_type,
+                            description="Generate comprehensive README, API documentation, and configuration guide.",
+                            dependencies=[nodes[0].id],
+                            assigned_tools=["file_write", "file_read"]
+                        ))
+
                 plan = DAGPlan(
                     session_id=session.session_id,
                     title=data.get("title", f"Autonomous Swarm: {session.vision[:40]}"),
@@ -817,6 +859,15 @@ class MetaOrchestrator:
             track == "communication_assistant"
             or bool(re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', raw_vision))
         )
+
+        if track == "founder_software":
+            plan = FounderInterviewEngine.compile_unbounded_agent_swarm(
+                session_id=session.session_id,
+                vision=session.vision,
+                answers=session.clarification_answers
+            )
+            session.dag_plan = plan
+            return plan
 
         if not is_email_mission and self.llm_client and not settings.is_mock():
             dynamic_plan = self._llm_compile_dag(session)

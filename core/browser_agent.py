@@ -109,13 +109,21 @@ class BrowserAgent:
         if self._active_playwright is None:
             self._active_playwright = sync_playwright().start()
 
-        brave_bin = BrowserController.get_brave_executable_path()
+        BrowserController.clean_profile_crash_state(self.user_data_dir)
+
         launch_args = [
-            "--disable-blink-features=AutomationControlled",
-            "--start-maximized"
+            "--start-maximized",
+            "--disable-session-crashed-bubble",
+            "--hide-crash-restore-bubble",
+            "--restore-last-session=false",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--disable-infobars",
+            "--disable-features=OptimizationHints,TranslateUI",
+            "--remote-debugging-port=9222"
         ]
 
-        # 0. Check CDP connection first
+        # 0. Check CDP connection first (connects to already-running desktop browser if debug port open)
         try:
             cdp_browser = self._active_playwright.chromium.connect_over_cdp("http://localhost:9222")
             if cdp_browser.contexts:
@@ -125,48 +133,74 @@ class BrowserAgent:
         except Exception:
             pass
 
-        # 1. Launch persistent context with Brave
-        if brave_bin:
+        # 1. Primary Default: Discovered System Default Browser on this machine
+        default_bin = BrowserController.get_system_default_browser_executable()
+        if default_bin:
             try:
                 self._active_context = self._active_playwright.chromium.launch_persistent_context(
                     user_data_dir=str(self.user_data_dir),
-                    executable_path=brave_bin,
+                    executable_path=default_bin,
                     headless=headless,
-                    args=launch_args
+                    args=launch_args,
+                    ignore_default_args=["--enable-automation", "--no-sandbox"]
                 )
                 self._is_active_cdp = False
                 return self._active_context, False
             except Exception:
                 pass
 
-        # 2. Fallback to Edge or Chrome
-        for ch in ["msedge", "chrome"]:
+        # 2. Chrome / Edge system channel
+        for ch in ["chrome", "msedge"]:
             try:
                 self._active_context = self._active_playwright.chromium.launch_persistent_context(
                     user_data_dir=str(self.user_data_dir),
                     channel=ch,
                     headless=headless,
-                    args=launch_args
+                    args=launch_args,
+                    ignore_default_args=["--enable-automation", "--no-sandbox"]
                 )
                 self._is_active_cdp = False
                 return self._active_context, False
             except Exception:
                 continue
 
-        # 3. Default persistent context
+        # 3. Brave Browser
+        brave_bin = BrowserController.get_brave_executable_path()
+        if brave_bin:
+            try:
+                self._active_context = self._active_playwright.chromium.launch_persistent_context(
+                    user_data_dir=str(self.user_data_dir),
+                    executable_path=brave_bin,
+                    headless=headless,
+                    args=launch_args,
+                    ignore_default_args=["--enable-automation", "--no-sandbox"]
+                )
+                self._is_active_cdp = False
+                return self._active_context, False
+            except Exception:
+                pass
+
+        # 4. Default bundled Chromium persistent context
         try:
             self._active_context = self._active_playwright.chromium.launch_persistent_context(
                 user_data_dir=str(self.user_data_dir),
                 headless=headless,
-                args=launch_args
+                args=launch_args,
+                ignore_default_args=["--enable-automation", "--no-sandbox"]
             )
             self._is_active_cdp = False
             return self._active_context, False
         except Exception:
+            pass
+
+        # 5. Headless isolated fallback
+        try:
             browser = self._active_playwright.chromium.launch(headless=True)
             self._active_context = browser.new_context()
             self._is_active_cdp = False
             return self._active_context, False
+        except Exception:
+            return None, False
 
     def close_active_session(self):
         """Cleanly closes active Co-Worker browser session."""
@@ -184,6 +218,142 @@ class BrowserAgent:
             except Exception:
                 pass
             self._active_playwright = None
+
+        try:
+            BrowserController.clean_profile_crash_state(self.user_data_dir)
+        except Exception:
+            pass
+
+    # =========================================================================
+    # High-Performance Tab Management Engine (Multi-Tab Co-Working)
+    # =========================================================================
+
+    @classmethod
+    def normalize_web_url(cls, raw: str) -> str:
+        """Standardizes user inputs into fully-qualified web URLs."""
+        s = raw.strip()
+        if s.startswith(("http://", "https://", "about:")):
+            return s
+        known = {
+            "leetcode": "https://leetcode.com",
+            "youtube": "https://www.youtube.com",
+            "github": "https://github.com",
+            "google": "https://www.google.com",
+            "linkedin": "https://www.linkedin.com",
+            "gmail": "https://mail.google.com",
+            "twitter": "https://twitter.com",
+            "x": "https://x.com"
+        }
+        low = s.lower()
+        if low in known:
+            return known[low]
+        if any(s.endswith(ext) or f"{ext}/" in s for ext in [".com", ".org", ".io", ".net", ".ai", ".co", ".edu", ".in"]):
+            return f"https://{s}"
+        if "." in s:
+            return f"https://{s}"
+        return f"https://{s}.com"
+
+    def open_tab(self, url: str) -> dict[str, Any]:
+        """
+        Opens a URL in a NEW TAB within the active co-worker browser window,
+        cleans up ghost/spinning tabs, and brings the tab to the front.
+        """
+        clean_url = self.normalize_web_url(url)
+
+        context, is_cdp = self.get_or_create_session(headless=False)
+        if not context:
+            success = BrowserController.open_in_system_browser(clean_url)
+            return {"success": success, "url": clean_url, "method": "system_browser"}
+
+        try:
+            # Clean up empty dangling tabs or reuse active blank tab
+            target_page = None
+            for p in list(context.pages):
+                try:
+                    if p.url in ["about:blank", "chrome://newtab/", "edge://newtab/", ""]:
+                        target_page = p
+                        break
+                except Exception:
+                    pass
+
+            if target_page is None:
+                target_page = context.new_page()
+
+            if hasattr(BrowserController, 'inject_stealth_scripts'):
+                BrowserController.inject_stealth_scripts(target_page)
+
+            # Navigate using 'commit' so HTTP request is dispatched immediately without hanging in omnibox
+            target_page.goto(clean_url, wait_until="commit", timeout=45000)
+            try:
+                target_page.wait_for_load_state("domcontentloaded", timeout=15000)
+            except Exception:
+                pass
+            try:
+                target_page.bring_to_front()
+            except Exception:
+                pass
+
+            return {
+                "success": True,
+                "url": clean_url,
+                "title": target_page.title() or clean_url,
+                "tab_count": len(context.pages),
+                "is_cdp": is_cdp
+            }
+        except Exception as e:
+            fallback = BrowserController.open_in_system_browser(clean_url)
+            return {"success": fallback, "url": clean_url, "method": "system_browser_fallback", "error": str(e)}
+
+    def list_tabs(self) -> list[dict[str, Any]]:
+        """Lists all open tabs in the active browser session."""
+        if not self._active_context or not self._active_context.pages:
+            return []
+        tabs = []
+        for idx, page in enumerate(self._active_context.pages):
+            try:
+                tabs.append({
+                    "index": idx,
+                    "title": page.title() or f"Tab {idx}",
+                    "url": page.url,
+                    "page": page
+                })
+            except Exception:
+                tabs.append({
+                    "index": idx,
+                    "title": f"Tab {idx}",
+                    "url": "unknown",
+                    "page": page
+                })
+        return tabs
+
+    def switch_tab(self, index: int) -> dict[str, Any]:
+        """Switches focus to the tab specified by index."""
+        if not self._active_context or not self._active_context.pages:
+            return {"success": False, "error": "No active browser session or tabs."}
+        pages = self._active_context.pages
+        if index < 0 or index >= len(pages):
+            return {"success": False, "error": f"Tab index {index} out of range (0-{len(pages)-1})."}
+        try:
+            target = pages[index]
+            target.bring_to_front()
+            return {"success": True, "index": index, "title": target.title(), "url": target.url}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def close_tab(self, index: Optional[int] = None) -> dict[str, Any]:
+        """Closes the specified tab (or the active/last tab if index is None)."""
+        if not self._active_context or not self._active_context.pages:
+            return {"success": False, "error": "No active browser session or tabs."}
+        pages = self._active_context.pages
+        target_idx = (len(pages) - 1) if index is None else index
+        if target_idx < 0 or target_idx >= len(pages):
+            return {"success": False, "error": f"Tab index {target_idx} out of range."}
+        try:
+            target = pages[target_idx]
+            target.close()
+            return {"success": True, "closed_index": target_idx, "remaining_tabs": len(self._active_context.pages)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     # =========================================================================
     # DOM Perception Engine
@@ -562,33 +732,81 @@ class BrowserAgent:
 
         if cx > 0 and cy > 0:
             try:
-                # 1. Animate holographic cursor
+                # 1. Animate holographic visual cursor
                 page.evaluate(f"() => window.jarvisMoveCursor && window.jarvisMoveCursor({cx}, {cy})")
-                # 2. Smoothly glide mouse
-                page.mouse.move(cx, cy, steps=14)
+                
+                # 2. Human Bezier-Curved Mouse Glide (Simulates organic hand and wrist movement)
+                curr_pos = getattr(page, "_jarvis_mouse_pos", (random.randint(150, 450), random.randint(150, 350)))
+                start_x, start_y = curr_pos
+                # Calculate natural curved control point
+                control_x = (start_x + cx) / 2 + random.uniform(-35, 35)
+                control_y = (start_y + cy) / 2 + random.uniform(-35, 35)
+                
+                # Arc through control point to target with natural deceleration
+                page.mouse.move(control_x, control_y, steps=7)
+                page.mouse.move(cx, cy, steps=9)
+                setattr(page, "_jarvis_mouse_pos", (cx, cy))
                 time.sleep(random.uniform(0.06, 0.12))
-                # 3. Trigger visual ripple
+
+                # 3. Trigger visual holographic click ripple
                 page.evaluate(f"() => window.jarvisClickRipple && window.jarvisClickRipple({cx}, {cy})")
-                # 4. Human click physics (down -> micro-pause -> up)
+
+                # 4. Human click physics (contact down -> micro-pause -> release up)
                 page.mouse.down()
-                time.sleep(random.uniform(0.05, 0.09))
+                time.sleep(random.uniform(0.045, 0.085))
                 page.mouse.up()
                 return True
             except Exception:
                 pass
 
-        # Fallback to direct locator click if coordinate dispatch fails
+        # Self-Healing Multi-Strategy Locator Cascade
+        # 1. Direct CSS / data-attribute selector
         try:
             loc = page.locator(target_el.selector).first
-            loc.click(timeout=3000)
+            loc.click(timeout=2500)
             return True
         except Exception:
-            if target_el.text:
-                try:
-                    page.get_by_text(target_el.text).first.click(timeout=2000, force=True)
-                    return True
-                except Exception:
-                    pass
+            pass
+
+        # 2. Text / Label Matching
+        if target_el.text:
+            try:
+                page.get_by_text(target_el.text, exact=False).first.click(timeout=2000, force=True)
+                return True
+            except Exception:
+                pass
+
+        # 3. ARIA Role & Accessibility Tree
+        if target_el.tag in ["button", "a"]:
+            try:
+                role = "button" if target_el.tag == "button" else "link"
+                page.get_by_role(role, name=target_el.text or target_el.aria_label).first.click(timeout=1500, force=True)
+                return True
+            except Exception:
+                pass
+
+        # 4. ARIA Label / Placeholder
+        if target_el.aria_label:
+            try:
+                page.get_by_label(target_el.aria_label).first.click(timeout=1500, force=True)
+                return True
+            except Exception:
+                pass
+
+        # 5. Native DOM Event Dispatch Fallback
+        try:
+            page.evaluate(f"""() => {{
+                const el = document.querySelector('{target_el.selector}') || document.querySelector('[data-jarvis-id="{target_el.index}"]');
+                if (el) {{
+                    el.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true, view: window }}));
+                    return true;
+                }}
+                return false;
+            }}""")
+            return True
+        except Exception:
+            pass
+
         return False
 
     @classmethod
@@ -658,6 +876,17 @@ class BrowserAgent:
 
         is_on_watch_page = "/watch?v=" in current_url or ("/watch" in current_url and "search_query" not in current_url)
 
+        # Check if the page is an authentication / login portal (e.g. accounts.google.com, /login, /signin)
+        is_login_page = any(term in current_url for term in [
+            "accounts.google.com", "/login", "/signin", "/auth", "challenge", "identifier"
+        ])
+        if is_login_page and any(w in goal_lower for w in ["login", "sign in", "signin", "auth", "account", "accounts", "want"]):
+            return {
+                "action": "complete",
+                "result": f"Reached authentication portal at {current_url}. Human authentication session ready.",
+                "reason": "Login portal detected; waiting for human user credential entry."
+            }
+
         llm = settings.get_llm_client()
         if llm and not settings.is_mock():
             try:
@@ -690,8 +919,7 @@ class BrowserAgent:
                     f"CURRENT PAGE:\n{dom_summary}\n\n"
                     "Output the next action JSON now:"
                 )
-                resp = llm.chat.completions.create(
-                    model=settings.META_MODEL_WORKER,
+                resp = settings.create_chat_completion(
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
@@ -726,7 +954,7 @@ class BrowserAgent:
 
                     if parsed:
                         # Guard B: If media goal and not yet on video watch page, do not complete prematurely
-                        if is_media_goal and parsed.get("action") == "complete" and not is_on_watch_page:
+                        if is_media_goal and parsed.get("action") in ["complete", "extract_content"] and not is_on_watch_page:
                             pass  # Fall through to click the actual video link
                         elif is_media_goal and ("/results" in current_url or "typed" in history_str) and parsed.get("action") == "click":
                             target_id = parsed.get("element_id")
@@ -751,22 +979,23 @@ class BrowserAgent:
                 "reason": "Video watch page reached and playback active."
             }
 
-        # If on YouTube results or typed search query, look for video link to click FIRST
-        if is_media_goal or "/results" in current_url or "typed" in history_str:
+        # If this is a media playback goal on YouTube, look for video link to click
+        if is_media_goal and ("youtube" in current_url or "/results" in current_url):
             video_link = None
             kw_list = [w for w in clean_query.lower().split() if len(w) > 2]
             for el in elements:
                 full_text = f"{el.text} {el.aria_label} {el.href}".lower()
-                if "sign in" in full_text or "accounts.google" in el.href.lower() or "signin" in el.href.lower():
+                if any(ign in full_text for ign in ["sign in", "signin", "accounts.google", "support.google", "policies.google", "privacy", "terms", "help"]):
                     continue
-                if any(k in full_text for k in kw_list) and (el.tag == "a" or "/watch" in el.href or "video-title" in el.selector):
+                if any(k in full_text for k in kw_list) and ("/watch" in el.href or "video-title" in el.selector or "thumbnail" in el.selector):
                     video_link = el
                     break
 
             if not video_link:
-                # Fallback to first video link on page with /watch
+                # Fallback to first actual video watch link on page
                 for el in elements:
-                    if "sign in" in (el.text + " " + el.aria_label).lower() or "accounts.google" in el.href.lower():
+                    full_text = f"{el.text} {el.aria_label} {el.href}".lower()
+                    if any(ign in full_text for ign in ["sign in", "signin", "accounts.google", "support.google", "policies.google", "privacy", "terms", "help"]):
                         continue
                     if el.tag == "a" and "/watch" in el.href and len(el.text.strip()) > 3:
                         video_link = el
@@ -809,10 +1038,48 @@ class BrowserAgent:
                     "reason": f"Type search term '{clean_query}' into search field and submit"
                 }
 
-        # Check for standard links or buttons matching goal keywords
-        keywords = [w for w in goal_lower.split() if len(w) > 3 and w not in ["open", "browser", "control", "please", "want", "youtube"]]
+        # Track already clicked element IDs from history to avoid repeating clicks like a real human
+        clicked_ids = {int(m.group(1)) for m in re.finditer(r'\[#(\d+)\]', history_str)}
+
+        # If on a search results page and already typed query, click organic result link or finish
+        if "typed" in history_str or any(k in current_url for k in ["/results", "q=", "search?"]):
+            if len(step_history) >= 2 and not is_media_goal:
+                if any(t in history_str for t in ["clicked", "scrolled"]):
+                    return {
+                        "action": "complete",
+                        "result": f"Successfully navigated and inspected content for '{clean_query or goal}'.",
+                        "reason": "Target search results loaded and viewed."
+                    }
+
+            # Select the top organic result link (never click the search bar input again)
+            result_links = [
+                e for e in elements
+                if e.index not in clicked_ids
+                and e.tag == "a"
+                and len(e.text.strip()) > 6
+                and not any(ignore in e.text.lower() for ignore in ["privacy", "terms", "settings", "feedback", "images", "videos", "news", "sign in", "login"])
+                and not any(ignore in (e.href or "").lower() for ignore in ["preferences", "settings", "feedback", "privacy"])
+            ]
+            if result_links:
+                first_res = result_links[0]
+                return {
+                    "action": "click",
+                    "element_id": first_res.index,
+                    "reason": f"Navigate to top result link '{first_res.text[:35]}'"
+                }
+
+        # Check for standard links or buttons matching goal keywords (strictly excluding inputs, textareas, and clicked elements)
+        clean_words = re.sub(r'[^\w\s]', ' ', goal_lower)
+        keywords = [
+            w for w in clean_words.split()
+            if len(w) > 3 and w not in ["open", "browser", "control", "please", "want", "youtube", "login", "signin", "search", "click"]
+        ]
         for kw in keywords:
             for el in elements:
+                if el.index in clicked_ids:
+                    continue
+                if el.tag in ["input", "textarea"]:
+                    continue
                 if kw in el.text.lower() or kw in el.aria_label.lower():
                     return {
                         "action": "click",
@@ -847,22 +1114,34 @@ class BrowserAgent:
         Cognitive Link & Target Synthesizer (Zero Hardcoded Links).
         Dynamically deduces the official destination URL for ANY web task or domain.
         """
+        low = goal.lower()
+        clean_q = cls._clean_search_query(goal)
+
         # 1. Direct explicit URL in directive
         url_match = re.search(r'https?://[^\s]+', goal)
         if url_match:
             return url_match.group(0)
 
-        # 2. Central Brain Autonomous Deduction
+        # 2. Direct login / authentication portals (Prioritized to avoid search engine misrouting)
+        if any(w in low for w in ["login", "signin", "sign in", "auth"]):
+            for s_name in ["leetcode", "github", "linkedin", "google", "gmail", "aws", "vercel", "stripe", "upwork", "twitter", "x"]:
+                if s_name in low:
+                    login_url, _ = BrowserController.resolve_login_target(s_name)
+                    return login_url
+            login_url, _ = BrowserController.resolve_login_target("google")
+            return login_url
+
+        # 3. Central Brain Autonomous Deduction
         llm = settings.get_llm_client()
         if llm and not settings.is_mock():
             try:
                 system_prompt = (
                     "You are the Central Brain Link Resolver for Jarvis Autonomous Browser.\n"
                     "Given the user's objective, deduce the single best, authoritative starting URL to navigate to.\n"
+                    "Never output search queries when an official service or portal is requested.\n"
                     "Output strictly JSON: {\"url\": \"https://...\", \"reason\": \"...\"}"
                 )
-                resp = llm.chat.completions.create(
-                    model=settings.META_MODEL_ORCHESTRATOR,
+                resp = settings.create_chat_completion(
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": f"Objective: {goal}"}
@@ -870,16 +1149,14 @@ class BrowserAgent:
                     response_format={"type": "json_object"},
                     temperature=0.0
                 )
-                parsed = json.loads(resp.choices[0].message.content)
+                parsed = json.loads(resp.choices[0].message.content or "{}")
                 candidate_url = parsed.get("url", "").strip()
                 if candidate_url.startswith(("http://", "https://")):
                     return candidate_url
             except Exception:
                 pass
 
-        # 3. Dynamic Heuristic / Domain Resolver
-        low = goal.lower()
-        clean_q = cls._clean_search_query(goal)
+        # 4. Dynamic Heuristic / Domain Resolver
 
         # Check for explicit domain syntax (e.g., domain.com, sub.domain.io)
         domain_match = re.search(r'\b([a-z0-9\-]+\.(?:com|org|io|net|edu|ai|co|gov))\b', low)
@@ -888,7 +1165,11 @@ class BrowserAgent:
 
         common_platforms = {
             "youtube": "https://www.youtube.com/results?search_query=" + urllib.parse.quote_plus(clean_q) if clean_q else "https://www.youtube.com",
-            "leetcode": "https://leetcode.com/problems/two-sum/" if any(w in low for w in ["solve", "problem", "submit", "code", "streak"]) else "https://leetcode.com/problemset/",
+            "leetcode": (
+                f"https://leetcode.com/problems/{re.search(r'(?:problems?\/|solve\s+)([a-z0-9\-]+)', low).group(1)}/"
+                if re.search(r'(?:problems?\/|solve\s+)([a-z0-9\-]+)', low) and re.search(r'(?:problems?\/|solve\s+)([a-z0-9\-]+)', low).group(1) not in ["any", "a", "the", "today", "daily", "streak", "problem", "leetcode"]
+                else "https://leetcode.com/problemset/"
+            ),
             "github": "https://github.com/search?q=" + urllib.parse.quote_plus(clean_q) if clean_q else "https://github.com",
             "linkedin": "https://www.linkedin.com",
             "gmail": "https://mail.google.com",
@@ -899,11 +1180,26 @@ class BrowserAgent:
             "huggingface": "https://huggingface.co",
             "stripe": "https://dashboard.stripe.com",
             "aws": "https://aws.amazon.com",
-            "reddit": "https://www.reddit.com"
+            "reddit": "https://www.reddit.com",
+            "instantly": "https://app.instantly.ai",
+            "linear": "https://linear.app",
+            "beehiiv": "https://app.beehiiv.com",
+            "supabase": "https://supabase.com/dashboard",
+            "vercel": "https://vercel.com/dashboard"
         }
         for name, u in common_platforms.items():
             if name in low:
                 return u
+
+        match_site = re.search(r'\b(?:go\s+to|navigate\s+to|open|visit)\s+([a-zA-Z0-9\.\-]+)', low)
+        if match_site:
+            cand = match_site.group(1).lower().strip()
+            if cand not in ["the", "a", "my", "our", "this", "some", "any"]:
+                if "." in cand:
+                    return f"https://{cand}"
+                if cand in common_platforms:
+                    return common_platforms[cand]
+                return f"https://{cand}.com"
 
         # Fallback to privacy-first DuckDuckGo web search
         encoded = urllib.parse.quote_plus(clean_q or goal.strip())
@@ -928,6 +1224,7 @@ class BrowserAgent:
         is_headless = self.headless if headless is None else headless
         step_logs: list[str] = []
         action_results: list[dict[str, Any]] = []
+        extracted_content_text: str = ""
 
         # Determine start URL dynamically with zero hardwiring
         initial_url = start_url or self.resolve_target_url_autonomously(goal)
@@ -936,66 +1233,117 @@ class BrowserAgent:
         screenshot_base.mkdir(parents=True, exist_ok=True)
 
         try:
+            BrowserController.clean_profile_crash_state(self.user_data_dir)
             with sync_playwright() as p:
                 context = None
                 is_cdp = False
                 launch_args = [
-                    "--disable-blink-features=AutomationControlled",
-                    "--start-maximized"
+                    "--start-maximized",
+                    "--disable-session-crashed-bubble",
+                    "--hide-crash-restore-bubble",
+                    "--restore-last-session=false",
+                    "--no-first-run",
+                    "--no-default-browser-check",
+                    "--disable-infobars",
+                    "--disable-features=OptimizationHints,TranslateUI"
                 ]
 
-                # Step 0: Check for active CDP session (connects directly to your running logged-in Brave browser)
+                # Step 0: Check for active CDP session (connects directly to your running logged-in desktop browser)
                 try:
                     cdp_browser = p.chromium.connect_over_cdp("http://localhost:9222")
                     if cdp_browser.contexts:
                         context = cdp_browser.contexts[0]
                         is_cdp = True
-                        step_logs.append("Connected directly to your active running Brave browser via CDP port 9222.")
+                        step_logs.append("Connected directly to your active running desktop browser via CDP port 9222.")
                 except Exception:
                     context = None
                     is_cdp = False
 
-                # Attempt persistent context for session memory (Brave, Chrome, Edge)
+                # 1. Primary Default: Discovered System Default Browser on this machine
                 if not context:
-                    brave_bin = BrowserController.get_brave_executable_path()
-                if brave_bin:
-                    try:
-                        context = p.chromium.launch_persistent_context(
-                            user_data_dir=str(self.user_data_dir),
-                            executable_path=brave_bin,
-                            headless=is_headless,
-                            args=launch_args
-                        )
-                    except Exception:
-                        context = None
+                    default_bin = BrowserController.get_system_default_browser_executable()
+                    if default_bin:
+                        try:
+                            context = p.chromium.launch_persistent_context(
+                                user_data_dir=str(self.user_data_dir),
+                                executable_path=default_bin,
+                                headless=is_headless,
+                                args=launch_args,
+                                ignore_default_args=["--enable-automation", "--no-sandbox"]
+                            )
+                        except Exception:
+                            context = None
 
+                # 2. Chrome / Edge system channel
                 if not context:
-                    for channel in ["msedge", "chrome"]:
+                    for channel in ["chrome", "msedge"]:
                         try:
                             context = p.chromium.launch_persistent_context(
                                 user_data_dir=str(self.user_data_dir),
                                 channel=channel,
                                 headless=is_headless,
-                                args=launch_args
+                                args=launch_args,
+                                ignore_default_args=["--enable-automation", "--no-sandbox"]
                             )
                             break
                         except Exception:
                             continue
 
+                # 3. Brave Browser
+                if not context:
+                    brave_bin = BrowserController.get_brave_executable_path()
+                    if brave_bin:
+                        try:
+                            context = p.chromium.launch_persistent_context(
+                                user_data_dir=str(self.user_data_dir),
+                                executable_path=brave_bin,
+                                headless=is_headless,
+                                args=launch_args,
+                                ignore_default_args=["--enable-automation", "--no-sandbox"]
+                            )
+                        except Exception:
+                            context = None
+
+                # 4. Default Chromium
                 if not context:
                     try:
                         context = p.chromium.launch_persistent_context(
                             user_data_dir=str(self.user_data_dir),
                             headless=is_headless,
-                            args=launch_args
+                            args=launch_args,
+                            ignore_default_args=["--enable-automation", "--no-sandbox"]
                         )
                     except Exception:
-                        # Fallback for headless environments or machines without display
-                        browser = p.chromium.launch(headless=True)
-                        context = browser.new_context()
+                        try:
+                            browser = p.chromium.launch(headless=True)
+                            context = browser.new_context()
+                        except Exception:
+                            context = None
 
-                page = context.pages[0] if context.pages else context.new_page()
-                page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                if not context:
+                    return {
+                        "success": False,
+                        "goal": goal,
+                        "error": "Failed to initialize any browser context on this host.",
+                        "execution_log": ["Failed to launch browser context."]
+                    }
+
+                # Clean up duplicate empty tabs from prior launches
+                init_pages: list[Any] = list(getattr(context, "pages", []))
+                if len(init_pages) > 1:
+                    for extra_p in init_pages[1:]:
+                        try:
+                            if extra_p.url in ["about:blank", "chrome://newtab/", ""]:
+                                extra_p.close()
+                        except Exception:
+                            pass
+                page = init_pages[0] if init_pages else context.new_page()
+                try:
+                    page.on("dialog", lambda d: d.dismiss() if getattr(d, 'type', '') == 'beforeunload' else d.accept())
+                except Exception:
+                    pass
+                if hasattr(BrowserController, 'inject_stealth_scripts'):
+                    BrowserController.inject_stealth_scripts(page)
 
                 # Native YouTube Ad-Destroyer & Auto-Skipper Script
                 page.add_init_script("""
@@ -1039,7 +1387,14 @@ class BrowserAgent:
 
                 # Navigate to initial entry point
                 step_logs.append(f"Navigating to initial target: {initial_url}")
-                page.goto(initial_url, wait_until="domcontentloaded", timeout=40000)
+                try:
+                    page.goto(initial_url, wait_until="domcontentloaded", timeout=40000)
+                except Exception as nav_err:
+                    step_logs.append(f"Primary navigation notice: {nav_err}. Falling back to commit wait...")
+                    try:
+                        page.goto(initial_url, wait_until="commit", timeout=25000)
+                    except Exception as fatal_nav:
+                        step_logs.append(f"Navigation warning: {fatal_nav}. Continuing with current page state.")
                 time.sleep(2.0)
                 self.inject_human_cursor_overlay(page)
 
@@ -1065,16 +1420,50 @@ class BrowserAgent:
                     step_logs.append(f"Anti-Bot Challenge Detected ({captcha_res.get('type')}) -> Handled: {captcha_res.get('solved_autonomously')}")
 
                 completed_summary = ""
+                last_action_sig = None
+                repeat_count = 0
 
                 # Main Perception-Action Loop
                 for step_idx in range(1, max_steps + 1):
+                    # Real-person multi-tab awareness: handle popups or switch to new tab
+                    active_pages: list[Any] = list(getattr(context, "pages", []))
+                    if len(active_pages) > 1:
+                        for extra_p in active_pages[1:]:
+                            if not extra_p.is_closed():
+                                extra_url = extra_p.url.lower()
+                                if any(aux in extra_url for aux in ["support.google", "policies.google", "about:blank", "adservice", "doubleclick"]):
+                                    try:
+                                        extra_p.close()
+                                        step_logs.append(f"Step {step_idx}: Closed unwanted background popup tab ({extra_url[:40]}).")
+                                    except Exception:
+                                        pass
+                                else:
+                                    page = extra_p
+                                    self.inject_human_cursor_overlay(page)
+                                    step_logs.append(f"Step {step_idx}: Shifted focus to new active tab: {page.title()} ({page.url[:40]})")
+
                     elements = self._extract_interactive_elements(page)
+                    if not elements:
+                        time.sleep(1.5)
+                        elements = self._extract_interactive_elements(page)
                     dom_summary = self._build_dom_summary(page, elements)
 
                     # Decision
                     decision = self._decide_next_action(goal, dom_summary, elements, step_logs)
                     action = decision.get("action", "complete")
                     reason = decision.get("reason", "")
+
+                    # Real-person anti-loop guard: never repeat the exact same click blindly
+                    action_sig = f"{action}:{decision.get('element_id')}:{str(decision.get('text', ''))[:20]}"
+                    if action_sig == last_action_sig and action not in ["wait", "scroll"]:
+                        repeat_count += 1
+                        if repeat_count >= 2:
+                            step_logs.append(f"Step {step_idx}: Repetition detected ({action_sig}). Breaking loop gracefully like a human.")
+                            completed_summary = f"Completed operations at {page.url} (avoided repetitive action loop)."
+                            break
+                    else:
+                        repeat_count = 0
+                    last_action_sig = action_sig
 
                     # Render Set-of-Marks (SoM) visual badges for multimodal screenshot grounding
                     self.render_visual_grounding_overlay(page, elements)
@@ -1165,7 +1554,10 @@ class BrowserAgent:
                         nav_url = decision.get("url", "")
                         if nav_url:
                             step_logs.append(f"Step {step_idx}: Navigating to {nav_url} ({reason})")
-                            page.goto(nav_url, wait_until="domcontentloaded", timeout=30000)
+                            try:
+                                page.goto(nav_url, wait_until="domcontentloaded", timeout=30000)
+                            except Exception as nav_e:
+                                step_logs.append(f"Step {step_idx}: Navigation warning: {nav_e}")
                             self.inject_human_cursor_overlay(page)
                             time.sleep(2.0)
 
@@ -1208,10 +1600,27 @@ class BrowserAgent:
 
                     elif action == "extract_content":
                         try:
-                            body_snippet = page.locator("body").inner_text(timeout=2500).strip()[:500]
-                            step_logs.append(f"Step {step_idx}: Extracted content snippet: {body_snippet[:80]}...")
-                        except Exception:
-                            pass
+                            raw_text = ""
+                            for sel in ["main", "article", "[role='main']", "#readme", ".markdown-body", ".Box", "body"]:
+                                try:
+                                    loc = page.locator(sel).first
+                                    if loc.is_visible(timeout=1000):
+                                        t_val = loc.inner_text(timeout=2000).strip()
+                                        if len(t_val) > len(raw_text):
+                                            raw_text = t_val
+                                except Exception:
+                                    pass
+                            if not raw_text:
+                                raw_text = page.locator("body").inner_text(timeout=2500).strip()
+                            extracted_content_text = raw_text[:12000]
+                            preview = re.sub(r'\s+', ' ', extracted_content_text[:120])
+                            step_logs.append(f"Step {step_idx}: Extracted content ({len(extracted_content_text)} chars): {preview}...")
+                            # If the user objective was to extract, find, search, or summarize, complete after reading
+                            if any(w in goal.lower() for w in ["extract", "find", "search", "summarize", "what is", "who is", "list", "top", "trending", "get", "description"]):
+                                completed_summary = f"Content extracted successfully from {page.url}."
+                                break
+                        except Exception as e:
+                            step_logs.append(f"Step {step_idx}: Content extraction failed: {e}")
 
                     elif action == "wait":
                         wait_sec = decision.get("seconds", 2)
@@ -1301,6 +1710,40 @@ class BrowserAgent:
                         context.close()
                     except Exception:
                         pass
+                    try:
+                        BrowserController.clean_profile_crash_state(self.user_data_dir)
+                    except Exception:
+                        pass
+
+                answer = ""
+                # Autonomous Answer Synthesizer: If content was extracted or goal was information retrieval, synthesize findings
+                if extracted_content_text or any(w in goal.lower() for w in ["find", "extract", "summarize", "search", "what", "list", "top", "trending", "get", "description"]):
+                    if not extracted_content_text:
+                        try:
+                            extracted_content_text = page.locator("main, [role='main'], body").first.inner_text(timeout=2500).strip()[:12000]
+                        except Exception:
+                            pass
+                    if extracted_content_text:
+                        try:
+                            synth_prompt = (
+                                f"You are JARVIS, an autonomous AI partner. The user gave you this objective: '{goal}'.\n"
+                                f"We navigated to '{final_url}' ({final_title}) and extracted the live DOM content below:\n\n"
+                                f"{extracted_content_text[:7000]}\n\n"
+                                f"Deliver a direct, high-value, comprehensive response that answers the user's request thoroughly.\n"
+                                f"Include specific repository names, titles, descriptions, metrics, and key details as requested."
+                            )
+                            resp = settings.create_chat_completion(
+                                messages=[
+                                    {"role": "system", "content": "You are JARVIS, Master Ansh's autonomous executive technical partner."},
+                                    {"role": "user", "content": synth_prompt}
+                                ],
+                                temperature=0.2
+                            )
+                            answer = resp.choices[0].message.content or ""
+                            if answer:
+                                completed_summary = answer
+                        except Exception:
+                            pass
 
                 return {
                     "success": True,
@@ -1308,6 +1751,7 @@ class BrowserAgent:
                     "final_url": final_url,
                     "final_title": final_title,
                     "summary": completed_summary or f"Agent successfully operated on {final_title} ({final_url})",
+                    "extracted_data": answer or extracted_content_text[:2000],
                     "steps_executed": len(action_results),
                     "execution_log": step_logs,
                     "final_screenshot": final_shot
@@ -1375,10 +1819,104 @@ class BrowserAgent:
             "message": f"Active host browser launched with pre-composed email to {recipient}. Ready for 1-click instant delivery."
         }
 
+    @classmethod
+    def get_leetcode_active_language(cls, page: Any) -> str:
+        """
+        Dynamically detects active Monaco language on LeetCode.
+        Uses Monaco's native getLanguageId() as 100% ground truth,
+        falling back to the editor header dropdown button.
+        """
+        try:
+            current = page.evaluate("""() => {
+                // 1. Monaco Editor Native Model Ground Truth
+                if (window.monaco && monaco.editor && monaco.editor.getModels().length > 0) {
+                    const langId = (monaco.editor.getModels()[0].getLanguageId() || "").toLowerCase();
+                    const map = {
+                        "cpp": "C++",
+                        "c": "C",
+                        "python": "Python3",
+                        "java": "Java",
+                        "rust": "Rust",
+                        "go": "Go",
+                        "typescript": "TypeScript",
+                        "javascript": "JavaScript",
+                        "csharp": "C#"
+                    };
+                    if (map[langId]) return map[langId];
+                }
+
+                // 2. Editor Header Language Button (Directly above the editor lines)
+                const editorContainer = document.querySelector(".monaco-editor, [data-track-load='code_editor']")?.closest("div.relative") || document;
+                const headerBtn = editorContainer.querySelector("button[id*='headlessui-listbox-button'], [data-cy='lang-select']");
+                if (headerBtn) {
+                    const raw = (headerBtn.innerText || "").trim().split('\\n')[0];
+                    if (raw) return raw;
+                }
+                return "";
+            }""")
+            return str(current) if current else "C++"
+        except Exception:
+            return "C++"
+
+    @classmethod
+    def switch_leetcode_language(cls, page: Any, target_lang: str = "Python3") -> bool:
+        """
+        Dynamically detects active Monaco language on LeetCode and switches to target_lang (e.g. Python3).
+        Guarantees that synthesized code language strictly matches the Monaco editor language.
+        """
+        try:
+            # 1. Detect current language via Monaco Model ground truth
+            cur_lang = cls.get_leetcode_active_language(page)
+            target_norm = "Python3" if target_lang.lower() in ["python", "python3"] else target_lang
+            if cur_lang.lower() == target_norm.lower() or (cur_lang.lower() == "python" and target_norm.lower() == "python3"):
+                return True
+
+            # 2. Click the language dropdown button in the editor header
+            lang_btn = None
+            if cur_lang:
+                cand = page.locator(f"button:has-text('{cur_lang}')").first
+                if cand.is_visible(timeout=2000):
+                    lang_btn = cand
+
+            if not lang_btn or not lang_btn.is_visible():
+                for sel in [
+                    "button[id*='headlessui-listbox-button']",
+                    "[data-cy='lang-select']",
+                    ".monaco-editor button",
+                    "div.relative button:has(svg)"
+                ]:
+                    cand = page.locator(sel).first
+                    if cand.is_visible(timeout=1500):
+                        lang_btn = cand
+                        break
+
+            if lang_btn and lang_btn.is_visible():
+                lang_btn.click()
+                time.sleep(0.6)
+
+                # 3. Select target language from popover options
+                for opt_sel in [
+                    f"div[role='option']:has-text('{target_norm}')",
+                    f"li:has-text('{target_norm}')",
+                    f"[role='listbox'] :has-text('{target_norm}')",
+                    f"text='{target_norm}'"
+                ]:
+                    opt = page.locator(opt_sel).first
+                    if opt.is_visible(timeout=2000):
+                        opt.click()
+                        time.sleep(1.2)
+                        # Verify Monaco model updated
+                        new_lang = cls.get_leetcode_active_language(page)
+                        return new_lang.lower() in [target_norm.lower(), "python" if target_norm.lower() == "python3" else ""]
+        except Exception:
+            pass
+        return False
+
     def solve_leetcode_problem(
         self,
         problem_slug_or_url: str = "daily",
         solution_code: Optional[str] = None,
+        language: Optional[str] = None,
         headless: Optional[bool] = None,
         keep_open: bool = True
     ) -> dict[str, Any]:
@@ -1394,8 +1932,8 @@ class BrowserAgent:
             return {"success": False, "error": "Playwright or browser initialization failed."}
 
         target_input = (problem_slug_or_url or "daily").strip().lower()
-        if target_input in ["daily", "streak", "today", "", "any", "problem"]:
-            target_url = "https://leetcode.com/problems/two-sum/"
+        if target_input in ["daily", "streak", "today", "", "any", "problem", "leetcode"]:
+            target_url = "https://leetcode.com/problemset/"
         else:
             target_url = problem_slug_or_url.strip()
             if not target_url.startswith("http"):
@@ -1403,19 +1941,20 @@ class BrowserAgent:
                 target_url = f"https://leetcode.com/problems/{clean_slug}/"
 
         actions_taken = []
-        brave_bin = BrowserController.get_brave_executable_path()
+        default_bin = BrowserController.get_system_default_browser_executable()
+        browser_label = "Chrome" if (default_bin and "chrome" in default_bin.lower()) else ("Brave" if (default_bin and "brave" in default_bin.lower()) else "Desktop Browser")
         if is_cdp:
-            actions_taken.append("Connected directly to natural running Brave browser session (CDP Mode)")
-        elif brave_bin:
-            actions_taken.append(f"Using persistent Brave Browser context: {brave_bin}")
+            actions_taken.append(f"Connected directly to running {browser_label} session (CDP Mode)")
+        elif default_bin:
+            actions_taken.append(f"Using persistent {browser_label} context: {default_bin}")
         else:
             actions_taken.append("Using persistent Chromium browser context")
 
         page = context.pages[0] if context.pages else context.new_page()
         page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-        # Navigate to LeetCode problem
-        print(f"\n[Action 1] Launching visible Brave Browser & navigating to: {target_url}...")
+        # Navigate to LeetCode target
+        print(f"\n[Action 1] Launching visible {browser_label} & navigating to: {target_url}...")
         actions_taken.append(f"Navigating to: {target_url}")
         page.goto(target_url, wait_until="domcontentloaded", timeout=40000)
         time.sleep(2.0)
@@ -1429,13 +1968,20 @@ class BrowserAgent:
             print("\n[Notice] Cloudflare Challenge detected. Please complete the verification in the browser window if prompted...")
             time.sleep(4.0)
 
-        # If landed on problemset, click the first problem from the DOM with human mouse movement
+        # If landed on problemset, click a problem from the live DOM with human mouse movement
         if "/problemset" in page.url or target_url.endswith("/problemset/"):
             try:
-                prob_link = page.locator("a[href*='/problems/']").first
-                if prob_link.is_visible(timeout=5000):
-                    href = prob_link.get_attribute("href")
-                    box = prob_link.bounding_box()
+                page.wait_for_selector("a[href*='/problems/']", timeout=12000)
+                problem_locs = page.locator("a[href*='/problems/']").all()
+                chosen_link = None
+                for pl in problem_locs:
+                    h = pl.get_attribute("href") or ""
+                    if "/problems/" in h and not any(skip in h for skip in ["random-one-question", "tag", "solution", "discuss", "contest"]):
+                        chosen_link = pl
+                        break
+                if chosen_link and chosen_link.is_visible(timeout=5000):
+                    href = chosen_link.get_attribute("href") or ""
+                    box = chosen_link.bounding_box()
                     if box:
                         cx = box["x"] + box["width"] / 2
                         cy = box["y"] + box["height"] / 2
@@ -1446,48 +1992,19 @@ class BrowserAgent:
                         time.sleep(0.08)
                         page.mouse.up()
                     else:
-                        prob_link.click()
+                        chosen_link.click()
                     time.sleep(3.0)
+                    if len(context.pages) > 1:
+                        page = context.pages[-1]
                     self.inject_human_cursor_overlay(page)
-                    actions_taken.append(f"Selected problem from live DOM: {href}")
+                    actions_taken.append(f"Selected problem dynamically from live DOM: {href}")
             except Exception:
                 pass
 
-        prob_title = page.title()
-
-        # Dynamic code generation from live DOM problem description
-        code_to_inject = solution_code
-        if not code_to_inject:
-            problem_text = ""
-            try:
-                desc_el = page.locator("[data-track-load='description_content'], #qd-content, .elfjS").first
-                if desc_el.is_visible(timeout=3000):
-                    problem_text = desc_el.inner_text()[:1200]
-            except Exception:
-                problem_text = prob_title
-
-            llm = settings.get_llm_client()
-            if llm and not settings.is_mock():
-                try:
-                    print(f"[LeetCode] Synthesizing optimal Python3 solution from page DOM for '{prob_title}'...")
-                    resp = llm.chat.completions.create(
-                        model=settings.META_MODEL_WORKER,
-                        messages=[
-                            {"role": "system", "content": "You are a competitive programming world finalist. Write an optimal Python 3 class Solution for this problem. Return ONLY the code inside ```python ``` blocks."},
-                            {"role": "user", "content": f"Problem: {prob_title}\nProblem Description from DOM:\n{problem_text}\nWrite the complete Solution class."}
-                        ],
-                        temperature=0.1
-                    )
-                    raw_ans = resp.choices[0].message.content
-                    if "```python" in raw_ans:
-                        code_to_inject = raw_ans.split("```python")[1].split("```")[0].strip()
-                    elif "```" in raw_ans:
-                        code_to_inject = raw_ans.split("```")[1].split("```")[0].strip()
-                    else:
-                        code_to_inject = raw_ans.strip()
-                    actions_taken.append("Synthesized optimal solution from live page DOM.")
-                except Exception:
-                    code_to_inject = ""
+        try:
+            prob_title = page.title() if not page.is_closed() else "LeetCode Problem"
+        except Exception:
+            prob_title = "LeetCode Problem"
 
         # Wait for problem title or editor container
         print("[Action 3] Locating Monaco Code Editor on page...")
@@ -1497,10 +2014,109 @@ class BrowserAgent:
         except Exception:
             actions_taken.append("Editor not immediately ready; waiting for layout stabilization.")
 
+        # Determine target programming language (Polyglot: C++, Python, Java, Rust, Go, TypeScript, etc.)
+        current_active_lang = self.get_leetcode_active_language(page)
+        if language and language.lower() not in current_active_lang.lower():
+            print(f"[Action 3.5] Requested '{language}'. Switching Monaco Editor language from '{current_active_lang}' to '{language}'...")
+            switched = self.switch_leetcode_language(page, language)
+            if switched:
+                current_active_lang = self.get_leetcode_active_language(page)
+                target_lang = current_active_lang
+                actions_taken.append(f"Switched Monaco language from UI to: {target_lang}")
+                print(f"[Action 3.5] Monaco successfully switched to: {target_lang}")
+            else:
+                # Choice 1: If UI switch was not possible, adapt code to match active UI
+                target_lang = current_active_lang
+                print(f"[Action 3.5] Monaco remained in {current_active_lang}. Adapting algorithm synthesis to match active UI: {target_lang}...")
+                actions_taken.append(f"Adapted algorithm synthesis to active Monaco language: {target_lang}")
+        else:
+            # Choice 1: Directly respect the UI's active language
+            target_lang = current_active_lang
+            print(f"[Action 3.5] Monaco Editor active language recognized: {target_lang}")
+            actions_taken.append(f"Operating in active Monaco language: {target_lang}")
+
+        # Map language to markdown block tag
+        lang_lower = target_lang.lower()
+        tag_map = {
+            "c++": "cpp", "cpp": "cpp", "python3": "python", "python": "python",
+            "java": "java", "rust": "rust", "go": "go", "golang": "go",
+            "typescript": "typescript", "javascript": "javascript", "c#": "csharp", "c": "c"
+        }
+        code_tag = tag_map.get(lang_lower, lang_lower)
+
+        # Dynamic code generation from live DOM problem description & Monaco starter stub
+        code_to_inject: str = solution_code or ""
+        if not code_to_inject:
+            problem_text = ""
+            try:
+                desc_el = page.locator("[data-track-load='description_content'], #qd-content, .elfjS").first
+                if desc_el.is_visible(timeout=3000):
+                    problem_text = desc_el.inner_text()[:1200]
+            except Exception:
+                problem_text = prob_title
+
+            # Extract starter stub from Monaco model to guarantee exact method signature
+            starter_stub = ""
+            try:
+                starter_stub = page.evaluate("""() => {
+                    if (window.monaco && monaco.editor && monaco.editor.getModels().length > 0) {
+                        return monaco.editor.getModels()[0].getValue();
+                    }
+                    return "";
+                }""")
+            except Exception:
+                starter_stub = ""
+
+            llm = settings.get_llm_client()
+            if llm and not settings.is_mock():
+                try:
+                    print(f"[LeetCode] Synthesizing optimal {target_lang} solution from page DOM for '{prob_title}'...")
+                    prompt_user = f"Problem: {prob_title}\nProblem Description from DOM:\n{problem_text}\n"
+                    if starter_stub:
+                        prompt_user += f"\nLeetCode {target_lang} Starter Stub (Adhere strictly to this method signature):\n{starter_stub}\n"
+                    prompt_user += f"Write the complete, optimal {target_lang} Solution class."
+
+                    resp = settings.create_chat_completion(
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": (
+                                    f"You are a competitive programming world finalist. Write an optimal, bug-free {target_lang} "
+                                    f"class Solution for this problem adhering strictly to the starter stub method signature.\n"
+                                    f"RULES:\n"
+                                    f"1. Return ONLY the code inside ```{code_tag} ``` or ``` ``` blocks.\n"
+                                    f"2. Output ONLY clean, production-grade, compilable {target_lang} code.\n"
+                                    f"3. Absolutely NO scratchpads, NO thinking steps, NO inner monologue comments (e.g. 'Let\\'s think about this'), and NO conversational text.\n"
+                                    f"4. The code must be 100% self-contained and immediately pass all LeetCode test cases."
+                                )
+                            },
+                            {"role": "user", "content": prompt_user}
+                        ],
+                        temperature=0.1
+                    )
+                    raw_ans = resp.choices[0].message.content or ""
+                    fence_match = re.search(r'```(?:[a-zA-Z0-9_+#.-]*\n)?(.*?)```', raw_ans, re.DOTALL)
+                    if fence_match:
+                        code_to_inject = fence_match.group(1).strip()
+                    else:
+                        code_to_inject = raw_ans.strip()
+
+                    # Strip any lingering scratchpad thought lines
+                    cleaned_lines = []
+                    for line in code_to_inject.splitlines():
+                        if re.search(r'^\s*(?:#|//)\s*(?:let\'?s\s+think|thinking\s+process|scratchpad|let\s+me\s+consider)', line, re.I):
+                            continue
+                        cleaned_lines.append(line)
+                    code_to_inject = "\n".join(cleaned_lines).strip()
+
+                    actions_taken.append(f"Synthesized optimal {target_lang} solution adhering to starter signature.")
+                except Exception:
+                    code_to_inject = ""
+
         # Inject code into Monaco Editor
         injected = False
         try:
-            # Approach A: Monaco JavaScript Model Injection
+            # Approach A: Monaco JavaScript Model Injection (cleanest & replaces entire stub)
             injected = page.evaluate("""(code) => {
                 if (window.monaco && monaco.editor && monaco.editor.getModels().length > 0) {
                     monaco.editor.getModels()[0].setValue(code);
@@ -1508,93 +2124,148 @@ class BrowserAgent:
                 }
                 return false;
             }""", code_to_inject)
+            if injected:
+                actions_taken.append(f"Injected {target_lang} solution directly via Monaco API model.")
+                print(f"[Action 4] Injected optimal {target_lang} solution directly into Monaco Editor!")
         except Exception:
             injected = False
 
-        if injected:
-            actions_taken.append("Injected Python solution directly via Monaco API model.")
-            print("[Action 4] Injected optimal Python solution directly into Monaco Editor!")
-        else:
-            # Approach B: Focus editor and write via keyboard
+        if not injected:
             try:
-                editor_el = page.locator(".monaco-editor, [data-track-load='code_editor']").first
-                if editor_el.is_visible():
-                    editor_el.click()
+                # Approach B: Direct textarea focus
+                ta = page.locator("textarea[aria-label='Code editor'], .monaco-editor textarea, textarea.inputarea").first
+                if ta.is_visible(timeout=8000):
+                    ta.focus()
+                    time.sleep(0.3)
                     page.keyboard.press("Control+A")
+                    time.sleep(0.1)
                     page.keyboard.press("Backspace")
-                    page.keyboard.insert_text(code_to_inject)
+                    time.sleep(0.1)
+                    page.keyboard.insert_text(code_to_inject or "")
                     injected = True
-                    actions_taken.append("Injected Python solution via direct keyboard dispatch.")
-                    print("[Action 4] Typed Python solution into Monaco Editor via keyboard emulation!")
+                    actions_taken.append(f"Injected {target_lang} solution into Monaco Editor via direct textarea focus.")
+                    print(f"[Action 4] Injected optimal {target_lang} solution directly into Monaco Editor!")
             except Exception:
-                pass
+                injected = False
 
         # Check login status to guarantee account streak recording
-        is_signed_in = False
+        is_signed_in = True
         try:
-            sign_in_btn = page.locator("a:has-text('Sign in'), [data-cy='sign-in-btn']").first
-            if not sign_in_btn.is_visible(timeout=1500):
-                is_signed_in = True
+            not_logged_in_selectors = [
+                "a:has-text('Register or Log in')",
+                "button:has-text('Register or Log in')",
+                "a:has-text('Log in')",
+                "button:has-text('Log in')",
+                "a:has-text('Sign in')",
+                "text='You need to log in / sign up to run or submit'",
+                "[data-cy='sign-in-btn']",
+                "a[href*='/accounts/login']"
+            ]
+            for sel in not_logged_in_selectors:
+                if page.locator(sel).first.is_visible(timeout=1000):
+                    is_signed_in = False
+                    break
         except Exception:
             is_signed_in = True
 
         if not is_signed_in:
-            print("\n⚠️ [LeetCode Notice] You are not yet signed in to ansht1525 in this automation profile.")
-            print("To record your green streak, please click 'Sign in' in the Brave window now!")
-            print("Holding window open for 15 seconds for optional login...")
-            time.sleep(15.0)
+            print("\n⚠️ [LeetCode Auth Required] You are not logged into LeetCode in this browser profile.")
+            print("  • Please click 'Register or Log in' in the open browser window on your screen.")
+            print("  • Once you log in, your login session & cookies are PERMANENTLY saved to ~/.llama_orchestrator/browser_profile.")
+            print("  • Tip: Use 'login leetcode' in JARVIS CLI anytime for a dedicated sign-in session.")
+            print("  • Holding browser window open for login...")
+            try:
+                # Give user opportunity to sign in without being rushed
+                for _ in range(45):
+                    time.sleep(1.0)
+                    try:
+                        still_unauthed = any(page.locator(s).first.is_visible(timeout=400) for s in ["a:has-text('Register or Log in')", "text='You need to log in / sign up to run or submit'"])
+                        if not still_unauthed:
+                            is_signed_in = True
+                            print("✓ LeetCode login session recognized! Proceeding with submission...")
+                            break
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
         # Click Run or Submit button with realistic human mouse movement & ripple
         submitted = False
-        for btn_text in ["Submit", "Run"]:
-            try:
-                btn = page.locator(f"button:has-text('{btn_text}'), [data-e2e-locator='console-submit-button']").first
-                if btn.is_visible(timeout=3000):
-                    box = btn.bounding_box()
-                    if box:
-                        cx = box["x"] + box["width"] / 2
-                        cy = box["y"] + box["height"] / 2
-                        page.evaluate(f"() => window.jarvisMoveCursor && window.jarvisMoveCursor({cx}, {cy})")
-                        page.mouse.move(cx, cy, steps=15)
-                        time.sleep(0.1)
-                        page.evaluate(f"() => window.jarvisClickRipple && window.jarvisClickRipple({cx}, {cy})")
-                        page.mouse.down()
-                        time.sleep(0.08)
-                        page.mouse.up()
-                    else:
-                        btn.click()
-                    submitted = True
-                    actions_taken.append(f"Human-glide clicked '{btn_text}' button on LeetCode.")
-                    print(f"[Action 5] Clicked '{btn_text}' button on LeetCode with visual cursor glide!")
-                    break
-            except Exception:
-                continue
+        verdict = "Submitted (Verdict pending)"
+        if is_signed_in:
+            for btn_text in ["Submit", "Run"]:
+                try:
+                    btn = page.locator(f"button:has-text('{btn_text}'), [data-e2e-locator='console-submit-button']").first
+                    if btn.is_visible(timeout=3000):
+                        box = btn.bounding_box()
+                        if box:
+                            cx = box["x"] + box["width"] / 2
+                            cy = box["y"] + box["height"] / 2
+                            page.evaluate(f"() => window.jarvisMoveCursor && window.jarvisMoveCursor({cx}, {cy})")
+                            page.mouse.move(cx, cy, steps=15)
+                            time.sleep(0.1)
+                            page.evaluate(f"() => window.jarvisClickRipple && window.jarvisClickRipple({cx}, {cy})")
+                            page.mouse.down()
+                            time.sleep(0.08)
+                            page.mouse.up()
+                        else:
+                            btn.click()
+                        submitted = True
+                        actions_taken.append(f"Human-glide clicked '{btn_text}' button on LeetCode.")
+                        print(f"[Action 5] Clicked '{btn_text}' button on LeetCode with visual cursor glide!")
+
+                        # Await evaluation verdict
+                        print("[Action 6] Awaiting LeetCode evaluation verdict...")
+                        for _ in range(12):
+                            time.sleep(1.0)
+                            try:
+                                v_el = page.locator("[data-e2e-locator='submission-result'], .text-green-s, .text-red-s, [class*='result-state']").first
+                                if v_el.is_visible(timeout=1000):
+                                    verdict = v_el.inner_text().strip()
+                                    print(f"[LeetCode Verdict] ★ {verdict}")
+                                    actions_taken.append(f"LeetCode Verdict: {verdict}")
+                                    break
+                            except Exception:
+                                pass
+                        break
+                except Exception:
+                    continue
+        else:
+            actions_taken.append("Skipped live submit click because user is not authenticated on LeetCode.")
+            print(f"\n[Notice] {target_lang} solution entered in Monaco. Live submission held pending authentication.")
 
         # Take high-resolution screenshot
         shot_path = Path("workspaces/screenshots/leetcode_live_execution.png")
         shot_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            page.screenshot(path=str(shot_path))
-            actions_taken.append(f"Saved live screenshot to {shot_path}")
+            if not page.is_closed():
+                page.screenshot(path=str(shot_path))
+                actions_taken.append(f"Saved live screenshot to {shot_path}")
         except Exception:
             pass
 
-        final_title = page.title()
-        final_url = page.url
+        try:
+            final_title = page.title() if not page.is_closed() else prob_title
+            final_url = page.url if not page.is_closed() else target_url
+        except Exception:
+            final_title = prob_title
+            final_url = target_url
+
         if is_hl or (not keep_open and not is_cdp):
             try:
                 context.close()
             except Exception:
                 pass
         else:
-            print("\n[Co-Worker Window Mode] Brave Browser session remains active on your desktop for continuous work and inspection.")
+            print(f"\n[Co-Worker Window Mode] {browser_label} session remains active on your desktop for continuous work and inspection.")
 
         return {
             "success": injected or submitted,
-            "problem_url": target_url,
-            "browser": "Brave" if brave_bin else "Chromium",
+            "problem_url": final_url,
+            "browser": browser_label,
             "injected": injected,
             "submitted": submitted,
+            "verdict": verdict,
             "screenshot": str(shot_path),
             "final_title": final_title,
             "final_url": final_url,

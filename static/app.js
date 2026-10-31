@@ -904,6 +904,109 @@ async function handleDirectiveSubmit(e) {
 
   const lower = text.toLowerCase().trim();
 
+  // 1. Direct Voice Toggles
+  if (lower === "voice on" || lower === "voice off") {
+    const enable = (lower === "voice on");
+    state.voiceEnabled = enable;
+    const label = document.getElementById("voiceStatusLabel");
+    if (label) label.textContent = `Executive Voice: ${enable ? "ON" : "OFF"}`;
+    appendChatMessage(`Executive Voice set to **${enable ? "ON" : "OFF"}**.`, "assistant");
+    if (enable) speakText("Executive voice enabled.");
+    return;
+  }
+
+  // 2. Direct Screen Clear
+  if (lower === "clear" || lower === "cls") {
+    const chat = document.getElementById("chatHistory");
+    if (chat) chat.innerHTML = "";
+    return;
+  }
+
+  // 3. Direct Browser Login Portal Directive (Axiom Mode)
+  const isDirectLogin = /^(?:login|signin|sign\s+in|auth)\b/i.test(lower) || lower === "browser login";
+  if (isDirectLogin && !lower.endsWith("?") && !lower.includes("how") && !lower.includes("what")) {
+    let cleanTarget = lower.replace(/^(?:browser\s+login|login\s+to|login\s+on|login\s+in|login|signin|sign\s+in\s+to|sign\s+in\s+on|sign\s+in|auth)\s*/i, "").trim().replace(/[;.]+$/, "");
+    if (!cleanTarget) cleanTarget = "google";
+    appendChatMessage(`🔑 **Launching Persistent Browser Authentication Portal for: ${cleanTarget.toUpperCase()}**\n\n- Operating Mode: **Axiom Persistent Profile**\n- Please complete sign-in in the clean desktop browser window on your screen.\n- Once signed in, all tokens and cookies are saved permanently to \`~/.llama_orchestrator/browser_profile\` for all autonomous actions!`, "assistant");
+    speakText(`Launching persistent authentication window for ${cleanTarget}. Please sign in to your account.`);
+    try {
+      fetch("/api/browser/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: cleanTarget })
+      }).then(r => r.json()).then(data => {
+        if (data.success) {
+          appendChatMessage(`✓ **Authentication Session Saved for ${data.service || cleanTarget}!** Subsequent autonomous browser actions will retain this session.`, "assistant");
+          speakText(`Authentication session saved for ${data.service || cleanTarget}.`);
+        }
+      });
+    } catch (err) {
+      appendChatMessage(`Authentication portal notice: ${err.message}`, "assistant");
+    }
+    return;
+  }
+
+  // 4. Direct LeetCode Autonomous Solver
+  const isLeetCode = lower.includes("leetcode") && (lower.includes("solve") || lower.includes("submit") || lower.includes("daily") || lower.includes("streak") || lower.includes("problem") || lower.includes("two sum"));
+  if (isLeetCode) {
+    let slug = "daily";
+    const slugMatch = lower.match(/(?:problems?\/|solve\s+)([a-z0-9\-]+)/);
+    if (slugMatch && !["any", "a", "the", "today", "daily", "streak", "problem", "leetcode"].includes(slugMatch[1])) {
+      slug = slugMatch[1];
+    } else if (lower.includes("two sum") || lower.includes("twosum")) {
+      slug = "two-sum";
+    }
+    let reqLang = null;
+    const langMatch = lower.match(/\b(?:in|using)\s+(c\+\+|cpp|python3?|java|rust|golang|go|typescript|javascript|c#)\b/);
+    if (langMatch) {
+      const lm = langMatch[1].toLowerCase();
+      const map = { cpp: "C++", "c++": "C++", python: "Python3", python3: "Python3", golang: "Go", go: "Go", rust: "Rust", java: "Java", typescript: "TypeScript", javascript: "JavaScript", "c#": "C#" };
+      reqLang = map[lm] || lm;
+    }
+
+    appendChatMessage(`⚡ **Autonomous LeetCode Algorithm Synthesis & Submission**\n\n- Target: **${slug}**\n- Requested Language: **${reqLang || "Auto-Detect (Active Monaco)"}**\n- Co-Worker Window: Visible Chrome on your desktop`, "assistant");
+    speakText("Commencing autonomous LeetCode algorithm synthesis and live submission.");
+
+    fetch("/api/browser/leetcode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: slug, language: reqLang, headless: false })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        appendChatMessage(`✓ **LeetCode Submission Complete!**\n- Problem: ${res.problem_url}\n- Monaco Injected: ${res.injected}\n- Live Submitted: ${res.submitted}\n- Verdict: **${res.verdict || "Submitted (Pending)"}**\n- Status: Browser window remains open on your desktop for continuous inspection.`, "assistant");
+        speakText(`LeetCode problem ${res.submitted ? 'submitted successfully' : 'injected into Monaco'}.`);
+      } else {
+        appendChatMessage(`⚠️ LeetCode solver notice: ${res.error || "Execution interrupted"}`, "assistant");
+      }
+    }).catch(err => {
+      appendChatMessage(`LeetCode Solver Error: ${err.message}`, "assistant");
+    });
+    return;
+  }
+
+  // 5. Direct Browser-Use Vision Agent
+  if (lower.startsWith("bu ") || lower.startsWith("browser-use ")) {
+    const task = text.replace(/^(bu|browser-use)\s+/i, "").trim();
+    appendChatMessage(`🌐 **Deploying Vision-Action Browser-Use Agent (Groq Meta Llama 3.3 70B)**\n\n- Objective: *"${task}"*\n- Profile: Axiom Persistent Context`, "assistant");
+    speakText("Deploying autonomous browser use agent.");
+
+    fetch("/api/browser/browser-use", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task: task, max_steps: 15, headless: false })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        appendChatMessage(`✓ **Browser-Use Agent Finished:**\n\n${res.result}\n\n*(Steps taken: ${res.steps_taken})*`, "assistant");
+        speakText("Browser task completed successfully.");
+      } else {
+        appendChatMessage(`⚠️ Browser-Use notice: ${res.error || "Execution finished"}`, "assistant");
+      }
+    }).catch(err => {
+      appendChatMessage(`Browser-Use Error: ${err.message}`, "assistant");
+    });
+    return;
+  }
+
   // Actionable Keywords check: if the prompt demands building, coding, scraping, emailing, or business execution
   const actionTerms = [
     "build", "create", "make", "deploy", "launch", "compile", "generate",
@@ -2371,3 +2474,135 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// ============================================================
+// BROWSER & AUTHENTICATION PORTALS CONTROLLER
+// ============================================================
+function openBrowserPortalsModal() {
+  const modal = document.getElementById("browserPortalsModal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+function closeBrowserPortalsModal() {
+  const modal = document.getElementById("browserPortalsModal");
+  if (modal) modal.classList.add("hidden");
+}
+window.openBrowserPortalsModal = openBrowserPortalsModal;
+window.closeBrowserPortalsModal = closeBrowserPortalsModal;
+
+function switchBrowserModalTab(tab) {
+  const tabAuth = document.getElementById("tabAuthContent");
+  const tabLC = document.getElementById("tabLeetCodeContent");
+  const tabBU = document.getElementById("tabBrowserUseContent");
+  const btnAuth = document.getElementById("tabAuthBtn");
+  const btnLC = document.getElementById("tabLeetCodeBtn");
+  const btnBU = document.getElementById("tabBrowserUseBtn");
+
+  [tabAuth, tabLC, tabBU].forEach(t => t && t.classList.add("hidden"));
+  [btnAuth, btnLC, btnBU].forEach(b => {
+    if (b) {
+      b.className = "px-3 py-1.5 rounded-lg text-gemini-muted hover:text-white transition";
+    }
+  });
+
+  if (tab === "auth" && tabAuth && btnAuth) {
+    tabAuth.classList.remove("hidden");
+    btnAuth.className = "px-3 py-1.5 rounded-lg bg-gemini-cardHover text-white font-semibold border border-gemini-border transition";
+  } else if (tab === "leetcode" && tabLC && btnLC) {
+    tabLC.classList.remove("hidden");
+    btnLC.className = "px-3 py-1.5 rounded-lg bg-gemini-cardHover text-white font-semibold border border-gemini-border transition";
+  } else if (tab === "browser-use" && tabBU && btnBU) {
+    tabBU.classList.remove("hidden");
+    btnBU.className = "px-3 py-1.5 rounded-lg bg-gemini-cardHover text-white font-semibold border border-gemini-border transition";
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+window.switchBrowserModalTab = switchBrowserModalTab;
+
+async function triggerWebAuth(target) {
+  const clean = (target || "").trim();
+  if (!clean) return;
+  const fb = document.getElementById("authStatusFeedback");
+  if (fb) fb.innerHTML = `<span class="text-gemini-blue animate-pulse">Launching persistent browser session for ${escapeHtml(clean)}... Please sign in.</span>`;
+  speakText(`Launching persistent authentication window for ${clean}.`);
+  closeBrowserPortalsModal();
+  appendChatMessage(`🔑 **Launching Persistent Browser Authentication Portal for: ${clean.toUpperCase()}**\n\n- Operating Mode: **Axiom Persistent Profile**\n- Sign in to your account in the visible browser window on your desktop.\n- Tokens & cookies are saved permanently in \`~/.llama_orchestrator/browser_profile\`.`, "assistant");
+
+  try {
+    const res = await fetch("/api/browser/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: clean })
+    });
+    const data = await res.json();
+    if (data.success) {
+      appendChatMessage(`✓ **Authentication Session Saved for ${data.service || clean}!** Subsequent autonomous actions will retain this session.`, "assistant");
+      speakText(`Authentication session saved for ${data.service || clean}.`);
+    }
+  } catch (err) {
+    appendChatMessage(`Authentication Portal error: ${err.message}`, "assistant");
+  }
+}
+window.triggerWebAuth = triggerWebAuth;
+
+async function triggerWebLeetCodeSolve() {
+  const slugInput = document.getElementById("leetcodeSlugInput");
+  const langSelect = document.getElementById("leetcodeLangSelect");
+  const slug = (slugInput ? slugInput.value : "daily").trim() || "daily";
+  const lang = (langSelect ? langSelect.value : "") || null;
+
+  closeBrowserPortalsModal();
+  appendChatMessage(`⚡ **Autonomous LeetCode Algorithm Synthesis & Submission**\n\n- Target Problem: **${slug}**\n- Target Language: **${lang || "Auto-Detect (Active Monaco)"}**\n- Browser Engine: Visible Chrome Co-Worker Session`, "assistant");
+  speakText("Commencing autonomous LeetCode algorithm synthesis and live submission.");
+
+  try {
+    const res = await fetch("/api/browser/leetcode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: slug, language: lang, headless: false })
+    });
+    const data = await res.json();
+    if (data.success) {
+      appendChatMessage(`✓ **LeetCode Submission Complete!**\n- Problem: ${data.problem_url}\n- Monaco Injected: ${data.injected}\n- Live Submitted: ${data.submitted}\n- Verdict: **${data.verdict || "Submitted"}**\n- Status: Browser window remains active on your desktop.`, "assistant");
+      speakText(`LeetCode problem ${data.submitted ? 'submitted successfully' : 'injected into Monaco'}.`);
+    } else {
+      appendChatMessage(`⚠️ LeetCode Solver Notice: ${data.error || "Execution interrupted"}`, "assistant");
+    }
+  } catch (err) {
+    appendChatMessage(`LeetCode Solver error: ${err.message}`, "assistant");
+  }
+}
+window.triggerWebLeetCodeSolve = triggerWebLeetCodeSolve;
+
+async function triggerWebBrowserUseTask() {
+  const taskInput = document.getElementById("browserUseTaskInput");
+  const task = (taskInput ? taskInput.value : "").trim();
+  if (!task) {
+    alert("Please enter a web browsing objective.");
+    return;
+  }
+
+  closeBrowserPortalsModal();
+  appendChatMessage(`🌐 **Deploying Vision-Action Browser-Use Agent (Groq Meta Llama 3.3 70B)**\n\n- Objective: *"${task}"*\n- Mode: Persistent Set-of-Marks Vision Loop`, "assistant");
+  speakText("Deploying autonomous browser use agent.");
+
+  try {
+    const res = await fetch("/api/browser/browser-use", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task: task, max_steps: 15, headless: false })
+    });
+    const data = await res.json();
+    if (data.success) {
+      appendChatMessage(`✓ **Browser-Use Agent Finished:**\n\n${data.result}\n\n*(Steps taken: ${data.steps_taken})*`, "assistant");
+      speakText("Browser task completed successfully.");
+    } else {
+      appendChatMessage(`⚠️ Browser-Use notice: ${data.error || "Task completed"}`, "assistant");
+    }
+  } catch (err) {
+    appendChatMessage(`Browser-Use error: ${err.message}`, "assistant");
+  }
+}
+window.triggerWebBrowserUseTask = triggerWebBrowserUseTask;

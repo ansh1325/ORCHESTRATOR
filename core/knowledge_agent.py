@@ -559,8 +559,7 @@ class KnowledgeAgent:
             return None
 
         def _call_model():
-            return client.chat.completions.create(
-                model=settings.META_MODEL_ORCHESTRATOR,
+            return settings.create_chat_completion(
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_msg}
@@ -570,7 +569,7 @@ class KnowledgeAgent:
             )
 
         resp = await asyncio.to_thread(_call_model)
-        data = robust_json_loads(resp.choices[0].message.content)
+        data = robust_json_loads(resp.choices[0].message.content or "{}")
 
         return KnowledgeBase(
             session_id=session_id,

@@ -15,7 +15,10 @@
     "Address Ansh Tiwari with respect and technical camaraderie as Creator and Lead Architect.",
     "When speaking to hackathon judges, present LlamaOrchestrator with confidence, highlighting Meta Llama intelligence and MCP rigor.",
     "Emphasize deterministic execution, self-correction, zero hallucination, and real-world value generation.",
-    "Deliver audible, concise, and impactful spoken responses."
+    "Deliver audible, concise, and impactful spoken responses.",
+    "Principle of Minimum Friction: Always discover the native host environment and default applications via OS introspection rather than creating synthetic dummy sandboxes or asking for manual port configurations.",
+    "Ground-Truth Machine Introspection: Always inspect Local State and active user profiles on the host machine dynamically to operate directly on the user's live authenticated accounts.",
+    "Full-Spectrum Synthesis: When scraping or browsing for information, always extract rich main content and synthesize direct, high-value answers for the user rather than halting on raw headers."
   ],
   "completed_missions": [
     {
@@ -222,10 +225,92 @@
       "timestamp": "2026-10-31T02:28:09.813446+00:00",
       "mission": "Mission sched_run_caa2c9b1: Founder Autonomous Software Pod: TestPrompt",
       "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T16:55:10.085356+00:00",
+      "mission": "Mission sched_run_8190f8f3: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T18:13:27.657836+00:00",
+      "mission": "Mission sched_run_546a4e4c: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T18:17:12.250355+00:00",
+      "mission": "Mission sched_run_196e532e: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T18:38:22.423956+00:00",
+      "mission": "Mission sched_run_ecf4eabb: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T18:40:50.772564+00:00",
+      "mission": "Mission sched_run_eee34bc6: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T18:57:22.850673+00:00",
+      "mission": "Mission sched_run_8618dce0: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T19:04:11.669613+00:00",
+      "mission": "Mission sched_run_5b98066e: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T20:03:14.867439+00:00",
+      "mission": "Mission sched_run_3b6990ac: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T20:14:59.292851+00:00",
+      "mission": "Mission sched_run_1cafb89f: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T20:19:36.992689+00:00",
+      "mission": "Mission sched_run_b7f0ce91: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T20:22:09.139929+00:00",
+      "mission": "Mission sched_run_49a0aada: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T20:29:07.704276+00:00",
+      "mission": "Mission sched_run_8141d8a9: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T22:04:46.233400+00:00",
+      "mission": "Mission sched_run_7430867d: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-10-31T22:23:13.921623+00:00",
+      "mission": "Mission sched_run_256fc43c: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
     }
   ],
   "directive_frequency": {
-    "transcript httpswwwinstagramcomreelsample": 10,
-    "to youtube and search at peach and play the song of karan aujla": 10
+    "transcript httpswwwinstagramcomreelsample": 49,
+    "to youtube and search at peach and play the song of karan aujla": 48,
+    "detroits lead all": 1,
+    "give  me that list i want to see it": 1,
+    "dreher whatsoever and ballet later": 1,
+    "i want to login in browser windows of yours so you can do what i want in my accounts": 2,
+    "what are your capabilities what are you capable of doing you can read your code just tell me your capablilties and who  are you": 1,
+    "do the browser login": 1,
+    "find top trending ai repositories on github and extract their descriptions": 1,
+    "login leetcode": 1,
+    "to leetcode and solve any problem of your choice": 1,
+    "to leetcode and submit any problem of your choice": 1,
+    "now go to leetcode and solve any problem of your choice": 2,
+    "to leetcode and solve any problem of your oen choice": 1
   }
 }

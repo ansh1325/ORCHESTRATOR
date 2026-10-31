@@ -256,8 +256,8 @@ class EvaluatorGatekeeper:
                 return self._fallback_evaluation(vision, files, score)
 
             def _call_model():
-                return client.chat.completions.create(
-                    model=settings.META_MODEL_ORCHESTRATOR,
+                from core.config import settings
+                return settings.create_chat_completion(
                     messages=[
                         {"role": "system", "content": system_msg},
                         {"role": "user", "content": user_msg}
@@ -267,7 +267,7 @@ class EvaluatorGatekeeper:
                 )
 
             resp = await asyncio.to_thread(_call_model)
-            return robust_json_loads(resp.choices[0].message.content)
+            return robust_json_loads(resp.choices[0].message.content or "{}")
         except Exception:
             return self._fallback_evaluation(vision, files, score)
 

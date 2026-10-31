@@ -178,10 +178,13 @@ class AutonomousScheduler:
 
     def update_schedule_run_status(self, task_id: str, run_date_str: str):
         schedules = self.list_schedules()
+        now = datetime.now()
         for s in schedules:
             if s.get("task_id") == task_id or s.get("id") == task_id:
                 s["last_run_at"] = datetime.now(UTC).isoformat()
                 s["last_run_date"] = run_date_str
+                s["last_run_hour"] = now.strftime("%Y-%m-%d %H")
+                s["last_run_ts"] = now.timestamp()
                 s["run_count"] = int(s.get("run_count", 0)) + 1
                 self._save_schedules(schedules)
                 break
@@ -202,6 +205,8 @@ class AutonomousScheduler:
                 current_hour = now.hour
                 current_minute = now.minute
                 today_str = now.strftime("%Y-%m-%d")
+                current_hour_str = now.strftime("%Y-%m-%d %H")
+                now_ts = now.timestamp()
 
                 schedules = self.list_schedules()
                 for sched in schedules:
@@ -209,18 +214,37 @@ class AutonomousScheduler:
                         continue
                     s_hour = int(sched.get("hour", 6))
                     s_minute = int(sched.get("minute", 0))
+                    tid = sched.get("task_id") or sched.get("id") or "sched"
+                    last_run_ts = sched.get("last_run_ts") or 0.0
 
-                    if current_hour == s_hour and current_minute == s_minute:
-                        if sched.get("last_run_date") != today_str:
-                            tid = sched.get("task_id") or sched.get("id") or "sched"
-                            print(f"[Scheduler] ⏰ Triggering scheduled daily mission '{sched.get('title')}' at {now.strftime('%H:%M:%S')}...")
-                            self.update_schedule_run_status(tid, today_str)
-                            asyncio.create_task(
-                                orchestrator_instance.run_scheduled_mission(
-                                    prompt=sched.get("prompt", ""),
-                                    title=sched.get("title", "Daily Autonomous Mission")
-                                )
+                    should_trigger = False
+                    status_marker = today_str
+
+                    if s_hour == -1 and s_minute == -1:
+                        # 1. Continuous 24/7 Daemon Loop: Triggers every cadence cycle (minimum 60s cooldown)
+                        if now_ts - last_run_ts >= 60:
+                            should_trigger = True
+                            status_marker = today_str
+                    elif s_hour == -1 and s_minute >= 0:
+                        # 2. Hourly Mission: Triggers at designated minute of every hour
+                        if current_minute == s_minute and sched.get("last_run_hour") != current_hour_str:
+                            should_trigger = True
+                            status_marker = current_hour_str
+                    else:
+                        # 3. Daily Scheduled Mission: Triggers at designated hour & minute once per day
+                        if current_hour == s_hour and current_minute == s_minute and sched.get("last_run_date") != today_str:
+                            should_trigger = True
+                            status_marker = today_str
+
+                    if should_trigger:
+                        print(f"[Scheduler] ⏰ Triggering scheduled mission '{sched.get('title')}' at {now.strftime('%H:%M:%S')}...")
+                        self.update_schedule_run_status(tid, status_marker)
+                        asyncio.create_task(
+                            orchestrator_instance.run_scheduled_mission(
+                                prompt=sched.get("prompt", ""),
+                                title=sched.get("title", "Daily Autonomous Mission")
                             )
+                        )
             except Exception as e:
                 print(f"[Scheduler Loop Error] {e}")
             await asyncio.sleep(poll_interval_sec)

@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 
 class MCPSandboxSecurityError(Exception):
@@ -101,9 +101,15 @@ class MCPServer:
                 }
 
         # Route python calls to the active interpreter
-        exec_cmd = command
+        exec_cmd = command.strip()
         if exec_cmd.startswith("python "):
             exec_cmd = f'"{sys.executable}" ' + exec_cmd[7:]
+        elif exec_cmd.startswith("python3 "):
+            exec_cmd = f'"{sys.executable}" ' + exec_cmd[8:]
+        elif exec_cmd.startswith("pytest ") or exec_cmd == "pytest":
+            exec_cmd = f'"{sys.executable}" -m pytest' + exec_cmd[6:]
+        elif exec_cmd.startswith("pip "):
+            exec_cmd = f'"{sys.executable}" -m pip ' + exec_cmd[4:]
 
         try:
             res = subprocess.run(
@@ -637,6 +643,15 @@ class MCPServer:
         from core.rea_powerup import rea_engine
         return rea_engine.audit_binary_security(binary_path)
 
+    def tool_browser_use_execute(self, task: str, max_steps: int = 15, headless: bool = False) -> dict[str, Any]:
+        """
+        Executes a dynamic browser automation objective using the official 'browser-use' engine.
+        Uses Set-of-Marks visual perception and multi-step reasoning to accomplish complex web tasks
+        without brittle hardcoded selectors.
+        """
+        from core.browser_use_engine import browser_use_engine
+        return browser_use_engine.execute_task_sync(task=task, max_steps=max_steps, headless=headless)
+
     def get_tool_definitions(self) -> list[dict[str, Any]]:
         return [
             {"name": "file_write", "description": "Write text content to a sandboxed file inside the workspace."},
@@ -668,7 +683,8 @@ class MCPServer:
             {"name": "rea_scan_secrets", "description": "Surgical REA Tool: Scans target files for leaked API keys, tokens, and credentials."},
             {"name": "rea_inspect_ipc", "description": "Surgical REA Tool: Isolates desktop Electron IPC events and channels."},
             {"name": "rea_harvest_routes", "description": "Surgical REA Tool: Harvests REST and WebSocket routes from traffic dumps."},
-            {"name": "rea_audit_security", "description": "Surgical REA Tool: Audits binary security posture and dangerous imported syscalls."}
+            {"name": "rea_audit_security", "description": "Surgical REA Tool: Audits binary security posture and dangerous imported syscalls."},
+            {"name": "browser_use_execute", "description": "Autonomous Vision-Action Web Agent powered by 'browser-use': dynamically navigates, operates, and solves tasks on any website without hardcoded selectors."}
         ]
 
     def handle_jsonrpc(self, request_data: dict[str, Any]) -> dict[str, Any]:
@@ -749,6 +765,12 @@ class MCPServer:
                     res = self.tool_rea_harvest_routes(tool_args["target_path"])
                 elif tool_name == "rea_audit_security":
                     res = self.tool_rea_audit_security(tool_args["binary_path"])
+                elif tool_name == "browser_use_execute":
+                    res = self.tool_browser_use_execute(
+                        task=tool_args["task"],
+                        max_steps=tool_args.get("max_steps", 15),
+                        headless=tool_args.get("headless", False)
+                    )
                 else:
                     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Tool '{tool_name}' not found."}}
                 return {"jsonrpc": "2.0", "id": req_id, "result": res}

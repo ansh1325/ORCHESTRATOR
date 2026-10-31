@@ -201,8 +201,8 @@ class DynamicWorkerEngine:
             return []
 
         def _call_model():
-            return client.chat.completions.create(
-                model=settings.META_MODEL_WORKER,
+            from core.config import settings
+            return settings.create_chat_completion(
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_msg}
@@ -212,7 +212,7 @@ class DynamicWorkerEngine:
             )
             
         resp = await asyncio.to_thread(_call_model)
-        raw_content = resp.choices[0].message.content.strip()
+        raw_content = (resp.choices[0].message.content or "{}").strip()
         data = robust_json_loads(raw_content)
         
         artifacts = []

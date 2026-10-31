@@ -130,8 +130,10 @@ def test_browser_agent_fastapi_endpoints():
     """Verify REST API endpoints for Browser Agent."""
     client = TestClient(app)
 
-    with patch.object(browser_agent, "execute_goal") as mock_exec, \
-         patch.object(browser_agent, "send_email_autonomously") as mock_email:
+    with patch("core.browser_agent.browser_agent.execute_goal") as mock_exec, \
+         patch("core.browser_agent.browser_agent.send_email_autonomously") as mock_email, \
+         patch.object(browser_agent, "execute_goal", mock_exec), \
+         patch.object(browser_agent, "send_email_autonomously", mock_email):
 
         mock_exec.return_value = {
             "success": True,
@@ -236,4 +238,37 @@ def test_clean_search_query_command_distillation():
     q3 = BrowserAgent._clean_search_query("play at peace by karan aujla")
     assert "karan aujla" in q3.lower()
     assert "at peace" in q3.lower()
+
+
+def test_browser_tab_management_engine():
+    """Verify multi-tab management API (list, switch, close, open)."""
+    from unittest.mock import MagicMock
+    agent = BrowserAgent()
+    mock_ctx = MagicMock()
+    page1 = MagicMock()
+    page1.title.return_value = "Google Accounts"
+    page1.url = "https://accounts.google.com"
+
+    page2 = MagicMock()
+    page2.title.return_value = "YouTube"
+    page2.url = "https://youtube.com"
+
+    mock_ctx.pages = [page1, page2]
+    agent._active_context = mock_ctx
+
+    # 1. Test listing tabs
+    tabs = agent.list_tabs()
+    assert len(tabs) == 2
+    assert tabs[0]["title"] == "Google Accounts"
+    assert tabs[1]["url"] == "https://youtube.com"
+
+    # 2. Test switching tabs
+    sw = agent.switch_tab(1)
+    assert sw["success"] is True
+    page2.bring_to_front.assert_called_once()
+
+    # 3. Test closing tab
+    cl = agent.close_tab(0)
+    assert cl["success"] is True
+    page1.close.assert_called_once()
 

@@ -198,8 +198,7 @@ if __name__ == "__main__":
                     "3. Return strictly JSON: {\"name\": \"...\", \"code\": \"python code string\", \"tags\": [\"...\"], \"capabilities\": [\"...\"]}"
                 )
                 resp = await asyncio.to_thread(
-                    llm.chat.completions.create,
-                    model=settings.META_MODEL_ORCHESTRATOR,
+                    settings.create_chat_completion,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": f"Task: {task_description}"}
@@ -207,7 +206,7 @@ if __name__ == "__main__":
                     response_format={"type": "json_object"},
                     temperature=0.2
                 )
-                parsed = json.loads(resp.choices[0].message.content)
+                parsed = json.loads(resp.choices[0].message.content or "{}")
                 code = parsed.get("code", "")
                 clean_name = parsed.get("name", clean_name)
                 tags = parsed.get("tags", tags)

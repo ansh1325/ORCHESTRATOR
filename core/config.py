@@ -1,3 +1,4 @@
+from typing import Any
 """
 LlamaOrchestrator Configuration Module
 Handles environment variables, model routing, and creator identity.
@@ -66,13 +67,62 @@ class Settings:
         try:
             from openai import OpenAI
             if cls.GROQ_API_KEY and not cls.GROQ_API_KEY.startswith("your_"):
-                return OpenAI(api_key=cls.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
+                return OpenAI(api_key=cls.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0, timeout=12.0)
             if cls.FIREWORKS_API_KEY and not cls.FIREWORKS_API_KEY.startswith("your_"):
-                return OpenAI(api_key=cls.FIREWORKS_API_KEY, base_url="https://api.fireworks.ai/inference/v1")
+                return OpenAI(api_key=cls.FIREWORKS_API_KEY, base_url="https://api.fireworks.ai/inference/v1", max_retries=0, timeout=12.0)
             if cls.OPENAI_API_KEY and not cls.OPENAI_API_KEY.startswith("your_"):
-                return OpenAI(api_key=cls.OPENAI_API_KEY, base_url=cls.OPENAI_BASE_URL or None)
+                return OpenAI(api_key=cls.OPENAI_API_KEY, base_url=cls.OPENAI_BASE_URL or None, max_retries=0, timeout=12.0)
         except Exception:
             return None
+        return None
+
+    @classmethod
+    def get_fallback_models(cls) -> list[str]:
+        """Returns priority order of operational models with dynamic quota failover."""
+        candidates = [cls.META_MODEL_ORCHESTRATOR, "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
+        seen: set[str] = set()
+        res: list[str] = []
+        for c in candidates:
+            if c and c not in seen:
+                seen.add(c)
+                res.append(c)
+        return res
+
+    @classmethod
+    def create_chat_completion(
+        cls,
+        messages: list[dict[str, Any]],
+        temperature: float = 0.7,
+        max_tokens: int = 1000,
+        response_format: dict[str, str] | None = None
+    ) -> Any:
+        """
+        Executes chat completion with automatic quota/429 fallback across available models.
+        """
+        client = cls.get_llm_client()
+        if not client:
+            return None
+
+        last_err: Exception | None = None
+        for model in cls.get_fallback_models():
+            try:
+                kwargs: dict[str, Any] = {
+                    "model": model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens
+                }
+                if response_format:
+                    kwargs["response_format"] = response_format
+                return client.chat.completions.create(**kwargs)
+            except Exception as e:
+                err_str = str(e).lower()
+                last_err = e
+                if any(x in err_str for x in ["429", "rate_limit", "quota", "tokens per day", "decommissioned", "does not exist", "404"]):
+                    continue
+                raise e
+        if last_err:
+            raise last_err
         return None
 
 # Singleton instance

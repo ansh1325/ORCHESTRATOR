@@ -106,47 +106,69 @@ class CreativeProblemSolver:
         if not transcript_text:
             try:
                 from playwright.sync_api import sync_playwright
+                from core.browser_controller import BrowserController
                 with sync_playwright() as p:
-                    browser = p.chromium.launch(headless=True)
-                    page = browser.new_page()
-                    target_w = media_url
-                    if "/shorts/" in target_w:
-                        sid = target_w.split("/shorts/")[1].split("?")[0]
-                        target_w = f"https://www.youtube.com/watch?v={sid}"
-                    page.goto(target_w, wait_until="networkidle", timeout=25000)
-                    page.wait_for_timeout(2000)
-                    page.mouse.wheel(0, 400)
-                    page.wait_for_timeout(1000)
+                    browser = None
                     try:
-                        page.locator("#expand, button:has-text('more')").first.click(timeout=3000)
+                        def_bin = BrowserController.get_system_default_browser_executable()
+                        if def_bin:
+                            try:
+                                browser = p.chromium.launch(executable_path=def_bin, headless=True)
+                            except Exception:
+                                browser = None
+                        if not browser:
+                            for ch in ["chrome", "msedge"]:
+                                try:
+                                    browser = p.chromium.launch(channel=ch, headless=True)
+                                    break
+                                except Exception:
+                                    pass
+                        if not browser:
+                            browser = p.chromium.launch(headless=True)
+                        page = browser.new_page()
+                        target_w = media_url
+                        if "/shorts/" in target_w:
+                            sid = target_w.split("/shorts/")[1].split("?")[0]
+                            target_w = f"https://www.youtube.com/watch?v={sid}"
+                        page.goto(target_w, wait_until="networkidle", timeout=25000)
+                        page.wait_for_timeout(2000)
+                        page.mouse.wheel(0, 400)
                         page.wait_for_timeout(1000)
-                        page.locator("button:has-text('Show transcript')").first.click(timeout=3000)
-                        page.wait_for_timeout(2500)
-                    except Exception:
-                        pass
-                    panel_text = page.evaluate("""() => {
-                        const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-transcript"], ytd-transcript-renderer, #segments-container');
-                        const raw = panel ? panel.innerText : document.body.innerText;
-                        if (raw.includes("Search transcript")) {
-                            let text = raw.split("Search transcript")[1];
-                            const cutoffs = ["India Today", "Auto-dubbed", "Streamed", "More from", "Comments"];
-                            for (const c of cutoffs) {
-                                if (text.includes(c)) text = text.split(c)[0];
+                        try:
+                            page.locator("#expand, button:has-text('more')").first.click(timeout=3000)
+                            page.wait_for_timeout(1000)
+                            page.locator("button:has-text('Show transcript')").first.click(timeout=3000)
+                            page.wait_for_timeout(2500)
+                        except Exception:
+                            pass
+                        panel_text = page.evaluate("""() => {
+                            const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-transcript"], ytd-transcript-renderer, #segments-container');
+                            const raw = panel ? panel.innerText : document.body.innerText;
+                            if (raw.includes("Search transcript")) {
+                                let text = raw.split("Search transcript")[1];
+                                const cutoffs = ["India Today", "Auto-dubbed", "Streamed", "More from", "Comments"];
+                                for (const c of cutoffs) {
+                                    if (text.includes(c)) text = text.split(c)[0];
+                                }
+                                return text.trim();
                             }
-                            return text.trim();
-                        }
-                        return raw;
-                    }""")
-                    if panel_text.strip() and len(panel_text.strip()) > 80:
-                        # Clean encoding and isolate spoken lines
-                        clean_lines = []
-                        for line in panel_text.split("\n"):
-                            l_strip = line.strip()
-                            if l_strip and not (len(l_strip) > 3 and l_strip[0].isdigit() and ":" in l_strip and len(l_strip) <= 8):
-                                clean_lines.append(l_strip)
-                        transcript_text = "\n".join(clean_lines)
-                        deduction_steps.append("Level 3: Intercepted and decoded live spoken transcript directly from YouTube transcript panel.")
-                    browser.close()
+                            return raw;
+                        }""")
+                        if panel_text.strip() and len(panel_text.strip()) > 80:
+                            # Clean encoding and isolate spoken lines
+                            clean_lines = []
+                            for line in panel_text.split("\n"):
+                                l_strip = line.strip()
+                                if l_strip and not (len(l_strip) > 3 and l_strip[0].isdigit() and ":" in l_strip and len(l_strip) <= 8):
+                                    clean_lines.append(l_strip)
+                            transcript_text = "\n".join(clean_lines)
+                            deduction_steps.append("Level 3: Intercepted and decoded live spoken transcript directly from YouTube transcript panel.")
+                    finally:
+                        if browser:
+                            try:
+                                browser.close()
+                            except Exception:
+                                pass
             except Exception as e:
                 deduction_steps.append(f"Playwright transcript extraction note: {e}")
 
@@ -190,8 +212,7 @@ class StrategicOutreachArchitect:
         if llm and not settings.is_mock():
             try:
                 import json
-                resp = llm.chat.completions.create(
-                    model=settings.META_MODEL_WORKER,
+                resp = settings.create_chat_completion(
                     messages=[
                         {"role": "system", "content": "You are an executive outreach strategist. Synthesize a 4-touch reply-first sequence tailored specifically to the given domain. Rules: Subject line strictly under 30 chars. Touch 1 under 75 words. Touch 2 under 40 words. Touch 3 under 50 words. Touch 4 under 40 words. Reply-first CTA only. Output strictly JSON: {\"touches\": [{\"touch\": 1, \"timing\": \"...\", \"subject\": \"...\", \"body\": \"...\"}, ...]}"},
                         {"role": "user", "content": f"Target Domain: {target_niche}\nSpecific Value Proposition / Bottleneck Fix: {value_hook}"}
@@ -199,7 +220,7 @@ class StrategicOutreachArchitect:
                     response_format={"type": "json_object"},
                     temperature=0.2
                 )
-                parsed = json.loads(resp.choices[0].message.content)
+                parsed = json.loads(resp.choices[0].message.content or "{}")
                 raw_touches = parsed.get("touches", [])
                 if len(raw_touches) == 4:
                     cadence_spec = []

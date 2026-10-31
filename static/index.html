@@ -123,6 +123,10 @@
         <i data-lucide="layers" class="w-4 h-4 text-gemini-blue"></i>
         <span>Reusable Workflows</span>
       </button>
+      <button type="button" onclick="openBrowserPortalsModal()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gemini-muted hover:text-white hover:bg-gemini-cardHover transition cursor-pointer">
+        <i data-lucide="globe" class="w-4 h-4 text-gemini-blue"></i>
+        <span>Browser & Auth Portals</span>
+      </button>
       <button type="button" id="hostFilesNavBtn" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gemini-muted hover:text-white hover:bg-gemini-cardHover transition cursor-pointer">
         <i data-lucide="hard-drive" class="w-4 h-4 text-gemini-blue"></i>
         <span>Host Files & Downloads</span>
@@ -205,6 +209,10 @@
         <button type="button" onclick="openWorkflowsModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gemini-card hover:bg-gemini-cardHover border border-gemini-border text-xs font-medium text-gemini-muted hover:text-white transition cursor-pointer">
           <i data-lucide="layers" class="w-3.5 h-3.5 text-gemini-blue"></i>
           <span class="hidden sm:inline">Workflows</span>
+        </button>
+        <button type="button" onclick="openBrowserPortalsModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gemini-card hover:bg-gemini-cardHover border border-gemini-border text-xs font-medium text-gemini-muted hover:text-white transition cursor-pointer">
+          <i data-lucide="globe" class="w-3.5 h-3.5 text-gemini-blue"></i>
+          <span class="hidden sm:inline">Browser Portals</span>
         </button>
       </div>
     </header>
@@ -535,6 +543,147 @@
         <button id="submitCustomClarificationsBtn" class="w-full sm:w-auto py-3 px-5 rounded-xl bg-gemini-cardHover hover:bg-gemini-border text-white font-semibold text-xs transition border border-gemini-border">
           Confirm Custom Selections
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- BROWSER & AUTONOMOUS AUTH PORTALS MODAL                     -->
+  <!-- ============================================================ -->
+  <div id="browserPortalsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeBrowserPortalsModal()">
+    <div class="bg-gemini-card border border-gemini-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-gemini-border">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gemini-blueBg text-gemini-blue flex items-center justify-center border border-gemini-blue/30">
+            <i data-lucide="globe" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Browser & Auth Portals</h3>
+            <p class="text-xs text-gemini-subtle">Persistent Axiom login sessions, LeetCode solver, and Browser-Use vision agent.</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeBrowserPortalsModal()" class="text-gemini-muted hover:text-white p-1 rounded-lg transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 border-b border-gemini-border/60 pb-2 text-xs">
+        <button type="button" id="tabAuthBtn" onclick="switchBrowserModalTab('auth')" class="px-3 py-1.5 rounded-lg bg-gemini-cardHover text-white font-semibold border border-gemini-border transition">
+          🔑 Account Logins (Axiom Mode)
+        </button>
+        <button type="button" id="tabLeetCodeBtn" onclick="switchBrowserModalTab('leetcode')" class="px-3 py-1.5 rounded-lg text-gemini-muted hover:text-white transition">
+          ⚡ LeetCode Solver
+        </button>
+        <button type="button" id="tabBrowserUseBtn" onclick="switchBrowserModalTab('browser-use')" class="px-3 py-1.5 rounded-lg text-gemini-muted hover:text-white transition">
+          🌐 Browser-Use Agent
+        </button>
+      </div>
+
+      <!-- TAB 1: PERSISTENT ACCOUNT AUTH -->
+      <div id="tabAuthContent" class="space-y-3 text-xs">
+        <p class="text-gemini-muted leading-relaxed">
+          Sign in <strong class="text-white">ONCE</strong> in the clean desktop browser window. All tokens, cookies, and sessions are permanently retained in <code class="text-gemini-blue bg-black/40 px-1 py-0.5 rounded">~/.llama_orchestrator/browser_profile</code> for all future autonomous workflows!
+        </p>
+
+        <!-- Quick 1-Click Platform Buttons -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+          <button type="button" onclick="triggerWebAuth('leetcode')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">LeetCode</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('instantly')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">Instantly</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('google')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">Google / Gmail</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('github')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">GitHub</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('linkedin')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">LinkedIn</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('linear')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">Linear</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('supabase')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">Supabase</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('stripe')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">Stripe</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+          <button type="button" onclick="triggerWebAuth('aws')" class="p-2.5 rounded-xl bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border flex items-center justify-between transition cursor-pointer">
+            <span class="font-medium text-white">AWS</span>
+            <span class="text-[10px] text-emerald-400 font-mono">1-Click</span>
+          </button>
+        </div>
+
+        <!-- Custom Target Auth -->
+        <div class="pt-2 flex items-center gap-2">
+          <input type="text" id="customAuthTargetInput" placeholder="Any platform or login URL (e.g. beehiiv, app.instantly.ai)..." class="flex-1 bg-black/40 border border-gemini-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-gemini-blue">
+          <button type="button" onclick="triggerWebAuth(document.getElementById('customAuthTargetInput').value)" class="px-4 py-2 bg-gemini-blue hover:bg-gemini-blueHover text-slate-950 font-bold rounded-xl transition cursor-pointer shadow-md">
+            Launch Login
+          </button>
+        </div>
+        <div id="authStatusFeedback" class="text-[11px] text-gemini-subtle font-mono pt-1"></div>
+      </div>
+
+      <!-- TAB 2: LEETCODE AUTONOMOUS SOLVER -->
+      <div id="tabLeetCodeContent" class="space-y-3 text-xs hidden">
+        <p class="text-gemini-muted leading-relaxed">
+          Jarvis will navigate directly to LeetCode in a visible co-worker window, inspect the DOM problem statement and starter method signature, synthesize an optimal algorithm in your chosen language, inject it into Monaco, and submit!
+        </p>
+
+        <div class="space-y-2">
+          <div>
+            <label class="block text-[11px] font-semibold text-gemini-subtle mb-1">Target Problem (URL or Slug)</label>
+            <input type="text" id="leetcodeSlugInput" value="daily" placeholder="daily, two-sum, twisted-mirror-path-count..." class="w-full bg-black/40 border border-gemini-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-gemini-blue">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-gemini-subtle mb-1">Target Monaco Language</label>
+            <select id="leetcodeLangSelect" class="w-full bg-black/40 border border-gemini-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-gemini-blue">
+              <option value="">Auto-Detect (Active Monaco Language)</option>
+              <option value="Python3">Python3</option>
+              <option value="C++">C++</option>
+              <option value="Java">Java</option>
+              <option value="Rust">Rust</option>
+              <option value="Go">Go</option>
+              <option value="TypeScript">TypeScript</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" onclick="triggerWebLeetCodeSolve()" class="w-full py-2.5 bg-gemini-blue hover:bg-gemini-blueHover text-slate-950 font-bold rounded-xl transition cursor-pointer shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+          <span>Solve & Submit on LeetCode</span>
+        </button>
+        <div id="leetcodeStatusFeedback" class="text-[11px] text-gemini-subtle font-mono pt-1"></div>
+      </div>
+
+      <!-- TAB 3: BROWSER-USE VISION AGENT -->
+      <div id="tabBrowserUseContent" class="space-y-3 text-xs hidden">
+        <p class="text-gemini-muted leading-relaxed">
+          Powered by <strong class="text-white">browser-use</strong> and Groq LPUs (<strong class="text-gemini-blue">Meta Llama 3.3 70B</strong>). Executes complex multi-step web tasks with Set-of-Marks visual perception without brittle selectors.
+        </p>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-gemini-subtle mb-1">Web Browsing Objective</label>
+          <textarea id="browserUseTaskInput" rows="3" placeholder="e.g. Go to Hacker News, find the top 3 AI stories, extract their links and write a brief summary..." class="w-full bg-black/40 border border-gemini-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-gemini-blue resize-none"></textarea>
+        </div>
+
+        <button type="button" onclick="triggerWebBrowserUseTask()" class="w-full py-2.5 bg-gemini-blue hover:bg-gemini-blueHover text-slate-950 font-bold rounded-xl transition cursor-pointer shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+          <span>Execute Browser-Use Agent</span>
+        </button>
+        <div id="browserUseStatusFeedback" class="text-[11px] text-gemini-subtle font-mono pt-1"></div>
       </div>
     </div>
   </div>

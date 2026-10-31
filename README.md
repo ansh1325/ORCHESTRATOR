@@ -85,32 +85,57 @@ JarvisLlama (JARVIS) is structured on clean, decoupled distributed systems princ
 
 ```mermaid
 flowchart TD
-    User(["Master Ansh / Voice & CLI Directive"]) --> CentralBrain["Stage 0: JARVIS Central Brain<br/>Meta Llama 3.1 70B + Creator Memory"]
+    User(["Master Ansh / Voice and CLI Directive"]) --> CentralBrain["Stage 0: JARVIS Central Brain<br/>(Meta Llama 3.1 70B + Creator Memory)"]
     CentralBrain --> Route{"Autonomous Intent Router"}
     
-    Route -->|"Informational Query"| VoiceResp["Solo Voice Direct Response<br/>Native Audio Synthesis"]
-    Route -->|"Web Goal / Browser Action"| BrowserAgent["Autonomous Browser Agent<br/>Perception-Action Loop"]
-    Route -->|"Enterprise Building Vision"| Stage1["Stage 1: Intent Decomposition<br/>Tactical Swarm Scoping"]
-    Route -->|"Reverse Engineering Arrow"| TacticalQuiver["Tactical Quiver & REA Engine<br/>Proportional Heavy Force Protocol"]
+    Route -->|"Solo Voice / Query"| VoiceResp["Direct Voice and Audio Synthesis"]
+    Route -->|"Web Goal / Perception"| BrowserAgent["Autonomous Browser Agent<br/>(DOM Tagging and Interactive Actions)"]
+    Route -->|"Enterprise Mission"| Stage1["Stage 1: Intent Decomposition<br/>(Swarm Sizing and Topology)"]
+    Route -->|"Tactical Inspection"| TacticalQuiver["Tactical Quiver and Granular REA<br/>(Forensic String, Secret, and IPC Engine)"]
     
-    BrowserAgent -->|"DOM Perception"| DOMPerception["Dynamic DOM Perception Engine<br/>Numerical Tagging & Human Keystrokes"]
-    DOMPerception -->|"Physical Execution"| LiveBrowser["Desktop Browser Session<br/>Anti-Bot Evasion & Persistent Profile"]
+    BrowserAgent -->|"DOM Scanner"| DOMPerception["In-Browser JavaScript Tagging Engine<br/>(Numerical Tags #1, #2, Sub-Second Latency)"]
+    DOMPerception -->|"Physical Keystrokes"| LiveBrowser["Desktop Browser Session<br/>(Persistent Profile, Anti-Bot Bypass)"]
     
-    Stage1 --> Stage2["Stage 2: Knowledge Gathering Agent<br/>MCP Research & Domain Knowledge Base"]
-    Stage2 --> Stage3["Stage 3: DAG Engine & Worker Synthesis<br/>Dynamically Generates Meta Llama Worker Fleet"]
+    Stage1 --> Stage2["Stage 2: Knowledge Gathering Agent<br/>(MCP Domain Research and Dynamic RAG)"]
+    Stage2 --> Stage3["Stage 3: DAG Engine and Worker Fleet Synthesis<br/>(O(V+E) Kahn's Topological Sort)"]
     
     subgraph SwarmExecution ["Stage 4: Autonomous ReAct Swarm Execution"]
-        W1["System Architect"] --> W2["Backend & API Engineer"]
-        W2 --> W3["Security & IaC Engineer"]
+        direction TB
+        W1["System Architect"] --> W2["Backend and API Engineer"]
+        W2 --> W3["Security and IaC Engineer"]
         W4["Lead Harvester"] --> W5["Outreach Copywriter"]
     end
     
     Stage3 --> SwarmExecution
-    SwarmExecution -->|"Runtime Error Intercept"| SelfHeal["Closed-Loop Self-Healing & Recursive Sub-DAG<br/>Automated AST Traceback Patching"]
+    SwarmExecution -->|"Runtime Traceback Intercept"| SelfHeal["Closed-Loop Self-Healing and Recursive Sub-DAG<br/>(Automated AST Stack Analysis and Hot-Patching)"]
     SelfHeal --> SwarmExecution
     
-    SwarmExecution --> Stage5["Stage 5: Quality Gatekeeper<br/>50/50 Pytest Verification & Sandboxing"]
-    Stage5 --> WorkspaceOutput["Certified Deliverables Workspace<br/>Exportable to Downloads in 1-Click"]
+    SwarmExecution --> Stage5["Stage 5: Quality Gatekeeper<br/>(100% Pytest Verification and Sandboxing)"]
+    Stage5 --> WorkspaceOutput["Certified Deliverables Workspace<br/>(Exportable to ~/Downloads in 1-Click)"]
+```
+
+```text
+========================================================================================================
+                                 JARVIS MULTI-AGENT ARCHITECTURAL PIPELINE
+========================================================================================================
+[Master Directive] ──▶ [JARVIS Central Brain: Llama-3.1-70B]
+                              │
+         ┌────────────────────┼────────────────────┬────────────────────┐
+         ▼                    ▼                    ▼                    ▼
+ [Voice OS Engine]    [Browser Perception]  [Swarm Orchestration] [Tactical REA Quiver]
+ (Groq Whisper V3     (JS DOM Tagging #N    (Kahn's DAG Engine     (Secret & IPC Hunter
+  + Win Hardware)      + System Chrome/Edge) + 8B Worker Fleet)    + Binary Forensic)
+                              │                    │
+                              ▼                    ▼
+                     [Live Browser Run]   [Autonomous ReAct Execution]
+                                                   │
+                                                   ├─▶ [AST Self-Healing Loop]
+                                                   ▼
+                                          [Stage 5 Gatekeeper]
+                                          (50/50 Pytest Gated)
+                                                   ▼
+                                         [Production Workspace]
+========================================================================================================
 ```
 
 ### Core Subsystems:
@@ -231,6 +256,8 @@ JARVIS >
 | **Enterprise Missions** | `<any high-level prompt>` | Compiles an autonomous multi-agent swarm (Stages 1–5), writes code, tests, and certifies output |
 | | `outreach <niche> [hook]` | Generates omnichannel outreach sequences across LinkedIn, Email, and Communities |
 | | `transcript <url>` | Extracts clean transcript from YouTube/Instagram video URLs |
+| **Codebase Ingestion & Upgrades** | `audit <folder_or_file>` | Ingests and performs architectural, security, and test gap audit on any existing codebase |
+| | `improve <folder> [goals]` | Ingests entire existing production application into sandbox and deploys multi-agent swarm to refactor and test |
 | **Fleet & Systems** | `fleet [status|replies]` | Inspects 20-Account Fleet rotation, daily quota compliance, and inbound prospect replies |
 | | `systems / system build` | Self-Constructing Software Engine (builds and executes custom permanent micro-tools) |
 | **Tactical REA Tools** | `rea strings <file> [pattern]` | Surgical forensic string extraction from caches, binaries, or logs |

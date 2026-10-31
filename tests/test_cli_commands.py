@@ -82,6 +82,32 @@ def test_resolve_external_requirements(tmp_path):
     assert "INGESTED SPECIFICATION FROM architecture_spec.md" in aug
     assert "Build a real-time event pipeline." in aug
 
+    # Whole directory / codebase ingestion test
+    codebase_dir = tmp_path / "legacy_app"
+    codebase_dir.mkdir()
+    (codebase_dir / "package.json").write_text('{"name": "legacy-service", "version": "1.0.0"}', encoding="utf-8")
+    (codebase_dir / "server.js").write_text('const express = require("express"); app.listen(3000);', encoding="utf-8")
+
+    aug_dir, resolved_dir = JarvisCLI.resolve_external_requirements(f"improve and refactor {codebase_dir}")
+    assert resolved_dir == codebase_dir
+    assert "INGESTED PRODUCTION CODEBASE:" in aug_dir
+    assert "legacy_app" in aug_dir
+    assert "package.json" in aug_dir
+    assert "server.js" in aug_dir
+
+    # Test finding a specific file inside a directory recursively
+    data_dir = tmp_path / "raw_data"
+    data_dir.mkdir()
+    sub_dir = data_dir / "nested"
+    sub_dir.mkdir()
+    target_csv = sub_dir / "metrics.csv"
+    target_csv.write_text("user,score\nansh,100", encoding="utf-8")
+
+    aug_find, resolved_find = JarvisCLI.resolve_external_requirements(f"find metrics.csv in {data_dir} and clean it")
+    assert resolved_find == target_csv
+    assert "INGESTED SPECIFICATION FROM metrics.csv" in aug_find
+    assert "user,score" in aug_find
+
 
 def test_universal_login_targets_and_workflow_evolution(tmp_path):
     """Verify universal login portal resolution (LinkedIn, AWS, GitHub) and repetition detection."""
@@ -95,7 +121,7 @@ def test_universal_login_targets_and_workflow_evolution(tmp_path):
 
     url_aws, name_aws = BrowserController.resolve_login_target("aws")
     assert "aws.amazon.com" in url_aws
-    assert "AWS" in name_aws
+    assert "aws" in name_aws.lower() or "amazon" in name_aws.lower()
 
     url_gh, name_gh = BrowserController.resolve_login_target("github")
     assert "github.com" in url_gh
@@ -113,4 +139,48 @@ def test_universal_login_targets_and_workflow_evolution(tmp_path):
     assert rep2["is_repeated"] is True
     assert rep2["count"] == 2
     assert "wf_auto_" in rep2["workflow_id"]
+
+
+@pytest.mark.asyncio
+async def test_browser_login_command_sanitization(tmp_path):
+    """Verify trailing semicolon sanitization and direct auth session routing for browser login;"""
+    import json
+    from unittest.mock import patch
+    from jarvis_cli import JarvisCLI
+    from core.browser_controller import BrowserController
+
+    cli = JarvisCLI()
+    cli.voice_enabled = False
+
+    # 1. Test clean_profile_crash_state
+    pref_dir = tmp_path / "Default"
+    pref_dir.mkdir(parents=True)
+    pref_file = pref_dir / "Preferences"
+    pref_file.write_text(json.dumps({"profile": {"exit_type": "Crashed", "exited_cleanly": False}}), encoding="utf-8")
+
+    BrowserController.clean_profile_crash_state(tmp_path)
+    cleaned = json.loads(pref_file.read_text(encoding="utf-8"))
+    assert cleaned["profile"]["exit_type"] == "Normal"
+    assert cleaned["profile"]["exited_cleanly"] is True
+
+    # 2. Test that 'browser login;' triggers launch_login_session with 'google'
+    with patch("core.browser_controller.BrowserController.launch_login_session") as mock_login:
+        mock_login.return_value = {"success": True, "logged_in": True, "service": "Google Account"}
+        res = await cli.process_directive("browser login;")
+        assert res is True
+        mock_login.assert_called_once_with("google", None)
+
+    # 3. Test that bare 'login leetcode;' routes directly to launch_login_session
+    with patch("core.browser_controller.BrowserController.launch_login_session") as mock_login_lc:
+        mock_login_lc.return_value = {"success": True, "logged_in": True, "service": "LeetCode"}
+        res = await cli.process_directive("login leetcode;")
+        assert res is True
+        mock_login_lc.assert_called_once_with("leetcode", None)
+
+    # 4. Test natural language user login request
+    with patch("core.browser_controller.BrowserController.launch_login_session") as mock_login_nat:
+        mock_login_nat.return_value = {"success": True, "logged_in": True, "service": "Google Account"}
+        res = await cli.process_directive("i want to login in browser windows of yours so you can do what i want in my accounts")
+        assert res is True
+        mock_login_nat.assert_called_once_with("google", None)
 

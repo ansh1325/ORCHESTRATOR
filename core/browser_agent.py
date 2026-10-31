@@ -1822,39 +1822,78 @@ class BrowserAgent:
     @classmethod
     def get_leetcode_active_language(cls, page: Any) -> str:
         """
-        Dynamically detects active Monaco language on LeetCode.
-        Uses Monaco's native getLanguageId() as 100% ground truth,
-        falling back to the editor header dropdown button.
+        Dynamically detects active programming language on LeetCode.
+        Combines 3 layers of perception:
+        1. Live DOM Toolbar Button: Reads the exact text of the language dropdown button (e.g. 'C++', 'Python3', 'Java').
+        2. Monaco Editor Active Model Ground Truth: Checks active editor's getModel().getLanguageId().
+        3. Code Stub Syntax Analysis: Inspects the method starter code inside the editor for definitive syntax markers.
         """
         try:
-            current = page.evaluate("""() => {
-                // 1. Monaco Editor Native Model Ground Truth
-                if (window.monaco && monaco.editor && monaco.editor.getModels().length > 0) {
-                    const langId = (monaco.editor.getModels()[0].getLanguageId() || "").toLowerCase();
-                    const map = {
-                        "cpp": "C++",
-                        "c": "C",
-                        "python": "Python3",
-                        "java": "Java",
-                        "rust": "Rust",
-                        "go": "Go",
-                        "typescript": "TypeScript",
-                        "javascript": "JavaScript",
-                        "csharp": "C#"
-                    };
-                    if (map[langId]) return map[langId];
+            detected = page.evaluate("""() => {
+                const KNOWN_LANGS = [
+                    "C++", "Python3", "Python", "Java", "C", "C#", "JavaScript", "TypeScript",
+                    "PHP", "Swift", "Kotlin", "Dart", "Go", "Ruby", "Scala", "Rust", "Racket", "Erlang", "Elixir"
+                ];
+                const langMap = {
+                    "cpp": "C++", "c": "C", "python": "Python3", "python3": "Python3",
+                    "java": "Java", "rust": "Rust", "go": "Go", "typescript": "TypeScript",
+                    "javascript": "JavaScript", "csharp": "C#", "c#": "C#"
+                };
+
+                // Layer 1: Check the visible language button in the editor header toolbar
+                const buttons = Array.from(document.querySelectorAll("button, [role='button']"));
+                for (const btn of buttons) {
+                    if (!btn.offsetParent && btn.offsetWidth === 0) continue;
+                    const raw = (btn.innerText || "").trim().split('\\n')[0].trim();
+                    for (const kl of KNOWN_LANGS) {
+                        if (raw === kl || raw.startsWith(kl + " ") || raw.startsWith(kl + "\\n") || raw === kl + "v" || raw === kl + " v") {
+                            return kl === "Python" ? "Python3" : kl;
+                        }
+                    }
                 }
 
-                // 2. Editor Header Language Button (Directly above the editor lines)
-                const editorContainer = document.querySelector(".monaco-editor, [data-track-load='code_editor']")?.closest("div.relative") || document;
-                const headerBtn = editorContainer.querySelector("button[id*='headlessui-listbox-button'], [data-cy='lang-select']");
-                if (headerBtn) {
-                    const raw = (headerBtn.innerText || "").trim().split('\\n')[0];
-                    if (raw) return raw;
+                // Layer 2: Monaco Editor Active Editor Ground Truth
+                if (window.monaco && monaco.editor) {
+                    const editors = monaco.editor.getEditors ? monaco.editor.getEditors() : [];
+                    for (const ed of editors) {
+                        const m = ed.getModel();
+                        if (m) {
+                            const lid = (m.getLanguageId() || "").toLowerCase();
+                            if (langMap[lid]) return langMap[lid];
+                        }
+                    }
+                    const models = monaco.editor.getModels ? monaco.editor.getModels() : [];
+                    for (const m of models) {
+                        const lid = (m.getLanguageId() || "").toLowerCase();
+                        if (langMap[lid]) return langMap[lid];
+                    }
                 }
+
+                // Layer 3: Starter Stub Syntax Analysis
+                let stub = "";
+                if (window.monaco && monaco.editor) {
+                    const editors = monaco.editor.getEditors ? monaco.editor.getEditors() : [];
+                    if (editors.length > 0 && editors[0].getModel()) {
+                        stub = editors[0].getModel().getValue();
+                    } else if (monaco.editor.getModels && monaco.editor.getModels().length > 0) {
+                        stub = monaco.editor.getModels()[0].getValue();
+                    }
+                }
+                if (!stub) {
+                    const linesEl = document.querySelector(".monaco-editor .view-lines");
+                    if (linesEl) stub = linesEl.innerText || "";
+                }
+                if (stub) {
+                    if (stub.includes("vector<") || stub.includes("class Solution {") || stub.includes("public:")) return "C++";
+                    if (stub.includes("def ") || stub.includes("class Solution:") || stub.includes("->")) return "Python3";
+                    if (stub.includes("public class Solution") || stub.includes("public int ")) return "Java";
+                    if (stub.includes("impl Solution") || stub.includes("pub fn ")) return "Rust";
+                    if (stub.includes("func ") && stub.includes(")")) return "Go";
+                }
+
                 return "";
             }""")
-            return str(current) if current else "C++"
+            return str(detected) if detected else "C++"
         except Exception:
             return "C++"
 
@@ -1865,7 +1904,7 @@ class BrowserAgent:
         Guarantees that synthesized code language strictly matches the Monaco editor language.
         """
         try:
-            # 1. Detect current language via Monaco Model ground truth
+            # 1. Detect current language via Monaco Model & Toolbar ground truth
             cur_lang = cls.get_leetcode_active_language(page)
             target_norm = "Python3" if target_lang.lower() in ["python", "python3"] else target_lang
             if cur_lang.lower() == target_norm.lower() or (cur_lang.lower() == "python" and target_norm.lower() == "python3"):
@@ -1874,11 +1913,12 @@ class BrowserAgent:
             # 2. Click the language dropdown button in the editor header
             lang_btn = None
             if cur_lang:
-                cand = page.locator(f"button:has-text('{cur_lang}')").first
-                if cand.is_visible(timeout=2000):
-                    lang_btn = cand
+                for cand in page.locator(f"button:has-text('{cur_lang}')").all():
+                    if cand.is_visible():
+                        lang_btn = cand
+                        break
 
-            if not lang_btn or not lang_btn.is_visible():
+            if not lang_btn:
                 for sel in [
                     "button[id*='headlessui-listbox-button']",
                     "[data-cy='lang-select']",
@@ -1886,25 +1926,26 @@ class BrowserAgent:
                     "div.relative button:has(svg)"
                 ]:
                     cand = page.locator(sel).first
-                    if cand.is_visible(timeout=1500):
+                    if cand.is_visible(timeout=1200):
                         lang_btn = cand
                         break
 
             if lang_btn and lang_btn.is_visible():
                 lang_btn.click()
-                time.sleep(0.6)
+                time.sleep(0.8)
 
                 # 3. Select target language from popover options
                 for opt_sel in [
                     f"div[role='option']:has-text('{target_norm}')",
                     f"li:has-text('{target_norm}')",
                     f"[role='listbox'] :has-text('{target_norm}')",
+                    f"button:has-text('{target_norm}')",
                     f"text='{target_norm}'"
                 ]:
                     opt = page.locator(opt_sel).first
-                    if opt.is_visible(timeout=2000):
+                    if opt.is_visible(timeout=1800):
                         opt.click()
-                        time.sleep(1.2)
+                        time.sleep(1.5)
                         # Verify Monaco model updated
                         new_lang = cls.get_leetcode_active_language(page)
                         return new_lang.lower() in [target_norm.lower(), "python" if target_norm.lower() == "python3" else ""]
@@ -2059,8 +2100,14 @@ class BrowserAgent:
             starter_stub = ""
             try:
                 starter_stub = page.evaluate("""() => {
-                    if (window.monaco && monaco.editor && monaco.editor.getModels().length > 0) {
-                        return monaco.editor.getModels()[0].getValue();
+                    if (window.monaco && monaco.editor) {
+                        const editors = monaco.editor.getEditors ? monaco.editor.getEditors() : [];
+                        if (editors.length > 0 && editors[0].getModel()) {
+                            return editors[0].getModel().getValue();
+                        }
+                        if (monaco.editor.getModels && monaco.editor.getModels().length > 0) {
+                            return monaco.editor.getModels()[0].getValue();
+                        }
                     }
                     return "";
                 }""")
@@ -2081,13 +2128,14 @@ class BrowserAgent:
                             {
                                 "role": "system",
                                 "content": (
-                                    f"You are a competitive programming world finalist. Write an optimal, bug-free {target_lang} "
-                                    f"class Solution for this problem adhering strictly to the starter stub method signature.\n"
-                                    f"RULES:\n"
-                                    f"1. Return ONLY the code inside ```{code_tag} ``` or ``` ``` blocks.\n"
-                                    f"2. Output ONLY clean, production-grade, compilable {target_lang} code.\n"
-                                    f"3. Absolutely NO scratchpads, NO thinking steps, NO inner monologue comments (e.g. 'Let\\'s think about this'), and NO conversational text.\n"
-                                    f"4. The code must be 100% self-contained and immediately pass all LeetCode test cases."
+                                    f"You are a competitive programming world finalist.\n"
+                                    f"Write an optimal, bug-free, production-grade {target_lang} class Solution for this problem.\n"
+                                    f"CRITICAL REQUIREMENTS:\n"
+                                    f"1. You must strictly write the solution in {target_lang} and adhere 100% to the starter stub method signature.\n"
+                                    f"2. Return ONLY the code inside ```{code_tag} ``` or ``` ``` blocks.\n"
+                                    f"3. Output ONLY clean, production-grade, compilable {target_lang} code.\n"
+                                    f"4. Absolutely ZERO comments, ZERO thinking steps, ZERO scratchpads (e.g. no '# Let\\'s think...', no '// Let\\'s think...'), and NO conversational text.\n"
+                                    f"5. The code must be 100% self-contained and immediately pass all LeetCode test cases."
                                 )
                             },
                             {"role": "user", "content": prompt_user}
@@ -2101,10 +2149,11 @@ class BrowserAgent:
                     else:
                         code_to_inject = raw_ans.strip()
 
-                    # Strip any lingering scratchpad thought lines
+                    # Strip any lingering scratchpad thought or reflection lines
                     cleaned_lines = []
                     for line in code_to_inject.splitlines():
-                        if re.search(r'^\s*(?:#|//)\s*(?:let\'?s\s+think|thinking\s+process|scratchpad|let\s+me\s+consider)', line, re.I):
+                        stripped = line.strip()
+                        if re.match(r'^(?:#|//|\*)\s*(?:let\'?s|we\s+need|thinking|scratchpad|consider|approach|note\s+that|step\s+\d|state\s+as|robot\s+moves|the\s+robot|we\s+can|suppose)', stripped, re.I):
                             continue
                         cleaned_lines.append(line)
                     code_to_inject = "\n".join(cleaned_lines).strip()
@@ -2118,9 +2167,16 @@ class BrowserAgent:
         try:
             # Approach A: Monaco JavaScript Model Injection (cleanest & replaces entire stub)
             injected = page.evaluate("""(code) => {
-                if (window.monaco && monaco.editor && monaco.editor.getModels().length > 0) {
-                    monaco.editor.getModels()[0].setValue(code);
-                    return true;
+                if (window.monaco && monaco.editor) {
+                    const editors = monaco.editor.getEditors ? monaco.editor.getEditors() : [];
+                    if (editors.length > 0 && editors[0].getModel()) {
+                        editors[0].getModel().setValue(code);
+                        return true;
+                    }
+                    if (monaco.editor.getModels && monaco.editor.getModels().length > 0) {
+                        monaco.editor.getModels()[0].setValue(code);
+                        return true;
+                    }
                 }
                 return false;
             }""", code_to_inject)

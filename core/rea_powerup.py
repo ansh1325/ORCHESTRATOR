@@ -326,6 +326,42 @@ class {system_name.replace(" ", "")}Client:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    @classmethod
+    def invoke_external_rea(cls, command: str, args: list[str]) -> dict[str, Any]:
+        """
+        External REA Toolchain Bridge:
+        Invokes the official '@morluto/rea' npm/CLI toolchain (Hopper, Ghidra, JADX)
+        via npx or local binary when deep native decompilation is required.
+        """
+        import shutil
+        import subprocess
+
+        rea_bin = shutil.which("rea") or shutil.which("rea.cmd")
+        npx_bin = shutil.which("npx.cmd") or shutil.which("npx")
+
+        cmd: list[str] = []
+        if rea_bin:
+            cmd = [rea_bin, command] + args
+        elif npx_bin:
+            cmd = [npx_bin, "-y", "@morluto/rea", command] + args
+        else:
+            return {
+                "success": False,
+                "error": "Neither 'rea' CLI nor 'npx' was found on PATH. Falling back to native REA engine."
+            }
+
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
+            return {
+                "success": res.returncode == 0,
+                "command": " ".join(cmd),
+                "stdout": res.stdout.strip(),
+                "stderr": res.stderr.strip(),
+                "exit_code": res.returncode
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
 
 # Global Singleton Instance
 rea_engine = ReverseEngineerAnythingEngine()

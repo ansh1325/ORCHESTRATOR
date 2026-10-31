@@ -1,5 +1,44 @@
 [
   {
+    "session_id": "sched_run_c87958db",
+    "title": "Daily 6AM Test Run",
+    "prompt": "Test prompt",
+    "folder": "Engineering",
+    "is_pinned": false,
+    "status": "completed",
+    "created_at": "2026-10-31T23:08:22.759013+00:00",
+    "artifacts": [
+      "architecture_prd.md",
+      "autonomous_system.db",
+      "browser_automator.py",
+      "continuous_daemon.py",
+      "core_engine.py",
+      "data_connector.py",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "README.md",
+      "recovered_comprehensive_pytest_qa_&_unit.py",
+      "storage_manager.py",
+      "test_autonomous_system.py",
+      "test_run.db"
+    ],
+    "deliverables": [
+      "architecture_prd.md",
+      "autonomous_system.db",
+      "browser_automator.py",
+      "continuous_daemon.py",
+      "core_engine.py",
+      "data_connector.py",
+      "evaluator_report.json",
+      "knowledge_base.json",
+      "README.md",
+      "recovered_comprehensive_pytest_qa_&_unit.py",
+      "storage_manager.py",
+      "test_autonomous_system.py",
+      "test_run.db"
+    ]
+  },
+  {
     "session_id": "sched_run_256fc43c",
     "title": "Daily 6AM Test Run",
     "prompt": "Test prompt",

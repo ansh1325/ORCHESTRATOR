@@ -1001,6 +1001,20 @@ class JarvisCLI:
             else:
                 print(f"{C.RED}✖ Error: {res.get('error')}{C.RESET}")
 
+        elif sub in ["run", "external", "official"]:
+            if len(parts) < 3:
+                print(f"{C.RED}Usage: rea run <command> [args...]{C.RESET}")
+                return
+            ext_cmd = parts[2]
+            ext_args = parts[3:]
+            print(f"\n{C.CYAN}[REA Official Toolchain]{C.RESET} Invoking @morluto/rea: {C.YELLOW}{ext_cmd} {' '.join(ext_args)}{C.RESET}")
+            res = rea_engine.invoke_external_rea(ext_cmd, ext_args)
+            if res.get("success"):
+                print(f"{C.GREEN}✓ REA Command Output:{C.RESET}")
+                print(res.get("stdout"))
+            else:
+                print(f"{C.RED}✖ Error ({res.get('exit_code')}):{C.RESET} {res.get('stderr') or res.get('error')}")
+
     async def handle_audit_cmd(self, target_str: str):
         target_path = Path(os.path.expanduser(target_str.strip().strip("'\"")))
         if not target_path.exists():

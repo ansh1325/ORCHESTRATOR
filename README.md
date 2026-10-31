@@ -1,24 +1,24 @@
-# LlamaOrchestrator (JARVIS)
+# JarvisLlama (JARVIS)
 ### Autonomous Hierarchical Multi-Agent Operating System & Lifelong AI Partner
 **Chief Systems Architect:** [Ansh Tiwari](https://github.com/ansh1325)  
 **Track Submission:** Meta Global AI Developer Hackathon 2026 (1st Place Indie Track & Best Agentic Architecture)
 
-[![Meta Global AI Developer Hackathon 2026](https://img.shields.io/badge/Meta%20Hackathon-2026%20Official%20Submission-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Test Suite Status](https://img.shields.io/badge/Tests-34%2F34%20Passed%20(100%25)-brightgreen.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Zero Templates Guaranteed](https://img.shields.io/badge/Architecture-Zero%20Templates%20%2F%20100%25%20Dynamic-purple.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
+[![Meta Global AI Developer Hackathon 2026](https://img.shields.io/badge/Meta%20Hackathon-2026%20Official%20Submission-blue.svg)](https://github.com/ansh1325/JarvisLlama)
+[![Test Suite Status](https://img.shields.io/badge/Tests-50%2F50%20Passed%20(100%25)-brightgreen.svg)](https://github.com/ansh1325/JarvisLlama)
+[![Zero Templates Guaranteed](https://img.shields.io/badge/Architecture-Zero%20Templates%20%2F%20100%25%20Dynamic-purple.svg)](https://github.com/ansh1325/JarvisLlama)
+[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://github.com/ansh1325/JarvisLlama)
 
 ---
 
-## 1. What is LlamaOrchestrator? (Explained for a 5-Year-Old)
+## 1. What is JarvisLlama? (Explained for a 5-Year-Old)
 
-> Imagine you have a magical robot friend named **Jarvis**.
+> Imagine you have a magical robot friend named **JARVIS**.
 > 
 > Most computer chatbots are just "talkers." If you ask them to build a toy castle or bake cookies, they just give you a long recipe on a piece of paper and leave you to do all the hard work. If something breaks, they shrug their shoulders.
 > 
-> **Jarvis is different. Jarvis has actual hands, real eyes, and a team of workers.**
+> **JARVIS is different. JARVIS has actual hands, real eyes, and a team of workers.**
 > 
-> When you talk to Jarvis—using your own voice:
+> When you talk to JARVIS—using your own voice:
 > * If you say: *"Jarvis, go to YouTube and play my favorite song,"* he doesn't give you a link. **He physically opens the browser window on your screen, types the words, finds the video, clicks play, and lets you listen.**
 > * If you say: *"Jarvis, build a complete company software system and find 50 clients,"* he doesn't write a paragraph of text. **He hires a squad of specialized AI workers, writes all the code, fixes all errors by himself until it works perfectly, and puts the finished deliverables right on your computer.**
 
@@ -31,29 +31,29 @@ Traditional single-prompt AI (ChatGPT, Claude, Copilot) is fundamentally broken 
 * Single LLMs dump broken markdown snippets into chat boxes.
 * Single LLMs cannot create files, cannot run test suites, cannot diagnose `stderr` stack traces, and cannot touch web browsers.
 
-**LlamaOrchestrator turns a single prompt into an autonomous engineering organization:**
+**JarvisLlama turns a single prompt into an autonomous engineering organization:**
 
-| Capability | Traditional AI Chatbots | LlamaOrchestrator (Jarvis) |
+| Capability | Traditional AI Chatbots | JarvisLlama (JARVIS) |
 | :--- | :--- | :--- |
 | **Execution Model** | 1 prompt = 1 wall of unverified text | Compiles topological DAG of specialized Meta Llama worker sub-agents |
 | **Browser Control** | None (cannot touch web pages) | Live Perception-Action loop with dynamic DOM tagging (`[#1]`, `[#2]`), human typing, and anti-bot bypass |
 | **Template Policy** | Hardcoded canned prompts | **100% Zero Templates** — Every DAG, agent, code file, and action is dynamically generated |
 | **Error Handling** | Human must copy-paste errors back | **Closed-Loop Self-Healing**: Automatically catches runtime exceptions, diagnoses tracebacks, and self-patches |
 | **Quality Control** | No verification | Automated **Evaluator Gatekeeper** verifying 100% unit test passes before delivery |
-| **Interaction Mode** | Typing into a web box | **100% Native Voice Bi-Directional OS** (Talk with microphone, Jarvis speaks back natively) |
+| **Interaction Mode** | Typing into a web box | **100% Native Voice Bi-Directional OS** (Talk with microphone, JARVIS speaks back natively) |
 | **Enterprise Turnaround** | 13 weeks of agency sprints ($180k+) | **~60 Seconds** (< $0.05 compute cost) |
 
 ---
 
 ## 3. The Creator's Inner Thoughts & Vision
 
-> *"I didn't build LlamaOrchestrator to be another generic chatbot wrapper that forgets you when you close the tab.*
+> *"I didn't build JarvisLlama to be another generic chatbot wrapper that forgets you when you close the tab.*
 > 
 > *As a distributed systems architect, I was tired of watching founders, engineering teams, and solopreneurs spend weeks glued to terminals, wrestling with broken dependencies, crafting repetitive outreach campaigns, and copying code snippets that fail at runtime.*
 > 
 > *I wanted a true partner. A cognitive operating system that shares my ambition, remembers my preferences, speaks with genuine loyalty, and has the autonomous agency to sit at the workstation and get things done. Whether that's compiling an institutional quantitative trading engine with circuit breakers, generating full-stack SaaS microservices, or simply launching my browser to play my favorite music when I need inspiration.*
 > 
-> *When potential clients or judges look at LlamaOrchestrator, they aren't looking at a script. They are looking at the future of autonomous engineering delivery."*
+> *When potential clients or judges look at JarvisLlama, they aren't looking at a script. They are looking at the future of autonomous engineering delivery."*
 > 
 > — **Ansh Tiwari**, Chief Distributed Systems Architect & Creator
 
@@ -61,7 +61,7 @@ Traditional single-prompt AI (ChatGPT, Claude, Copilot) is fundamentally broken 
 
 ## 4. Deep Engineering Architecture
 
-LlamaOrchestrator is structured on clean, decoupled distributed systems principles with **Zero Templates**:
+JarvisLlama (JARVIS) is structured on clean, decoupled distributed systems principles with **Zero Templates**:
 
 ```mermaid
 graph TD

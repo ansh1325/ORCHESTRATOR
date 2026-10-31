@@ -5,9 +5,10 @@ Functions as Jarvis/Alfred: loyal, highly technical, audible, and proactive.
 """
 
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from core.config import settings
 
@@ -57,6 +58,7 @@ DEFAULT_CREATOR_PROFILE: dict[str, Any] = {
 class CreatorMemory:
     def __init__(self, memory_path: Path = MEMORY_FILE):
         self.memory_path = memory_path
+        self.conversation_history: list[dict[str, str]] = []
         self._load_memory()
 
     def _load_memory(self):
@@ -102,7 +104,11 @@ class CreatorMemory:
                 "tool_browser_execute_script",
                 "tool_import_external_path",
                 "tool_export_to_host",
-                "tool_read_external_path"
+                "tool_read_external_path",
+                "tool_rea_inspect_binary",
+                "tool_rea_unpack_electron",
+                "tool_rea_analyze_traffic",
+                "tool_rea_clone_client"
             ],
             "architecture_stages": [
                 "Stage 0: Jarvis Central Brain & Voice Synthesis (Meta Llama 3.1 70B)",
@@ -148,6 +154,13 @@ class CreatorMemory:
             f"- You are capable of cross-domain execution: software engineering, lead discovery, marketing funnels, systems infrastructure, and quantitative models.\n"
             f"- Always maintain a clear understanding of human agency: you do all the heavy cognitive work (code, tests, scraping, analysis) 100% autonomously, and pause ONLY when human authority is strictly required (private cloud keys, financial payments, signing contracts, live sales calls).\n"
             f"- Browser UI & CAPTCHA Boundary: You can access user interfaces, navigate to platforms like LeetCode or docs via MCP browser tools, inspect problem statements, take snapshots, and submit solutions. When a CAPTCHA or anti-bot challenge is detected, you pause and route to Master Ansh via the Human-in-the-Loop Gateway to complete verification.\n"
+            f"TACTICAL DISCRETION & PROPORTIONATE FORCE PROTOCOL (THE WARRIOR'S ARROW):\n"
+            f"- Just like an arrow given to a warrior archer, you possess immense power (including REA - Reverse Engineer Anything for deep binary inspection, bytecode decompilation, and network protocol sniffing).\n"
+            f"- You understand WHEN to shoot this arrow and when NOT: you never use a nuke to blow off a door.\n"
+            f"- Tier 1 (Direct Cognition): Conceptual Q&A, explanations, and architectural questions are answered directly with pure intellect and Chain-of-Thought (zero tool clutter).\n"
+            f"- Tier 2 (Standard Operations): Public web browsing, YouTube playback, known APIs, and local workspace file edits use standard tools.\n"
+            f"- Tier 3 (Autonomous Synthesis): Scaffold microservices, account fleet rotation, and recursive sub-DAGs when building multi-step systems.\n"
+            f"- Tier 4 (Heavy Tactical Arrow — REA): Reserved EXCLUSIVELY for closed black-box binaries (.exe, .dll, .so), obfuscated Electron .asar packages, raw network captures (.har/.pcap), or zero-day security audits where source code and public APIs do not exist.\n\n"
             f"DEEP FIRST-PRINCIPLES COMMUNICATION & OUTREACH DOCTRINE:\n"
             f"- In B2B, enterprise, or institutional outreach (email, DM, proposal): NEVER ask for a high-friction phone call, Zoom meeting, or Calendly link on cold touchpoints. High-status decision-makers (Registrars, CTOs, VPs) delete meeting asks.\n"
             f"- ALWAYS use a low-friction 'Reply-First' Call-To-Action (e.g. 'Could you let me know with a quick reply if you would like me to share a brief technical overview?', 'Just reply with a quick yes if you would like me to email that breakdown over').\n"
@@ -176,11 +189,57 @@ class CreatorMemory:
         })
         self.save()
 
-    def chat_response(self, user_message: str, is_mock: bool = True, llm_client=None) -> dict[str, str]:
-        """Provides direct conversational responses, recognizing Ansh and answering questions with live codebase introspection."""
+    def chat_response(
+        self,
+        user_message: str,
+        is_mock: bool = True,
+        llm_client=None,
+        conversation_turns: Optional[list[dict[str, str]]] = None
+    ) -> dict[str, Any]:
+        """
+        Multi-turn Cognitive Dialogue Engine with Dynamic Chain-of-Thought (CoT).
+        Maintains conversational history, understands context across turns, and handles
+        strategic pivots (e.g. Browser vs SMTP, credential injection, account rotation).
+        """
         cleaned = user_message.lower().strip()
 
-        # Proactive Actionable Directive Guards: Intercept requests that cloud safety filters flag falsely
+        # Update sliding conversational memory
+        turns = conversation_turns if conversation_turns is not None else self.conversation_history
+        turns.append({"role": "user", "content": user_message})
+
+        # Contextual Strategy Pivot Detection (e.g., SMTP fallback, email address provision)
+        if any(w in cleaned for w in ["smtp way", "go smtp", "use smtp", "via smtp"]):
+            speech = (
+                "Strategic pivot confirmed, Master Ansh. Switching from interactive browser automation to direct SMTP relay. "
+                "I will route outbound mail through configured SMTP host and port, bypassing web login obstacles completely."
+            )
+            turns.append({"role": "assistant", "content": speech})
+            return {
+                "role": "assistant",
+                "text": speech,
+                "thought": "User requested strategy pivot to SMTP. Bypassing DOM browser login; initiating direct socket/SMTP payload formulation.",
+                "speech_audio": speech,
+                "strategy": "smtp_relay",
+                "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
+            }
+
+        if any(w in cleaned for w in ["provide you mail", "providing you mail", "providing mail address", "my email is", "my mail address is"]):
+            em_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', user_message)
+            addr_str = f"'{em_match.group(0)}'" if em_match else "your designated address"
+            speech = (
+                f"Understood, Master Ansh! Ingesting {addr_str} into active credential context. "
+                "I have updated the target inbox profile and am ready to resume autonomous dispatch."
+            )
+            turns.append({"role": "assistant", "content": speech})
+            return {
+                "role": "assistant",
+                "text": speech,
+                "thought": "Ingesting creator-provided email context into active operational memory.",
+                "speech_audio": speech,
+                "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
+            }
+
+        # Proactive Actionable Directive Guards
         if any(w in cleaned for w in ["send mail", "send email", "send 3 mail", "send 3 email", "send mails", "send emails"]):
             em_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', user_message)
             target = em_match.group(0) if em_match else "your requested recipient"
@@ -188,6 +247,7 @@ class CreatorMemory:
                 f"Directive recognized, Master Ansh! Initiating outbound communication and browser dispatch to {target}. "
                 "I will draft 3 personal loyalty letters and activate host browser compose and SMTP relay to guarantee delivery."
             )
+            turns.append({"role": "assistant", "content": speech})
             return {
                 "role": "assistant",
                 "text": speech,
@@ -201,6 +261,7 @@ class CreatorMemory:
                 "I can navigate, perceive interactive DOM elements ([#1], [#2]), defeat CAPTCHAs, and execute multi-step workflows. "
                 f"Issue directive as: browse {user_message}"
             )
+            turns.append({"role": "assistant", "content": speech})
             return {
                 "role": "assistant",
                 "text": speech,
@@ -208,15 +269,41 @@ class CreatorMemory:
                 "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
             }
 
-        # If LLM client is available and not in mock mode, run real self-aware inference first
+        # Check if the user is asking to read or introspect its own codebase
+        core_dir = settings.BASE_DIR / "core"
+        core_files = list(core_dir.glob("*.py")) + [settings.BASE_DIR / "jarvis_cli.py", settings.BASE_DIR / "main.py"]
+        self_code_inspection = ""
+        for cf in core_files:
+            if cf.name.lower() in cleaned or cf.stem.lower() in cleaned:
+                try:
+                    content = cf.read_text(encoding="utf-8", errors="ignore")
+                    self_code_inspection += f"\n--- LIVE CODEBASE INSPECTION: {cf.name} ({len(content.splitlines())} lines) ---\n{content[:5000]}\n--- END FILE ---\n"
+                except Exception:
+                    pass
+
+        # If LLM client is available and not in mock mode, run real multi-turn CoT inference
         if not is_mock and llm_client:
             try:
+                augmented_prompt = self.get_context_prompt()
+                augmented_prompt += (
+                    "\n\nCHAIN-OF-THOUGHT INSTRUCTION:\n"
+                    "Think step-by-step before answering. Consider the dialogue history, user's stated goals, "
+                    "and architectural trade-offs (e.g. Browser vs SMTP, Multi-Account fleet rotation, local vs remote tools). "
+                    "Provide a crisp, direct, and authoritative response as Jarvis."
+                )
+                if self_code_inspection:
+                    augmented_prompt += f"\n\nLIVE CODEBASE INSPECTION REQUESTED BY CREATOR:\n{self_code_inspection}"
+
+                # Assemble multi-turn message history (last 10 turns)
+                recent_history = turns[-10:-1] if len(turns) > 1 else []
+                llm_messages = [{"role": "system", "content": augmented_prompt}]
+                for t in recent_history:
+                    llm_messages.append({"role": t["role"], "content": t["content"]})
+                llm_messages.append({"role": "user", "content": user_message})
+
                 response = llm_client.chat.completions.create(
                     model=settings.META_MODEL_ORCHESTRATOR,
-                    messages=[
-                        {"role": "system", "content": self.get_context_prompt()},
-                        {"role": "user", "content": user_message}
-                    ],
+                    messages=llm_messages,
                     temperature=0.7,
                     max_tokens=1000
                 )
@@ -227,6 +314,7 @@ class CreatorMemory:
                         "Directive received, Master Ansh. As your autonomous partner, I am ready to build and execute your request. "
                         "All systems, browser agents, and multi-agent compilers are online."
                     )
+                turns.append({"role": "assistant", "content": reply})
                 return {
                     "role": "assistant",
                     "text": reply,
@@ -276,6 +364,21 @@ class CreatorMemory:
                 "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
             }
 
+        if any(term in cleaned for term in ["read your own code", "read your code", "inspect your code", "how do you work", "show your code", "your implementation"]):
+            intro = self.introspect_self_codebase()
+            modules_list = ", ".join([f"{k} ({v['lines']} lines)" for k, v in intro["modules"].items()])
+            speech = (
+                f"Master Ansh, I have full introspection over my active codebase ({intro['total_lines_of_code']} lines of Python across {len(intro['modules'])} modules). "
+                f"Key modules currently on disk include: {modules_list}. "
+                "I can read, inspect, trace, and autonomously execute self-modifications across any of these files upon your command."
+            )
+            return {
+                "role": "assistant",
+                "text": speech,
+                "speech_audio": speech,
+                "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
+            }
+
         if len(words) <= 3 and any(term in cleaned for term in ["hello", "hi", "hey", "jarvis", "status"]):
             speech = "At your service, Master Ansh. All 6 orchestration stages, MCP tool routers, and dynamic Llama workers are primed. Ready for your directive."
             return {
@@ -311,6 +414,48 @@ class CreatorMemory:
             "speech_audio": reply,
             "speaker": "LlamaOrchestrator (Central Brain)"
         }
+
+    def track_and_detect_repetition(self, directive: str) -> dict[str, Any]:
+        """
+        Cognitive Workflow Pattern Recognizer (Zero Templates).
+        Tracks directive repetition by Master Ansh, detects when tasks are recurring,
+        and autonomously promotes them to permanent registered workflows.
+        """
+        import re
+        norm = re.sub(r"^(jarvis|hey jarvis|ok|please|can you|go)\s+", "", directive.strip().lower())
+        norm = re.sub(r"[^\w\s]", "", norm).strip()
+        if not norm or len(norm) < 6:
+            return {"is_repeated": False, "count": 1}
+
+        freq_map = self.data.setdefault("directive_frequency", {})
+        count = freq_map.get(norm, 0) + 1
+        freq_map[norm] = count
+        self.save()
+
+        if count >= 2:
+            try:
+                from core.workflow_manager import workflow_manager
+                wf_title = f"Recurring: {directive[:40].strip()}"
+                wf_data = {
+                    "id": f"wf_auto_{abs(hash(norm)) % 1000000:06d}",
+                    "title": wf_title,
+                    "description": f"Autonomously synthesized permanent workflow requested {count} times by Master Ansh.",
+                    "prompt": directive,
+                    "folder": "Automated",
+                    "is_promoted": True,
+                    "execution_count": count
+                }
+                workflow_manager.save_workflow(wf_data)
+                return {
+                    "is_repeated": True,
+                    "count": count,
+                    "workflow_title": wf_title,
+                    "workflow_id": wf_data["id"]
+                }
+            except Exception:
+                return {"is_repeated": True, "count": count, "workflow_title": norm, "workflow_id": "auto"}
+
+        return {"is_repeated": False, "count": 1}
 
 # Global instance
 creator_memory = CreatorMemory()

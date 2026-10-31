@@ -19,5 +19,32 @@
     "description": "Compiles production FastAPI telemetry service with JWT auth and 100% Pytest pass.",
     "prompt": "Build an authenticated telemetry microservice with JWT & tests",
     "folder": "Engineering"
+  },
+  {
+    "id": "wf_auto_102226",
+    "title": "Recurring: scrape latest AI funding rounds and expo",
+    "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
+    "prompt": "scrape latest AI funding rounds and export to csv",
+    "folder": "Automated",
+    "is_promoted": true,
+    "execution_count": 2
+  },
+  {
+    "id": "wf_auto_586332",
+    "title": "Recurring: transcript https://www.instagram.com/ree",
+    "description": "Autonomously synthesized permanent workflow requested 10 times by Master Ansh.",
+    "prompt": "transcript https://www.instagram.com/reel/sample",
+    "folder": "Automated",
+    "is_promoted": true,
+    "execution_count": 10
+  },
+  {
+    "id": "wf_auto_290453",
+    "title": "Recurring: go to youtube and search at peach and pl",
+    "description": "Autonomously synthesized permanent workflow requested 10 times by Master Ansh.",
+    "prompt": "go to youtube and search at peach and play the song of karan aujla",
+    "folder": "Automated",
+    "is_promoted": true,
+    "execution_count": 10
   }
 ]

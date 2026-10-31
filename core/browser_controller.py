@@ -12,6 +12,7 @@ import json
 import os
 import re
 import smtplib
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -882,11 +883,39 @@ class BrowserController:
             return {"success": False, "error": f"Playwright real-person execution error: {e!s}"}
 
     @classmethod
-    def launch_login_session(cls, target_url: str = "https://mail.google.com") -> dict[str, Any]:
+    def resolve_login_target(cls, target: Optional[str]) -> tuple[str, str]:
+        """Resolves any service alias (e.g. linkedin, github, aws, vercel, leetcode) to its official auth portal."""
+        t = (target or "").strip().lower()
+        if not t or t in ["google", "gmail", "mail"]:
+            return "https://accounts.google.com", "Google Account"
+        if "linkedin" in t:
+            return "https://www.linkedin.com/login", "LinkedIn"
+        if "github" in t:
+            return "https://github.com/login", "GitHub"
+        if "aws" in t:
+            return "https://signin.aws.amazon.com", "Amazon Web Services (AWS)"
+        if "vercel" in t:
+            return "https://vercel.com/login", "Vercel"
+        if "leetcode" in t:
+            return "https://leetcode.com/accounts/login/", "LeetCode"
+        if t in ["twitter", "x"]:
+            return "https://x.com/i/flow/login", "X / Twitter"
+        if "stripe" in t:
+            return "https://dashboard.stripe.com/login", "Stripe"
+        if "upwork" in t:
+            return "https://www.upwork.com/ab/account-security/login", "Upwork"
+        if t.startswith(("http://", "https://")):
+            return target.strip(), "Custom Web Portal"
+        return f"https://{target.strip()}", target.strip()
+
+    @classmethod
+    def launch_login_session(cls, target_url: str = "https://accounts.google.com") -> dict[str, Any]:
         """
         Launches visible desktop browser in persistent profile so user can log in once (Axiom style).
+        Works universally for ANY service: LinkedIn, Google, GitHub, AWS, Vercel, Twitter, Stripe, etc.
         All cookies, tokens, and active sessions are saved permanently in ~/.llama_orchestrator/browser_profile.
         """
+        resolved_url, service_name = cls.resolve_login_target(target_url)
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
@@ -898,17 +927,29 @@ class BrowserController:
         try:
             with sync_playwright() as p:
                 context = None
-                for channel in ["msedge", "chrome"]:
+                brave_bin = cls.get_brave_executable_path()
+                if brave_bin:
                     try:
                         context = p.chromium.launch_persistent_context(
                             user_data_dir=str(profile_path),
-                            channel=channel,
+                            executable_path=brave_bin,
                             headless=False,
                             args=["--start-maximized", "--disable-blink-features=AutomationControlled"]
                         )
-                        break
                     except Exception:
-                        continue
+                        context = None
+                if not context:
+                    for channel in ["msedge", "chrome"]:
+                        try:
+                            context = p.chromium.launch_persistent_context(
+                                user_data_dir=str(profile_path),
+                                channel=channel,
+                                headless=False,
+                                args=["--start-maximized", "--disable-blink-features=AutomationControlled"]
+                            )
+                            break
+                        except Exception:
+                            continue
                 if not context:
                     context = p.chromium.launch_persistent_context(
                         user_data_dir=str(profile_path),
@@ -916,21 +957,28 @@ class BrowserController:
                         args=["--start-maximized"]
                     )
                 page = context.pages[0] if context.pages else context.new_page()
-                page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
+                page.goto(resolved_url, wait_until="domcontentloaded", timeout=60000)
                 # Keep open up to 90 seconds for user to sign in
                 logged_in = False
                 try:
-                    page.wait_for_url("**/mail.google.com/**", timeout=90000)
-                    time.sleep(2.0)
-                    logged_in = True
+                    start_t = time.time()
+                    while time.time() - start_t < 90:
+                        time.sleep(2.0)
+                        cur_url = page.url.lower()
+                        # Detect successful auth if URL moved away from login landing
+                        if not any(k in cur_url for k in ["/login", "/signin", "/accounts/login", "accounts.google.com/v3/signin"]):
+                            logged_in = True
+                            break
                 except Exception:
                     logged_in = False
                 context.close()
                 return {
                     "success": True,
+                    "service": service_name,
+                    "target_url": resolved_url,
                     "logged_in": logged_in,
                     "profile_path": str(profile_path),
-                    "message": "Browser profile session saved. Subsequent browser actions will use this authenticated session."
+                    "message": f"Browser profile session saved for {service_name}. Subsequent browser actions will use this authenticated session."
                 }
         except Exception as e:
             return {"success": False, "error": str(e)}

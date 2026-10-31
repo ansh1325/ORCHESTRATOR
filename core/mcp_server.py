@@ -87,7 +87,10 @@ class MCPServer:
 
     def tool_run_command(self, command: str, timeout_sec: int = 15) -> dict[str, Any]:
         """Executes a subprocess confined to the session workspace, capturing stderr and stdout."""
-        dangerous_tokens = ["format", "del /s", "rmdir /s /q c:", "rm -rf /", "shutdown"]
+        dangerous_tokens = [
+            "format", "del /s", "rmdir /s /q c:", "rm -rf /", "shutdown",
+            "pintohome", "quickaccess", "automaticdestinations", "679f85cb-0220-4080-b29b"
+        ]
         for token in dangerous_tokens:
             if token in command.lower():
                 return {
@@ -584,6 +587,56 @@ class MCPServer:
             return {"success": True, "type": "directory", "path": str(p), "entries": entries[:100]}
         return {"success": False, "error": "Unknown path type"}
 
+    # =========================================================================
+    # REA (Reverse Engineer Anything) Tactical Powerup MCP Tools (Tier 4)
+    # =========================================================================
+
+    def tool_rea_inspect_binary(self, binary_path: str) -> dict[str, Any]:
+        """Tactical Arrow (Tier 4): Disassembles closed binaries, DLLs, or executables."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.inspect_binary(binary_path)
+
+    def tool_rea_unpack_electron(self, asar_path: str) -> dict[str, Any]:
+        """Tactical Arrow (Tier 4): Unpacks Electron .asar archives to inspect internal JS/IPC channels."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.unpack_electron(asar_path)
+
+    def tool_rea_analyze_traffic(self, capture_path: str) -> dict[str, Any]:
+        """Tactical Arrow (Tier 4): Reconstructs private APIs from network telemetry dumps (HAR/PCAP)."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.analyze_traffic(capture_path)
+
+    def tool_rea_clone_client(self, service_name: str, endpoints: list[str]) -> dict[str, Any]:
+        """Tactical Arrow (Tier 4): Generates clean-room Python client code for reversed endpoints."""
+        from core.rea_powerup import rea_engine
+        code = rea_engine.synthesize_clean_room_client(service_name, endpoints)
+        return {"success": True, "service_name": service_name, "client_code": code}
+
+    def tool_rea_extract_strings(self, file_path: str, min_length: int = 5, filter_pattern: str | None = None) -> dict[str, Any]:
+        """Surgical REA Tool: Fast forensic string extraction from any file or binary."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.extract_strings(file_path, min_length, filter_pattern)
+
+    def tool_rea_scan_secrets(self, file_path: str) -> dict[str, Any]:
+        """Surgical REA Tool: Scans any file or bundle for leaked API tokens, keys, and credentials."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.scan_secrets_and_keys(file_path)
+
+    def tool_rea_inspect_ipc(self, asar_or_bundle_path: str) -> dict[str, Any]:
+        """Surgical REA Tool: Extracts desktop Electron IPC communication channels."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.inspect_ipc_channels(asar_or_bundle_path)
+
+    def tool_rea_harvest_routes(self, target_path: str) -> dict[str, Any]:
+        """Surgical REA Tool: Harvests REST and WebSocket routes from traffic dumps."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.harvest_api_endpoints(target_path)
+
+    def tool_rea_audit_security(self, binary_path: str) -> dict[str, Any]:
+        """Surgical REA Tool: Audits binary security posture and dangerous imported syscalls."""
+        from core.rea_powerup import rea_engine
+        return rea_engine.audit_binary_security(binary_path)
+
     def get_tool_definitions(self) -> list[dict[str, Any]]:
         return [
             {"name": "file_write", "description": "Write text content to a sandboxed file inside the workspace."},
@@ -606,7 +659,16 @@ class MCPServer:
             {"name": "browser_execute_script", "description": "Execute a Python browser automation script."},
             {"name": "import_external_path", "description": "Import a file or folder from the host (e.g. Downloads or Desktop) into workspace."},
             {"name": "export_to_host", "description": "Export deliverables to user host directory (defaults to Downloads)."},
-            {"name": "read_external_path", "description": "Read content from a user-specified host file or folder."}
+            {"name": "read_external_path", "description": "Read content from a user-specified host file or folder."},
+            {"name": "rea_inspect_binary", "description": "Tactical Heavy Arrow (Tier 4): Disassembles compiled binaries (.exe, .dll, .so) to inspect exported symbols and routes without source code."},
+            {"name": "rea_unpack_electron", "description": "Tactical Heavy Arrow (Tier 4): Unpacks Electron .asar archives to discover internal IPC channels and API routes."},
+            {"name": "rea_analyze_traffic", "description": "Tactical Heavy Arrow (Tier 4): Analyzes network telemetry captures (HAR/PCAP) to reconstruct private API protocols."},
+            {"name": "rea_clone_client", "description": "Tactical Heavy Arrow (Tier 4): Synthesizes clean-room Python client libraries from reversed API specifications."},
+            {"name": "rea_extract_strings", "description": "Surgical REA Tool: Forensic string and symbol extraction from any target file."},
+            {"name": "rea_scan_secrets", "description": "Surgical REA Tool: Scans target files for leaked API keys, tokens, and credentials."},
+            {"name": "rea_inspect_ipc", "description": "Surgical REA Tool: Isolates desktop Electron IPC events and channels."},
+            {"name": "rea_harvest_routes", "description": "Surgical REA Tool: Harvests REST and WebSocket routes from traffic dumps."},
+            {"name": "rea_audit_security", "description": "Surgical REA Tool: Audits binary security posture and dangerous imported syscalls."}
         ]
 
     def handle_jsonrpc(self, request_data: dict[str, Any]) -> dict[str, Any]:
@@ -669,6 +731,24 @@ class MCPServer:
                     res = self.tool_export_to_host(tool_args.get("workspace_path", ""), tool_args.get("destination_path"))
                 elif tool_name == "read_external_path":
                     res = self.tool_read_external_path(tool_args["path"])
+                elif tool_name == "rea_inspect_binary":
+                    res = self.tool_rea_inspect_binary(tool_args["binary_path"])
+                elif tool_name == "rea_unpack_electron":
+                    res = self.tool_rea_unpack_electron(tool_args["asar_path"])
+                elif tool_name == "rea_analyze_traffic":
+                    res = self.tool_rea_analyze_traffic(tool_args["capture_path"])
+                elif tool_name == "rea_clone_client":
+                    res = self.tool_rea_clone_client(tool_args["service_name"], tool_args.get("endpoints", []))
+                elif tool_name == "rea_extract_strings":
+                    res = self.tool_rea_extract_strings(tool_args["file_path"], tool_args.get("min_length", 5), tool_args.get("filter_pattern"))
+                elif tool_name == "rea_scan_secrets":
+                    res = self.tool_rea_scan_secrets(tool_args["file_path"])
+                elif tool_name == "rea_inspect_ipc":
+                    res = self.tool_rea_inspect_ipc(tool_args["asar_or_bundle_path"])
+                elif tool_name == "rea_harvest_routes":
+                    res = self.tool_rea_harvest_routes(tool_args["target_path"])
+                elif tool_name == "rea_audit_security":
+                    res = self.tool_rea_audit_security(tool_args["binary_path"])
                 else:
                     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Tool '{tool_name}' not found."}}
                 return {"jsonrpc": "2.0", "id": req_id, "result": res}

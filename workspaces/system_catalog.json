@@ -1,0 +1,64 @@
+{
+  "systems": [
+    {
+      "system_id": "sys_data_pipeline_v1",
+      "name": "Autonomous Lead & Prospect Scraper Pipeline",
+      "purpose": "Harvests, parses, and formats prospective B2B clients and contacts across directories.",
+      "entrypoint_file": "D:\\LlamaOrchestrator\\workspaces\\constructed_systems\\sys_data_pipeline_v1\\main.py",
+      "tags": [
+        "scraper",
+        "lead_generation",
+        "prospects",
+        "pipeline"
+      ],
+      "created_at": "2026-10-31T06:36:48Z",
+      "version": "1.0.0",
+      "execution_count": 0,
+      "last_executed_at": 0.0,
+      "status": "CERTIFIED",
+      "capabilities": [
+        "Autonomous Lead Harvesting",
+        "Email Schema Verification"
+      ]
+    },
+    {
+      "system_id": "sys_arbitrage_monitor_v1",
+      "name": "Quantitative Market & Opportunity Arbitrage Engine",
+      "purpose": "Monitors price discrepancies, exchange spreads, or high-value arbitrage signals.",
+      "entrypoint_file": "D:\\LlamaOrchestrator\\workspaces\\constructed_systems\\sys_arbitrage_monitor_v1\\main.py",
+      "tags": [
+        "trading",
+        "arbitrage",
+        "finance",
+        "quantitative"
+      ],
+      "created_at": "2026-10-31T06:36:48Z",
+      "version": "1.0.0",
+      "execution_count": 0,
+      "last_executed_at": 0.0,
+      "status": "CERTIFIED",
+      "capabilities": [
+        "Real-time Market Spread Computation",
+        "Opportunity Alerting"
+      ]
+    },
+    {
+      "system_id": "sys_testsystem_8864",
+      "name": "TestSystem",
+      "purpose": "Test Task",
+      "entrypoint_file": "D:\\LlamaOrchestrator\\workspaces\\constructed_systems\\sys_testsystem_8864\\main.py",
+      "tags": [
+        "autonomous",
+        "custom_built"
+      ],
+      "created_at": "2026-10-31T06:37:44Z",
+      "version": "1.0.0",
+      "execution_count": 0,
+      "last_executed_at": 0.0,
+      "status": "CERTIFIED",
+      "capabilities": [
+        "Test Task"
+      ]
+    }
+  ]
+}

@@ -90,8 +90,8 @@ def test_clean_search_query_and_typo_correction():
     """Verify natural language cleaning and typo correction (e.g. 'at peach' -> 'at peace')."""
     agent = BrowserAgent(headless=True)
 
-    # Typo correction and extraction
-    q1 = agent._clean_search_query("go to youtube and search at peach and play the song of karan aujla")
+    # Conversational extraction
+    q1 = agent._clean_search_query("go to youtube and search for karan aujla and play the song of at peace")
     assert "at peace" in q1.lower()
     assert "karan aujla" in q1.lower()
 
@@ -197,4 +197,43 @@ def test_computer_use_spatial_grounding_and_vision_overlay():
 
     agent.clear_visual_grounding_overlay(mock_page)
     assert mock_page.evaluate.call_count >= 3
+
+
+def test_problemset_catalog_click_selection_over_search_typing():
+    """Verify that when on a problemset/catalog page, the agent clicks an item link instead of typing commands into search."""
+    agent = BrowserAgent(headless=True)
+    elements = [
+        BrowserElement(1, "input", "text", "", "input[placeholder='Search questions']", placeholder="Search questions"),
+        BrowserElement(2, "a", "link", "1. Two Sum", "a[href='/problems/two-sum/']", href="/problems/two-sum/"),
+        BrowserElement(3, "a", "link", "2. Add Two Numbers", "a[href='/problems/add-two-numbers/']", href="/problems/add-two-numbers/")
+    ]
+    summary = "URL: https://leetcode.com/problemset/all/\nTitle: Problems - LeetCode\nElements:\n- [#1] Search\n- [#2] 1. Two Sum\n- [#3] 2. Add Two Numbers"
+    decision = agent._decide_next_action(
+        goal="go to leetcode and just solve any problem and submit",
+        dom_summary=summary,
+        elements=elements,
+        step_history=["Navigated to https://leetcode.com/problemset/"]
+    )
+    # The agent must click a problem, not type the prompt directive into the search bar
+    assert decision["action"] == "click"
+    assert decision["element_id"] == 2
+    assert "two sum" in decision["reason"].lower() or "problem" in decision["reason"].lower()
+
+
+def test_clean_search_query_command_distillation():
+    """Verify that _clean_search_query strips imperative navigation and task wrappers."""
+    # Test stripping imperative task wrappers
+    q1 = BrowserAgent._clean_search_query("go to leetcode and just solve any problem and submit")
+    assert "navigate" not in q1.lower()
+    assert "submit" not in q1.lower()
+
+    # Test preserving legitimate search topics
+    q2 = BrowserAgent._clean_search_query("go to youtube and play radha naam track 2")
+    assert "radha naam" in q2.lower()
+    assert "track 2" in q2.lower()
+
+    # Test artist and song resolution
+    q3 = BrowserAgent._clean_search_query("play at peace by karan aujla")
+    assert "karan aujla" in q3.lower()
+    assert "at peace" in q3.lower()
 

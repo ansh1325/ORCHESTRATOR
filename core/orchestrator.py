@@ -1329,6 +1329,31 @@ class MetaOrchestrator:
                     emit_event=lambda evt: self.emit_event(session, evt)
                 )
                 if not success:
+                    # Recursive Sub-DAG Dynamic Replanning Powerup
+                    try:
+                        from core.recursive_subdag import subdag_replanner
+                        await self.emit_event(session, ExecutionEvent(
+                            event_type="self_correction",
+                            session_id=session_id,
+                            stage=4,
+                            stage_name="Recursive Sub-DAG Replanning",
+                            task_id=node.id,
+                            message=f"Standard self-correction barrier hit on '{node.title}'. Invoking Recursive Sub-DAG Replanner...",
+                            speech_text="Standard recovery limit reached. Spawning recursive child sub-DAG."
+                        ))
+                        subdag_res = await subdag_replanner.spawn_and_execute_subdag(
+                            parent_task=node,
+                            parent_spec=spec,
+                            failure_context=node.error_feedback or "Verification barrier",
+                            mcp=session.mcp,
+                            emit_event=lambda evt: self.emit_event(session, evt)
+                        )
+                        if subdag_res.success:
+                            success = True
+                    except Exception as sub_err:
+                        logger.warning(f"Sub-DAG recovery notice: {sub_err}")
+
+                if not success:
                     raise RuntimeError(f"Task '{node.title}' failed self-correction gate.")
                 await asyncio.sleep(0.3)
 

@@ -661,13 +661,13 @@ class JarvisCLI:
             print(f"  • Co-Worker Window: {C.CYAN}Independent Visible Desktop Session (Concurrent User Control){C.RESET}\n")
             self.speak("Commencing autonomous LeetCode algorithm synthesis and live submission.")
 
-            # Extract target problem slug dynamically
+            # Extract target problem slug dynamically (works universally for any problem name or slug)
             slug = "daily"
-            slug_match = re.search(r'(?:problems?\/|solve\s+)([a-z0-9\-]+)', low)
-            if slug_match and slug_match.group(1) not in ["any", "a", "the", "today", "daily", "streak", "problem", "leetcode"]:
-                slug = slug_match.group(1)
-            elif "two sum" in low or "twosum" in low:
-                slug = "two-sum"
+            named_match = re.search(r'(?:problems?\/|solve\s+|problem\s+)([a-z0-9\s\-]+?)(?:\s+(?:in|using)\s+|\s+and\s+submit|\s*$)', low)
+            if named_match:
+                extracted = named_match.group(1).strip()
+                if extracted and extracted not in ["any", "a", "the", "today", "daily", "streak", "problem", "leetcode", "any problem", "a problem", "of your choice"]:
+                    slug = re.sub(r'[^a-z0-9\-]+', '-', extracted).strip('-')
 
             # Detect polyglot language preference (e.g. "solve in c++", "in rust", "in python", "in java")
             req_lang = None

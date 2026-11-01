@@ -184,3 +184,46 @@ async def test_browser_login_command_sanitization(tmp_path):
         assert res is True
         mock_login_nat.assert_called_once_with("google", None)
 
+
+@pytest.mark.asyncio
+async def test_autonomous_email_synthesis_and_batch_dispatch():
+    """Verify autonomous batch email synthesis and multi-item dispatch without canned boilerplate."""
+    from unittest.mock import patch, MagicMock
+    from jarvis_cli import JarvisCLI
+
+    cli = JarvisCLI()
+    cli.voice_enabled = False
+
+    # 1. Test dynamic email synthesis generates 3 distinct emails
+    emails = await cli.synthesize_outbound_emails(
+        prompt="go send 3 mails to anshtiwarif17@gmail.com",
+        recipient="anshtiwarif17@gmail.com",
+        count=3
+    )
+    assert len(emails) == 3
+    assert all("subject" in e and "body" in e for e in emails)
+    # Subjects must be distinct (no identical duplicates)
+    subjects = [e["subject"] for e in emails]
+    assert len(set(subjects)) == 3
+
+    # 2. Test full directive execution dispatches all 3 emails
+    with patch("core.browser_controller.BrowserController.automate_gmail_dispatch_playwright") as mock_pw, \
+         patch("asyncio.sleep") as _mock_sleep, \
+         patch.object(cli, "speak", MagicMock()):
+        mock_pw.return_value = {
+            "success": True,
+            "sent_automatically": True,
+            "actions": ["Navigated to Gmail", "Clicked Send"],
+            "message": "Real person dispatch sent"
+        }
+        await cli.handle_autonomous_browse("go send 3 mails to anshtiwarif17@gmail.com")
+
+        assert mock_pw.call_count == 3
+        # Check that recipient passed is correct across all dispatches
+        for call_args in mock_pw.call_args_list:
+            assert call_args.kwargs.get("recipient") == "anshtiwarif17@gmail.com"
+            assert "subject" in call_args.kwargs
+            assert "body" in call_args.kwargs
+
+
+

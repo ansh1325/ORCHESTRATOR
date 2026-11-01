@@ -566,7 +566,7 @@ class BrowserController:
         try:
             async with async_playwright() as p:
                 context = None
-                for channel in ["msedge", "chrome"]:
+                for channel in ["chrome", "msedge"]:
                     try:
                         context = await p.chromium.launch_persistent_context(
                             user_data_dir=str(profile_path),
@@ -815,7 +815,7 @@ class BrowserController:
                     pass
 
                 if not context:
-                    for channel in ["msedge", "chrome"]:
+                    for channel in ["chrome", "msedge"]:
                         try:
                             context = p.chromium.launch_persistent_context(
                                 user_data_dir=str(profile_path),
@@ -1725,7 +1725,7 @@ class BrowserController:
         try:
             with sync_playwright() as p:
                 browser = None
-                for channel in ["msedge", "chrome"]:
+                for channel in ["chrome", "msedge"]:
                     try:
                         browser = p.chromium.launch(channel=channel, headless=headless)
                         break

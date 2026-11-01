@@ -518,11 +518,12 @@ class JarvisCLI:
         except asyncio.TimeoutError:
             pass
 
-    async def classify_intent_autonomously(self, line: str) -> dict[str, Any]:
+    async def decompose_directive_cognitively(self, line: str) -> dict[str, Any]:
         """
-        Pure Autonomous Intent Perception.
-        Dynamically classifies the user's directive into the optimal execution engine.
-        Prioritizes user authentication requests to launch persistent login sessions cleanly.
+        Pure Autonomous Cognitive Task Decomposition & Execution Planner.
+        Zero hardcoded string splitters, zero regex conjunctions.
+        The Central Brain deliberates on the entire directive, recognizes single or multi-step pipelines,
+        and returns an ordered list of typed executable steps.
         """
         low = line.lower()
         login_keywords = ["login", "log in", "sign in", "signin"]
@@ -540,38 +541,40 @@ class JarvisCLI:
                     if s in low:
                         target_svc = s
                         break
-            return {"mode": "login", "target": target_svc, "goal": line}
+            return {"thought": "User login session request", "steps": [{"mode": "login", "target": target_svc, "goal": line}]}
 
         from core.config import settings
         llm = settings.get_llm_client()
         if llm and not settings.is_mock():
             try:
                 system_prompt = (
-                    "You are the Central Brain Intent & Semantic Entity Router of JARVIS.\n"
+                    "You are the Central Brain Decomposer and Execution Planner of JARVIS.\n"
                     "Chief Systems Architect: Ansh Tiwari.\n"
-                    "Analyze the user's directive and classify it into one of these execution modes:\n"
-                    "1. 'login': When the user wants to sign in, log in, or authenticate with their accounts (Google, LeetCode, GitHub, LinkedIn, AWS, etc.) in a browser window so Jarvis can act on their behalf.\n"
-                    "2. 'browser': For autonomous web/browser actions — navigating to websites, sending emails, solving LeetCode problems, watching/playing media, scraping, extracting transcripts, or web automation.\n"
-                    "3. 'swarm': For building, scaffolding, or compiling software applications, codebases, backends, APIs, or multi-agent engineering workflows.\n"
-                    "4. 'chat': For casual conversation, conceptual questions, strategy advice, or explanations.\n\n"
-                    "When mode == 'browser', semantically extract all relevant entities into 'sub_action':\n"
-                    "- 'email': if sending email(s). Extract 'recipient' (email address), 'count' (integer, converting words like 'three', 'a couple' to numbers), 'subject' (if specified, else null), and 'body' (if specified, else null).\n"
-                    "- 'leetcode': if solving code/algorithm problems. Extract 'problem_slug' (canonical slug e.g. 'daily', 'two-sum', 'trapping-rain-water'), and 'language' (e.g. 'C++', 'Python3', 'Java', 'Rust', 'Go' or null).\n"
-                    "- 'media': if watching or playing music/video. Extract 'media_query' (clean search query for YouTube / media).\n"
-                    "- 'transcript': if extracting speech/subtitles from a video/URL. Extract 'target_url'.\n"
-                    "- 'web': for general web exploration, scraping, navigation, or research. Extract 'target_url' (if mentioned) and 'objective'.\n\n"
-                    "Output strictly a JSON object: {\n"
-                    "  \"mode\": \"login\" | \"browser\" | \"swarm\" | \"chat\",\n"
-                    "  \"target\": \"service name or URL if login\",\n"
-                    "  \"sub_action\": \"email\" | \"leetcode\" | \"media\" | \"transcript\" | \"web\" | null,\n"
-                    "  \"recipient\": \"...\",\n"
-                    "  \"count\": 1,\n"
-                    "  \"problem_slug\": \"...\",\n"
-                    "  \"language\": \"...\",\n"
-                    "  \"media_query\": \"...\",\n"
-                    "  \"target_url\": \"...\",\n"
-                    "  \"objective\": \"...\",\n"
-                    "  \"goal\": \"concise target\"\n"
+                    "Analyze the user directive. It may contain a single objective or multiple sequential objectives across web, code, email, or system domains.\n"
+                    "Decompose it into a structured execution plan.\n\n"
+                    "Mode guidelines:\n"
+                    "- 'browser': For all web automation, sending emails, solving LeetCode algorithms, streaming media, and online research.\n"
+                    "- 'swarm': For building software applications, APIs, full-stack scaffolds, refactoring codebases.\n"
+                    "- 'login': Strictly when the user explicitly requests to log in, sign in, or authenticate with an account.\n"
+                    "- 'chat': For conceptual conversation, advice, or general Q&A.\n\n"
+                    "Output strictly JSON:\n"
+                    "{\n"
+                    "  \"thought\": \"reasoning about the user's intent\",\n"
+                    "  \"steps\": [\n"
+                    "    {\n"
+                    "      \"mode\": \"browser\" | \"swarm\" | \"login\" | \"chat\",\n"
+                    "      \"sub_action\": \"email\" | \"leetcode\" | \"media\" | \"web\" | null,\n"
+                    "      \"recipient\": \"email address if email dispatch\",\n"
+                    "      \"count\": 1,\n"
+                    "      \"subject\": \"subject line if specified, else null\",\n"
+                    "      \"body_instruction\": \"specific instructions, message guidance, or feelings to convey\",\n"
+                    "      \"problem_slug\": \"canonical slug if leetcode (e.g. 'daily', 'two-sum')\",\n"
+                    "      \"language\": \"programming language if specified, else null\",\n"
+                    "      \"media_query\": \"clean search query if media playback\",\n"
+                    "      \"target\": \"service name if login\",\n"
+                    "      \"goal\": \"concise description of this specific step\"\n"
+                    "    }\n"
+                    "  ]\n"
                     "}"
                 )
                 resp = await asyncio.to_thread(
@@ -585,23 +588,28 @@ class JarvisCLI:
                 )
                 content = resp.choices[0].message.content or "{}"
                 parsed = json.loads(content)
-                if isinstance(parsed, list):
-                    return parsed[0] if (parsed and isinstance(parsed[0], dict)) else {"mode": "chat", "goal": line}
-                if isinstance(parsed, dict):
+                if isinstance(parsed, dict) and "steps" in parsed and isinstance(parsed["steps"], list) and len(parsed["steps"]) > 0:
                     return parsed
-                return {"mode": "chat", "goal": line}
+                elif isinstance(parsed, dict) and "mode" in parsed:
+                    return {"thought": "Single directive", "steps": [parsed]}
+                elif isinstance(parsed, list) and len(parsed) > 0:
+                    return {"thought": "Multi-step plan", "steps": parsed}
             except Exception:
                 pass
 
         # Robust zero-model fallback
         low = line.lower()
-        if any(k in low for k in ["login", "log in", "sign in", "signin", "authenticate", "auth"]) and any(w in low for w in ["browser", "window", "account", "accounts", "google", "gmail", "leetcode", "github", "linkedin", "let me", "i want to", "my", "your"]):
-            return {"mode": "login", "target": "google", "goal": line}
         if any(w in low for w in ["http://", "https://", "www.", ".com", ".org", "browse", "browser", "youtube", "play", "transcript", "leetcode", "github", "search", "trending", "scrape", "extract from", "web"]):
-            return {"mode": "browser", "goal": line}
+            return {"thought": "Offline web fallback", "steps": [{"mode": "browser", "goal": line}]}
         if any(w in low for w in ["build", "create", "scaffold", "compile", "develop", "codebase", "api", "backend", "app"]):
-            return {"mode": "swarm", "goal": line}
-        return {"mode": "chat", "goal": line}
+            return {"thought": "Offline swarm fallback", "steps": [{"mode": "swarm", "goal": line}]}
+        return {"thought": "Offline chat fallback", "steps": [{"mode": "chat", "goal": line}]}
+
+    async def classify_intent_autonomously(self, line: str) -> dict[str, Any]:
+        """Backward-compatible intent classification returning the primary step."""
+        plan = await self.decompose_directive_cognitively(line)
+        steps = plan.get("steps", [])
+        return steps[0] if steps else {"mode": "chat", "goal": line}
 
     @staticmethod
     def _generate_contextual_emails(recipient: str, count: int, offset: int = 0) -> list[dict[str, str]]:
@@ -762,7 +770,20 @@ class JarvisCLI:
             elif intent and intent.get("subject") and intent.get("body") and count == 1:
                 emails_to_send = [{"subject": str(intent["subject"]), "body": str(intent["body"])}]
             else:
-                emails_to_send = await self.synthesize_outbound_emails(goal_or_query, recipient, count)
+                prompt_to_use = str(intent.get("body_instruction") or "") if intent else ""
+                if intent and intent.get("subject"):
+                    prompt_to_use = f"Subject requirement: {intent['subject']}. Message guidance: {prompt_to_use}"
+                if not prompt_to_use:
+                    prompt_to_use = goal_or_query
+                emails_to_send = await self.synthesize_outbound_emails(prompt_to_use, recipient, count)
+
+            if intent and intent.get("subject"):
+                req_subj = str(intent["subject"]).strip()
+                for i, item in enumerate(emails_to_send):
+                    if count > 1:
+                        item["subject"] = f"{req_subj} [{i + 1}/{count}]"
+                    else:
+                        item["subject"] = req_subj
 
             print(f"\n{C.CYAN}{C.BOLD}[Autonomous Email Dispatcher]{C.RESET} Target: {C.YELLOW}{recipient}{C.RESET} (Queue: {len(emails_to_send)} item{'s' if len(emails_to_send) > 1 else ''})")
             print(f"  • Architecture: {C.GREEN}Host Browser Bridge / Authenticated Session -> Direct 1-Click Dispatch{C.RESET}\n")
@@ -1590,21 +1611,6 @@ class JarvisCLI:
                 print(f"{C.DIM}[No voice command detected or microphone timed out]{C.RESET}\n")
                 return True
 
-        # Multi-Action Compound Directive Decomposition (e.g. "Task 1 and then Task 2")
-        compound_parts = re.split(r'\s*(?:;\s*then\s+|;\s*and\s+then\s+|\s+and\s+then\s+|\s+after\s+that\s+)\s*', line, flags=re.I)
-        if len(compound_parts) > 1 and all(len(p.strip()) > 5 for p in compound_parts):
-            print(f"\n{C.CYAN}{C.BOLD}⛓️  [JARVIS Compound Directive Pipeline]{C.RESET} Decomposed into {len(compound_parts)} sequential operations:")
-            for idx, p in enumerate(compound_parts, start=1):
-                print(f"  {idx}. {C.YELLOW}{p.strip()}{C.RESET}")
-            print()
-            self.speak(f"Executing compound directive with {len(compound_parts)} sequential operations.")
-            for idx, part in enumerate(compound_parts, start=1):
-                print(f"\n{C.BLUE}{C.BOLD}▶ [Executing Operation {idx}/{len(compound_parts)}]:{C.RESET} {C.YELLOW}{part.strip()}{C.RESET}")
-                ok = await self.process_directive(part.strip())
-                if not ok:
-                    return False
-            return True
-
         # Utility Subcommands
         if low.startswith("audit ") or low.startswith("inspect folder "):
             target = line.split(maxsplit=1)[1].strip().strip("'\"")
@@ -1778,28 +1784,51 @@ class JarvisCLI:
             print(f"  • Registered in workflow library ({C.CYAN}workflows.json{C.RESET}) for 1-click execution or 24/7 scheduling.\n")
             self.speak("Pattern recognized. I have promoted this workflow into your permanent library.")
 
-        # Autonomous Intent Classification by Central Brain (Zero Templates, Zero Keyword Dictionaries)
-        intent = await self.classify_intent_autonomously(line)
-        if not isinstance(intent, dict):
-            intent = {"mode": "chat", "goal": line}
-        mode = intent.get("mode", "chat")
-        goal = intent.get("goal", line)
+        # Autonomous Intent Perception & Execution Planning by Central Brain (Zero Templates, Zero Keyword Dictionaries)
+        plan = await self.decompose_directive_cognitively(line)
+        steps = plan.get("steps", [])
+        if not steps:
+            steps = [{"mode": "chat", "goal": line}]
+
+        thought = plan.get("thought")
+        if thought and len(steps) > 1:
+            print(f"\n{C.DIM}🧠 [Central Brain Deliberation]: {thought}{C.RESET}")
+
+        if len(steps) > 1:
+            print(f"\n{C.CYAN}{C.BOLD}⛓️  [JARVIS Autonomous Execution Plan]{C.RESET} Central Brain formulated an execution pipeline ({len(steps)} operations):")
+            for idx, s in enumerate(steps, start=1):
+                print(f"  {idx}. {C.YELLOW}{s.get('goal', 'Operation')}{C.RESET}")
+            print()
+            self.speak(f"Executing autonomous pipeline with {len(steps)} operations.")
+
+        for idx, step in enumerate(steps, start=1):
+            if len(steps) > 1:
+                print(f"\n{C.BLUE}{C.BOLD}▶ [Executing Operation {idx}/{len(steps)}]:{C.RESET} {C.YELLOW}{step.get('goal', '')}{C.RESET}")
+            ok = await self.execute_autonomous_step(step, original_line=line)
+            if not ok:
+                return False
+        return True
+
+    async def execute_autonomous_step(self, step: dict[str, Any], original_line: str) -> bool:
+        """Executes a single decomposed step from the Central Brain's plan."""
+        mode = step.get("mode", "chat")
+        goal = step.get("goal") or original_line
 
         if mode == "login":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as user authentication session.")
-            target_svc = intent.get("target") or "google"
+            target_svc = step.get("target") or "google"
             await self.handle_browser_cmd(["browser", "login", target_svc])
             return True
         elif mode == "browser":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous web/browser action.")
-            await self.handle_autonomous_browse(line, intent=intent)
+            await self.handle_autonomous_browse(goal, intent=step)
             return True
         elif mode == "swarm":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous software engineering project.")
             await self.run_mission(goal)
             return True
         else:
-            await self.handle_chat(line)
+            await self.handle_chat(goal)
             return True
 
     async def run_interactive(self):

@@ -292,5 +292,33 @@ async def test_cognitive_intent_entity_routing():
             assert call_args.kwargs.get("recipient") == "anshtiwarif17@gmail.com"
 
 
+@pytest.mark.asyncio
+async def test_central_brain_multi_step_decomposition():
+    """Verify Central Brain decomposes complex compound directives into sequential operations with zero regex split."""
+    from jarvis_cli import JarvisCLI
+
+    cli = JarvisCLI()
+    cli.voice_enabled = False
+
+    compound_prompt = (
+        "go send 3 mails to anshtiwarisocial@gmail.com with subject i am jarvis and with body whatever you feel about me "
+        "and then send 3 mails to arushitiwari2405@gmail.com saying subject i am jarvis and body with my master is ansh "
+        "and just tell her what you feel about me all those 3 mails"
+    )
+
+    plan = await cli.decompose_directive_cognitively(compound_prompt)
+    steps = plan.get("steps", [])
+
+    assert len(steps) == 2
+    assert steps[0]["sub_action"] == "email"
+    assert steps[0]["recipient"] == "anshtiwarisocial@gmail.com"
+    assert steps[0]["count"] == 3
+
+    assert steps[1]["sub_action"] == "email"
+    assert steps[1]["recipient"] == "arushitiwari2405@gmail.com"
+    assert steps[1]["count"] == 3
+
+
+
 
 

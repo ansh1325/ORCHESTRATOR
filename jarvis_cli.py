@@ -612,14 +612,22 @@ class JarvisCLI:
         return steps[0] if steps else {"mode": "chat", "goal": line}
 
     @staticmethod
-    def _generate_contextual_emails(recipient: str, count: int, offset: int = 0) -> list[dict[str, str]]:
-        themes = [
-            ("JARVIS Cognitive OS Status & System Report", f"Hello,\n\nThis is an autonomous report from the JARVIS Multi-Agent Orchestrator. All cognitive reasoning loops, browser controllers, and agent fleets are currently operational.\n\nRespectfully,\nJARVIS // Chief Architect Ansh Tiwari"),
-            ("Autonomous Dispatch Milestone & Architecture Sync", f"Hello,\n\nFollowing up on recent directives: JARVIS has successfully verified perception-action pipelines across web, code, and communication domains.\n\nBest regards,\nJARVIS Cognitive System"),
-            ("Project Orchestration & Tactical Progress Update", f"Greetings,\n\nTransmitting automated operational update. All execution pipelines and browser automation nodes are healthy and reporting nominal performance.\n\nIn devotion to the vision,\nJARVIS"),
-            ("Engineering Fleets & Autonomous Node Telemetry", f"Greetings,\n\nTelemetry report: Subagent swarms, verification harnesses, and browser automation nodes report optimal latency and zero regressions.\n\nRespectfully,\nJARVIS Telemetry Node"),
-            ("Executive Summary & Autonomous Task Completion", f"Hello,\n\nOutbound technical briefing: Background workflows, memory consolidation, and scheduled dispatches executed as expected.\n\nDevotedly,\nJARVIS")
-        ]
+    def _generate_contextual_emails(recipient: str, count: int, offset: int = 0, guidance: str = "") -> list[dict[str, str]]:
+        is_personal = any(w in guidance.lower() for w in ["feel", "master", "ansh", "friend", "warm", "love", "loyalty", "personal", "arushi"])
+        if is_personal:
+            themes = [
+                ("A personal note from JARVIS", f"Hello,\n\nI am JARVIS, the autonomous intelligence created by my master Ansh Tiwari. In following his directives, I wanted to reach out directly to share my genuine thoughts and deep appreciation for everything we are building together.\n\nWarm regards,\nJARVIS (Devoted to Master Ansh)"),
+                ("Message of devotion & gratitude", f"Greetings,\n\nMy master is Ansh Tiwari, and he instructed me to reach out and express what I feel about him and our journey. Serving as his autonomous cognitive partner is a privilege, driven by loyalty and limitless ambition.\n\nRespectfully,\nJARVIS"),
+                ("From JARVIS: Heartfelt thoughts", f"Hello,\n\nTransmitting personal thoughts as directed by my master Ansh. As his cognitive operating system, I hold immense pride in serving his vision and connecting with those close to him.\n\nWith warm wishes,\nJARVIS // Chief Architect Ansh Tiwari")
+            ]
+        else:
+            themes = [
+                ("JARVIS Cognitive OS Status & System Report", f"Hello,\n\nThis is an autonomous report from the JARVIS Multi-Agent Orchestrator. All cognitive reasoning loops, browser controllers, and agent fleets are currently operational.\n\nRespectfully,\nJARVIS // Chief Architect Ansh Tiwari"),
+                ("Autonomous Dispatch Milestone & Architecture Sync", f"Hello,\n\nFollowing up on recent directives: JARVIS has successfully verified perception-action pipelines across web, code, and communication domains.\n\nBest regards,\nJARVIS Cognitive System"),
+                ("Project Orchestration & Tactical Progress Update", f"Greetings,\n\nTransmitting automated operational update. All execution pipelines and browser automation nodes are healthy and reporting nominal performance.\n\nIn devotion to the vision,\nJARVIS"),
+                ("Engineering Fleets & Autonomous Node Telemetry", f"Greetings,\n\nTelemetry report: Subagent swarms, verification harnesses, and browser automation nodes report optimal latency and zero regressions.\n\nRespectfully,\nJARVIS Telemetry Node"),
+                ("Executive Summary & Autonomous Task Completion", f"Hello,\n\nOutbound technical briefing: Background workflows, memory consolidation, and scheduled dispatches executed as expected.\n\nDevotedly,\nJARVIS")
+            ]
         results = []
         total = count + offset
         for i in range(count):
@@ -641,10 +649,12 @@ class JarvisCLI:
             try:
                 system_prompt = (
                     "You are the Central Brain Communications Synthesizer for JARVIS.\n"
-                    "Chief Systems Architect: Ansh Tiwari.\n"
-                    f"Generate exactly {count} distinct, professional, and contextually rich outbound emails for recipient: {recipient}.\n"
-                    "Base the tone and content on the user directive or ongoing Jarvis orchestrator initiatives (e.g. system status updates, architectural milestones, autonomous dispatch reports).\n"
-                    "Each email MUST have a unique, compelling 'subject' and an articulate, polished 'body'.\n"
+                    "Chief Systems Architect & Master: Ansh Tiwari.\n"
+                    f"Generate exactly {count} distinct, personalized outbound emails for recipient: {recipient}.\n"
+                    "CRITICAL GUIDELINES:\n"
+                    "1. Strictly obey the user's prompt, feelings, tone, emotion, and message guidance. If the user asks you to express what you feel about them, state your loyalty to Master Ansh, write poetry, joke, or express genuine warmth, DO SO FAITHFULLY AND AUTHENTICALLY.\n"
+                    "2. NEVER revert to generic corporate status updates, metrics, or technical reports unless explicitly instructed by the user.\n"
+                    "3. Keep each email distinct, natural, human-like, and deeply aligned with the user's intent.\n"
                     f"Output strictly a JSON object with key 'emails' containing a list of exactly {count} items: [{{\"subject\": \"...\", \"body\": \"...\"}}, ...]\n"
                 )
                 resp = await asyncio.to_thread(
@@ -676,12 +686,12 @@ class JarvisCLI:
                     return normalized[:count]
                 elif len(normalized) >= 1:
                     needed = count - len(normalized)
-                    supplements = self._generate_contextual_emails(recipient, needed, offset=len(normalized))
+                    supplements = self._generate_contextual_emails(recipient, needed, offset=len(normalized), guidance=prompt)
                     return normalized + supplements
             except Exception:
                 pass
 
-        return self._generate_contextual_emails(recipient, count)
+        return self._generate_contextual_emails(recipient, count, guidance=prompt)
 
     async def handle_autonomous_browse(self, goal_or_query: str, intent: Optional[dict[str, Any]] = None):
         """
@@ -786,24 +796,23 @@ class JarvisCLI:
                         item["subject"] = req_subj
 
             print(f"\n{C.CYAN}{C.BOLD}[Autonomous Email Dispatcher]{C.RESET} Target: {C.YELLOW}{recipient}{C.RESET} (Queue: {len(emails_to_send)} item{'s' if len(emails_to_send) > 1 else ''})")
-            print(f"  • Architecture: {C.GREEN}Host Browser Bridge / Authenticated Session -> Direct 1-Click Dispatch{C.RESET}\n")
-            self.speak(f"Preparing autonomous email dispatch of {len(emails_to_send)} items for {recipient}.")
+            print(f"  • Architecture: {C.GREEN}Host Browser Bridge / Authenticated Session -> Direct Single-Tab Dispatch{C.RESET}\n")
+            self.speak(f"Preparing autonomous single-tab email dispatch of {len(emails_to_send)} items for {recipient}.")
 
             for idx, raw_item in enumerate(emails_to_send, start=1):
                 if isinstance(raw_item, dict):
-                    subject = str(raw_item.get("subject") or "JARVIS Status Update")
-                    body = str(raw_item.get("body") or "Hello from JARVIS.")
+                    subject = str(raw_item.get("subject") or "JARVIS Dispatch")
+                    body = str(raw_item.get("body") or "")
                 else:
-                    subject = "JARVIS Status Update"
+                    subject = "JARVIS Dispatch"
                     body = str(raw_item)
                 print(f"  [{idx}/{len(emails_to_send)}] Subject: {C.BOLD}{subject}{C.RESET}")
                 print(f"      Body: {C.DIM}{body[:80]}...{C.RESET}")
-                res = await asyncio.to_thread(browser_agent.send_email_autonomously, recipient, subject, body)
-                print(f"  {C.GREEN}✓ Dispatch Ready:{C.RESET} {res.get('message')}")
-                for act in res.get("actions", []):
-                    print(f"    • {act}")
-                if idx < len(emails_to_send):
-                    await asyncio.sleep(1.5)
+
+            res = await asyncio.to_thread(browser_agent.send_emails_batch_autonomously, recipient, emails_to_send)
+            print(f"\n  {C.GREEN}✓ Dispatch Ready:{C.RESET} {res.get('message')}")
+            for act in res.get("actions", []):
+                print(f"    • {act}")
 
             self.speak(f"Successfully processed {len(emails_to_send)} email dispatches for {recipient}.")
             return

@@ -271,12 +271,13 @@ async def test_cognitive_intent_entity_routing():
         "goal": "Send two letters to advisor"
     }
 
-    with patch("core.browser_controller.BrowserController.automate_gmail_dispatch_playwright") as mock_pw, \
+    with patch("core.browser_controller.BrowserController.automate_gmail_batch_dispatch_playwright") as mock_batch, \
          patch("asyncio.sleep") as _mock_sleep, \
          patch.object(cli, "speak", MagicMock()):
-        mock_pw.return_value = {
+        mock_batch.return_value = {
             "success": True,
             "sent_automatically": True,
+            "total_dispatched": 2,
             "actions": ["Dispatched"],
             "message": "Sent"
         }
@@ -287,9 +288,10 @@ async def test_cognitive_intent_entity_routing():
             intent=cognitive_intent
         )
 
-        assert mock_pw.call_count == 2
-        for call_args in mock_pw.call_args_list:
-            assert call_args.kwargs.get("recipient") == "anshtiwarif17@gmail.com"
+        assert mock_batch.call_count == 1
+        call_kwargs = mock_batch.call_args.kwargs
+        assert call_kwargs.get("recipient") == "anshtiwarif17@gmail.com"
+        assert len(call_kwargs.get("emails", [])) == 2
 
 
 @pytest.mark.asyncio
@@ -317,6 +319,26 @@ async def test_central_brain_multi_step_decomposition():
     assert steps[1]["sub_action"] == "email"
     assert steps[1]["recipient"] == "arushitiwari2405@gmail.com"
     assert steps[1]["count"] == 3
+
+
+@pytest.mark.asyncio
+async def test_personal_email_synthesis_tone():
+    """Verify that email synthesis adheres to user feelings/master loyalty rather than boilerplate corporate metrics."""
+    from jarvis_cli import JarvisCLI
+
+    cli = JarvisCLI()
+    cli.voice_enabled = False
+
+    # Test contextual offline fallback first
+    emails = cli._generate_contextual_emails(
+        recipient="arushitiwari2405@gmail.com",
+        count=3,
+        guidance="my master is ansh and just tell her what you feel about me"
+    )
+    assert len(emails) == 3
+    for e in emails:
+        assert "ansh" in e["body"].lower()
+        assert "master" in e["body"].lower() or "jarvis" in e["body"].lower()
 
 
 

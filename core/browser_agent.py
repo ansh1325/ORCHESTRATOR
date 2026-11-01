@@ -149,16 +149,24 @@ class BrowserAgent:
             except Exception:
                 pass
 
-        # 2. Chrome / Edge system channel
-        for ch in ["chrome", "msedge"]:
+        # 2. Preferred Cross-Platform System Channels (macOS / Linux / Windows)
+        for ch in BrowserController.get_preferred_channels():
             try:
-                self._active_context = self._active_playwright.chromium.launch_persistent_context(
-                    user_data_dir=str(self.user_data_dir),
-                    channel=ch,
-                    headless=headless,
-                    args=launch_args,
-                    ignore_default_args=["--enable-automation", "--no-sandbox"]
-                )
+                if ch:
+                    self._active_context = self._active_playwright.chromium.launch_persistent_context(
+                        user_data_dir=str(self.user_data_dir),
+                        channel=ch,
+                        headless=headless,
+                        args=launch_args,
+                        ignore_default_args=["--enable-automation", "--no-sandbox"]
+                    )
+                else:
+                    self._active_context = self._active_playwright.chromium.launch_persistent_context(
+                        user_data_dir=str(self.user_data_dir),
+                        headless=headless,
+                        args=launch_args,
+                        ignore_default_args=["--enable-automation", "--no-sandbox"]
+                    )
                 self._is_active_cdp = False
                 return self._active_context, False
             except Exception:
@@ -1274,17 +1282,25 @@ class BrowserAgent:
                         except Exception:
                             context = None
 
-                # 2. Chrome / Edge system channel
+                # 2. Preferred Cross-Platform System Channels (macOS / Linux / Windows)
                 if not context:
-                    for channel in ["chrome", "msedge"]:
+                    for channel in BrowserController.get_preferred_channels():
                         try:
-                            context = p.chromium.launch_persistent_context(
-                                user_data_dir=str(self.user_data_dir),
-                                channel=channel,
-                                headless=is_headless,
-                                args=launch_args,
-                                ignore_default_args=["--enable-automation", "--no-sandbox"]
-                            )
+                            if channel:
+                                context = p.chromium.launch_persistent_context(
+                                    user_data_dir=str(self.user_data_dir),
+                                    channel=channel,
+                                    headless=is_headless,
+                                    args=launch_args,
+                                    ignore_default_args=["--enable-automation", "--no-sandbox"]
+                                )
+                            else:
+                                context = p.chromium.launch_persistent_context(
+                                    user_data_dir=str(self.user_data_dir),
+                                    headless=is_headless,
+                                    args=launch_args,
+                                    ignore_default_args=["--enable-automation", "--no-sandbox"]
+                                )
                             break
                         except Exception:
                             continue

@@ -547,13 +547,32 @@ class JarvisCLI:
         if llm and not settings.is_mock():
             try:
                 system_prompt = (
-                    "You are the Central Brain Intent Router of Jarvis.\n"
+                    "You are the Central Brain Intent & Semantic Entity Router of JARVIS.\n"
+                    "Chief Systems Architect: Ansh Tiwari.\n"
                     "Analyze the user's directive and classify it into one of these execution modes:\n"
                     "1. 'login': When the user wants to sign in, log in, or authenticate with their accounts (Google, LeetCode, GitHub, LinkedIn, AWS, etc.) in a browser window so Jarvis can act on their behalf.\n"
-                    "2. 'browser': For autonomous web/browser actions — navigating to websites, watching/playing media, scraping, extracting transcripts, or web automation.\n"
+                    "2. 'browser': For autonomous web/browser actions — navigating to websites, sending emails, solving LeetCode problems, watching/playing media, scraping, extracting transcripts, or web automation.\n"
                     "3. 'swarm': For building, scaffolding, or compiling software applications, codebases, backends, APIs, or multi-agent engineering workflows.\n"
-                    "4. 'chat': For casual conversation, conceptual questions, strategy advice, or explanations.\n"
-                    "Output strictly JSON: {\"mode\": \"login\" | \"browser\" | \"swarm\" | \"chat\", \"target\": \"service name (e.g. google, leetcode, github) or URL if login\", \"goal\": \"concise target\"}"
+                    "4. 'chat': For casual conversation, conceptual questions, strategy advice, or explanations.\n\n"
+                    "When mode == 'browser', semantically extract all relevant entities into 'sub_action':\n"
+                    "- 'email': if sending email(s). Extract 'recipient' (email address), 'count' (integer, converting words like 'three', 'a couple' to numbers), 'subject' (if specified, else null), and 'body' (if specified, else null).\n"
+                    "- 'leetcode': if solving code/algorithm problems. Extract 'problem_slug' (canonical slug e.g. 'daily', 'two-sum', 'trapping-rain-water'), and 'language' (e.g. 'C++', 'Python3', 'Java', 'Rust', 'Go' or null).\n"
+                    "- 'media': if watching or playing music/video. Extract 'media_query' (clean search query for YouTube / media).\n"
+                    "- 'transcript': if extracting speech/subtitles from a video/URL. Extract 'target_url'.\n"
+                    "- 'web': for general web exploration, scraping, navigation, or research. Extract 'target_url' (if mentioned) and 'objective'.\n\n"
+                    "Output strictly a JSON object: {\n"
+                    "  \"mode\": \"login\" | \"browser\" | \"swarm\" | \"chat\",\n"
+                    "  \"target\": \"service name or URL if login\",\n"
+                    "  \"sub_action\": \"email\" | \"leetcode\" | \"media\" | \"transcript\" | \"web\" | null,\n"
+                    "  \"recipient\": \"...\",\n"
+                    "  \"count\": 1,\n"
+                    "  \"problem_slug\": \"...\",\n"
+                    "  \"language\": \"...\",\n"
+                    "  \"media_query\": \"...\",\n"
+                    "  \"target_url\": \"...\",\n"
+                    "  \"objective\": \"...\",\n"
+                    "  \"goal\": \"concise target\"\n"
+                    "}"
                 )
                 resp = await asyncio.to_thread(
                     settings.create_chat_completion,
@@ -624,22 +643,37 @@ class JarvisCLI:
                     temperature=0.7
                 )
                 data = json.loads(resp.choices[0].message.content or "{}")
-                emails = data.get("emails", [])
-                if isinstance(emails, list) and len(emails) >= count:
-                    return emails[:count]
-                elif isinstance(emails, list) and len(emails) >= 1:
-                    needed = count - len(emails)
-                    supplements = self._generate_contextual_emails(recipient, needed, offset=len(emails))
-                    return emails + supplements
+                raw_emails = data.get("emails", [])
+                normalized: list[dict[str, str]] = []
+                if isinstance(raw_emails, list):
+                    for e in raw_emails:
+                        if isinstance(e, dict):
+                            normalized.append({
+                                "subject": str(e.get("subject", "JARVIS Status Update")),
+                                "body": str(e.get("body", "Hello from JARVIS."))
+                            })
+                        elif isinstance(e, str):
+                            lines = e.strip().split("\n", 1)
+                            subj = lines[0].replace("Subject:", "").strip() or "JARVIS Status Update"
+                            bdy = lines[1].strip() if len(lines) > 1 else e
+                            normalized.append({"subject": subj, "body": bdy})
+
+                if len(normalized) >= count:
+                    return normalized[:count]
+                elif len(normalized) >= 1:
+                    needed = count - len(normalized)
+                    supplements = self._generate_contextual_emails(recipient, needed, offset=len(normalized))
+                    return normalized + supplements
             except Exception:
                 pass
 
         return self._generate_contextual_emails(recipient, count)
 
-    async def handle_autonomous_browse(self, goal_or_query: str):
+    async def handle_autonomous_browse(self, goal_or_query: str, intent: Optional[dict[str, Any]] = None):
         """
         Dedicated Autonomous Browser Agent (Interactive Perception-Action Loop).
         Figures out destination links, perceives live DOM interactive elements, and navigates on its own.
+        Driven by Central Brain cognitive intent and semantic entity extraction (Zero Hardcoding).
         """
         import importlib
         import core.browser_agent
@@ -651,13 +685,18 @@ class JarvisCLI:
         from core.browser_controller import BrowserController
 
         low = goal_or_query.lower()
+        sub_act = intent.get("sub_action") if intent else None
+
         # Fallback guard against typing conversational login prompts into pages
-        if any(k in low for k in ["login", "log in", "sign in", "signin", "authenticate", "auth"]) and any(w in low for w in ["browser", "window", "account", "accounts", "google", "gmail", "leetcode", "github", "linkedin", "let me", "i want to", "yours", "so you can"]):
-            target_svc = "google"
-            for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "google", "gmail"]:
-                if s in low:
-                    target_svc = s
-                    break
+        if (intent and intent.get("mode") == "login") or (
+            any(k in low for k in ["login", "log in", "sign in", "signin", "authenticate", "auth"]) and any(w in low for w in ["browser", "window", "account", "accounts", "google", "gmail", "leetcode", "github", "linkedin", "let me", "i want to", "yours", "so you can"])
+        ):
+            target_svc = str(intent.get("target") or "google") if intent else "google"
+            if not intent:
+                for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "google", "gmail"]:
+                    if s in low:
+                        target_svc = s
+                        break
             print(f"\n{C.CYAN}{C.BOLD}🔐 [Jarvis User Authentication Portal]{C.RESET}")
             print(f"Launching persistent browser window for you to sign into your {target_svc.title()} account...")
             self.speak(f"Opening browser window for you to sign into your {target_svc.title()} account.")
@@ -665,15 +704,18 @@ class JarvisCLI:
             return
 
         url_match = re.search(r'https?://[^\s]+', goal_or_query)
-        if url_match and any(w in goal_or_query.lower() for w in ["transcript", "speech", "dialogue", "subtitles"]):
-            self.handle_transcript_cmd(url_match.group(0))
-            return
+        if (sub_act == "transcript") or (url_match and any(w in goal_or_query.lower() for w in ["transcript", "speech", "dialogue", "subtitles"])):
+            t_url = str(intent.get("target_url") or "") if intent else (url_match.group(0) if url_match else "")
+            if t_url:
+                self.handle_transcript_cmd(t_url)
+                return
 
         # Direct Media / YouTube dispatch optimization (Zero Ads, Native Brave Shields, No window trembling)
-        low = goal_or_query.lower()
-        is_media_playback = any(w in low for w in ["youtube", "play", "song", "video", "listen", "audio", "music", "track"]) and not any(w in low for w in ["transcript", "scrape", "extract", "inspect"])
+        is_media_playback = (sub_act == "media") or (
+            any(w in low for w in ["youtube", "play", "song", "video", "listen", "audio", "music", "track"]) and not any(w in low for w in ["transcript", "scrape", "extract", "inspect"])
+        )
         if is_media_playback:
-            clean_q = browser_agent._clean_search_query(goal_or_query)
+            clean_q = str(intent.get("media_query") or "") if (intent and intent.get("media_query")) else browser_agent._clean_search_query(goal_or_query)
             print(f"\n{C.CYAN}{C.BOLD}[Autonomous Media Dispatcher]{C.RESET} Distilled search query: {C.YELLOW}{clean_q}{C.RESET}")
             resolved = await asyncio.to_thread(browser_agent.resolve_youtube_direct_url, goal_or_query)
             watch_url = resolved.get("watch_url") or f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(clean_q)}"
@@ -689,15 +731,21 @@ class JarvisCLI:
             self.speak(f"Playing {clean_q} in your browser tab.")
             return
 
-        # Direct Email dispatch routing (Intelligent Host Bridge & Authenticated Session)
+        # Direct Email dispatch routing (Cognitive Central Brain Entity Extraction)
         email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', goal_or_query)
-        is_email = any(w in low for w in ["email", "mail", "send mail", "send email", "gmail", "compose", "inbox"]) and email_match
+        is_email = (sub_act == "email" and (bool(intent.get("recipient")) or bool(email_match))) or (
+            any(w in low for w in ["email", "mail", "send mail", "send email", "gmail", "compose", "inbox"]) and email_match
+        )
         if is_email:
-            recipient = email_match.group(0)
+            recipient = str(intent.get("recipient") or "") if (intent and intent.get("recipient")) else (email_match.group(0) if email_match else "")
 
-            # Detect quantity: "send 3 mails", "5 emails", "2 letters", etc.
-            count_match = re.search(r'\b(\d+)\s*(?:mails?|emails?|letters?|messages?)\b', low)
-            count = int(count_match.group(1)) if count_match else 1
+            # Central Brain Cognitive entity resolution takes priority over regex
+            count = 1
+            if intent and isinstance(intent.get("count"), int) and intent.get("count", 1) > 0:
+                count = int(intent["count"])
+            else:
+                count_match = re.search(r'\b(\d+)\s*(?:mails?|emails?|letters?|messages?)\b', low)
+                count = int(count_match.group(1)) if count_match else 1
             count = max(1, min(count, 10))  # safe bounds
 
             subj_match = re.search(r'subject[:\s]+(["\']?)(.*?)\1(?:\s+(?:with\s+)?body|\s*$)', goal_or_query, re.I)
@@ -705,6 +753,8 @@ class JarvisCLI:
 
             if subj_match and body_match and count == 1:
                 emails_to_send = [{"subject": subj_match.group(2).strip(), "body": body_match.group(2).strip()}]
+            elif intent and intent.get("subject") and intent.get("body") and count == 1:
+                emails_to_send = [{"subject": str(intent["subject"]), "body": str(intent["body"])}]
             else:
                 emails_to_send = await self.synthesize_outbound_emails(goal_or_query, recipient, count)
 
@@ -712,9 +762,13 @@ class JarvisCLI:
             print(f"  • Architecture: {C.GREEN}Host Browser Bridge / Authenticated Session -> Direct 1-Click Dispatch{C.RESET}\n")
             self.speak(f"Preparing autonomous email dispatch of {len(emails_to_send)} items for {recipient}.")
 
-            for idx, item in enumerate(emails_to_send, start=1):
-                subject = item.get("subject", "JARVIS Status Update")
-                body = item.get("body", "Hello from JARVIS.")
+            for idx, raw_item in enumerate(emails_to_send, start=1):
+                if isinstance(raw_item, dict):
+                    subject = str(raw_item.get("subject") or "JARVIS Status Update")
+                    body = str(raw_item.get("body") or "Hello from JARVIS.")
+                else:
+                    subject = "JARVIS Status Update"
+                    body = str(raw_item)
                 print(f"  [{idx}/{len(emails_to_send)}] Subject: {C.BOLD}{subject}{C.RESET}")
                 print(f"      Body: {C.DIM}{body[:80]}...{C.RESET}")
                 res = await asyncio.to_thread(browser_agent.send_email_autonomously, recipient, subject, body)
@@ -727,8 +781,10 @@ class JarvisCLI:
             self.speak(f"Successfully processed {len(emails_to_send)} email dispatches for {recipient}.")
             return
 
-        # Direct LeetCode problem solving engine dispatch
-        is_leetcode = "leetcode" in low and any(w in low for w in ["solve", "problem", "submit", "daily", "streak", "two sum", "twosum", "code", "run"])
+        # Direct LeetCode problem solving engine dispatch (Cognitive Central Brain Resolution)
+        is_leetcode = (sub_act == "leetcode") or (
+            "leetcode" in low and any(w in low for w in ["solve", "problem", "submit", "daily", "streak", "two sum", "twosum", "code", "run"])
+        )
         if is_leetcode:
             clean_goal = browser_agent._clean_search_query(goal_or_query)
             print(f"\n{C.CYAN}{C.BOLD}[Autonomous LeetCode Solver]{C.RESET} Objective: {C.YELLOW}{clean_goal or goal_or_query}{C.RESET}")
@@ -736,21 +792,23 @@ class JarvisCLI:
             print(f"  • Co-Worker Window: {C.CYAN}Independent Visible Desktop Session (Concurrent User Control){C.RESET}\n")
             self.speak("Commencing autonomous LeetCode algorithm synthesis and live submission.")
 
-            # Extract target problem slug dynamically (works universally for any problem name or slug)
-            slug = "daily"
-            named_match = re.search(r'(?:problems?\/|solve\s+|problem\s+)([a-z0-9\s\-]+?)(?:\s+(?:in|using)\s+|\s+and\s+submit|\s*$)', low)
-            if named_match:
-                extracted = named_match.group(1).strip()
-                if extracted and extracted not in ["any", "a", "the", "today", "daily", "streak", "problem", "leetcode", "any problem", "a problem", "of your choice"]:
-                    slug = re.sub(r'[^a-z0-9\-]+', '-', extracted).strip('-')
+            # Dynamic entity extraction from Central Brain with zero-model fallback
+            slug = str(intent.get("problem_slug") or "daily") if intent else "daily"
+            req_lang: Optional[str] = str(intent["language"]) if (intent and intent.get("language")) else None
 
-            # Detect polyglot language preference (e.g. "solve in c++", "in rust", "in python", "in java")
-            req_lang = None
-            lang_match = re.search(r'\b(?:in|using)\s+(c\+\+|cpp|python3?|java|rust|golang|go|typescript|javascript|c#)\b', low)
-            if lang_match:
-                matched = lang_match.group(1).lower()
-                lang_norm = {"cpp": "C++", "c++": "C++", "python": "Python3", "python3": "Python3", "golang": "Go", "go": "Go", "rust": "Rust", "java": "Java", "typescript": "TypeScript", "javascript": "JavaScript", "c#": "C#"}
-                req_lang = lang_norm.get(matched, matched.title())
+            if not intent or slug in ["daily", ""]:
+                named_match = re.search(r'(?:problems?\/|solve\s+|problem\s+)([a-z0-9\s\-]+?)(?:\s+(?:in|using)\s+|\s+and\s+submit|\s*$)', low)
+                if named_match:
+                    extracted = named_match.group(1).strip()
+                    if extracted and extracted not in ["any", "a", "the", "today", "daily", "streak", "problem", "leetcode", "any problem", "a problem", "of your choice"]:
+                        slug = re.sub(r'[^a-z0-9\-]+', '-', extracted).strip('-')
+
+            if not intent or not req_lang:
+                lang_match = re.search(r'\b(?:in|using)\s+(c\+\+|cpp|python3?|java|rust|golang|go|typescript|javascript|c#)\b', low)
+                if lang_match:
+                    matched = lang_match.group(1).lower()
+                    lang_norm = {"cpp": "C++", "c++": "C++", "python": "Python3", "python3": "Python3", "golang": "Go", "go": "Go", "rust": "Rust", "java": "Java", "typescript": "TypeScript", "javascript": "JavaScript", "c#": "C#"}
+                    req_lang = lang_norm.get(matched, matched.title())
 
             res = await asyncio.to_thread(
                 browser_agent.solve_leetcode_problem,
@@ -1711,7 +1769,7 @@ class JarvisCLI:
             return True
         elif mode == "browser":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous web/browser action.")
-            await self.handle_autonomous_browse(line)
+            await self.handle_autonomous_browse(line, intent=intent)
             return True
         elif mode == "swarm":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous software engineering project.")

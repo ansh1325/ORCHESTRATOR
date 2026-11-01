@@ -80,6 +80,22 @@ class BrowserController:
         return None
 
     @classmethod
+    def get_preferred_channels(cls) -> list[Optional[str]]:
+        """
+        Cross-platform browser channel resolution (Windows, macOS, Linux).
+        Dynamically detects the platform and provides the optimal channels:
+        - macOS: Chrome -> Chromium -> Edge -> None (Playwright bundled Chromium)
+        - Linux: Chrome -> Chromium -> Edge -> None (Playwright bundled Chromium)
+        - Windows: Chrome -> Edge -> Chromium -> None (Playwright bundled Chromium)
+        """
+        if sys.platform == "darwin":
+            return ["chrome", "chromium", "msedge", None]
+        elif sys.platform.startswith("linux"):
+            return ["chrome", "chromium", "msedge", None]
+        else:
+            return ["chrome", "msedge", "chromium", None]
+
+    @classmethod
     def get_system_default_browser_executable(cls) -> Optional[str]:
         """
         Universally discovers the machine's actual default browser binary across Windows, macOS, and Linux.
@@ -361,11 +377,14 @@ class BrowserController:
                     except Exception:
                         browser = None
 
-                # 2. Chrome / Edge system channel
+                # 2. Preferred Cross-Platform System Channels (macOS / Linux / Windows)
                 if not browser:
-                    for channel in ["chrome", "msedge"]:
+                    for channel in cls.get_preferred_channels():
                         try:
-                            browser = p.chromium.launch(channel=channel, headless=headless, args=launch_args, ignore_default_args=["--enable-automation", "--no-sandbox"])
+                            if channel:
+                                browser = p.chromium.launch(channel=channel, headless=headless, args=launch_args, ignore_default_args=["--enable-automation", "--no-sandbox"])
+                            else:
+                                browser = p.chromium.launch(headless=headless, args=launch_args, ignore_default_args=["--enable-automation", "--no-sandbox"])
                             break
                         except Exception:
                             continue
@@ -566,33 +585,35 @@ class BrowserController:
         try:
             async with async_playwright() as p:
                 context = None
-                for channel in ["chrome", "msedge"]:
+                for channel in cls.get_preferred_channels():
                     try:
-                        context = await p.chromium.launch_persistent_context(
-                            user_data_dir=str(profile_path),
-                            channel=channel,
-                            headless=headless,
-                            args=["--start-maximized"],
-                            ignore_default_args=["--enable-automation", "--no-sandbox"]
-                        )
-                        executed_actions.append(f"Launched persistent browser context via {channel}")
+                        if channel:
+                            context = await p.chromium.launch_persistent_context(
+                                user_data_dir=str(profile_path),
+                                channel=channel,
+                                headless=headless,
+                                args=["--start-maximized"],
+                                ignore_default_args=["--enable-automation", "--no-sandbox"]
+                            )
+                            executed_actions.append(f"Launched persistent browser context via {channel}")
+                        else:
+                            context = await p.chromium.launch_persistent_context(
+                                user_data_dir=str(profile_path),
+                                headless=headless,
+                                args=["--start-maximized"]
+                            )
+                            executed_actions.append("Launched default persistent browser context via bundled chromium")
                         break
                     except Exception:
                         continue
 
                 if not context:
                     try:
-                        context = await p.chromium.launch_persistent_context(
-                            user_data_dir=str(profile_path),
-                            headless=headless,
-                            args=["--start-maximized"]
-                        )
-                        executed_actions.append("Launched default persistent browser context")
-                    except Exception:
-                        # Fallback if profile is locked
-                        browser = await p.chromium.launch(channel="msedge", headless=headless)
+                        browser = await p.chromium.launch(headless=headless)
                         context = await browser.new_context()
                         executed_actions.append("Launched standard browser context (profile unlocked)")
+                    except Exception:
+                        pass
 
                 page = context.pages[0] if context.pages else await context.new_page()
 
@@ -815,27 +836,27 @@ class BrowserController:
                     pass
 
                 if not context:
-                    for channel in ["chrome", "msedge"]:
+                    for channel in cls.get_preferred_channels():
                         try:
-                            context = p.chromium.launch_persistent_context(
-                                user_data_dir=str(profile_path),
-                                channel=channel,
-                                headless=headless,
-                                args=["--start-maximized"],
-                                ignore_default_args=["--enable-automation", "--no-sandbox"]
-                            )
-                            executed_actions.append(f"Launched persistent browser context via {channel}")
+                            if channel:
+                                context = p.chromium.launch_persistent_context(
+                                    user_data_dir=str(profile_path),
+                                    channel=channel,
+                                    headless=headless,
+                                    args=["--start-maximized"],
+                                    ignore_default_args=["--enable-automation", "--no-sandbox"]
+                                )
+                                executed_actions.append(f"Launched persistent browser context via {channel}")
+                            else:
+                                context = p.chromium.launch_persistent_context(
+                                    user_data_dir=str(profile_path),
+                                    headless=headless,
+                                    args=["--start-maximized"]
+                                )
+                                executed_actions.append("Launched default persistent browser context via bundled chromium")
                             break
                         except Exception:
                             continue
-
-                if not context:
-                    context = p.chromium.launch_persistent_context(
-                        user_data_dir=str(profile_path),
-                        headless=headless,
-                        args=["--start-maximized"]
-                    )
-                    executed_actions.append("Launched default persistent browser context")
 
                 page = context.pages[0] if context.pages else context.new_page()
 
@@ -1015,7 +1036,7 @@ class BrowserController:
 
     @classmethod
     def get_host_chrome_user_data_dir(cls) -> Optional[Path]:
-        """Detects the real user's Chrome or Brave User Data directory on host PC."""
+        """Detects the real user's Chrome or Brave User Data directory on host PC across Windows, macOS, and Linux."""
         if sys.platform == "win32":
             p = Path.home() / "AppData" / "Local" / "Google" / "Chrome" / "User Data"
             if p.exists():
@@ -1023,6 +1044,24 @@ class BrowserController:
             p_brave = Path.home() / "AppData" / "Local" / "BraveSoftware" / "Brave-Browser" / "User Data"
             if p_brave.exists():
                 return p_brave
+        elif sys.platform == "darwin":
+            p = Path.home() / "Library" / "Application Support" / "Google" / "Chrome"
+            if p.exists():
+                return p
+            p_brave = Path.home() / "Library" / "Application Support" / "BraveSoftware" / "Brave-Browser"
+            if p_brave.exists():
+                return p_brave
+            p_edge = Path.home() / "Library" / "Application Support" / "Microsoft Edge"
+            if p_edge.exists():
+                return p_edge
+        elif sys.platform.startswith("linux"):
+            for cand in [
+                Path.home() / ".config" / "google-chrome",
+                Path.home() / ".config" / "chromium",
+                Path.home() / ".config" / "BraveSoftware" / "Brave-Browser"
+            ]:
+                if cand.exists():
+                    return cand
         return None
 
     @classmethod
@@ -1517,15 +1556,23 @@ class BrowserController:
                             context = None
 
                 if not context:
-                    for channel in ["chrome", "msedge"]:
+                    for channel in cls.get_preferred_channels():
                         try:
-                            context = p.chromium.launch_persistent_context(
-                                user_data_dir=str(profile_path),
-                                channel=channel,
-                                headless=False,
-                                args=base_args,
-                                ignore_default_args=["--enable-automation", "--no-sandbox"]
-                            )
+                            if channel:
+                                context = p.chromium.launch_persistent_context(
+                                    user_data_dir=str(profile_path),
+                                    channel=channel,
+                                    headless=False,
+                                    args=base_args,
+                                    ignore_default_args=["--enable-automation", "--no-sandbox"]
+                                )
+                            else:
+                                context = p.chromium.launch_persistent_context(
+                                    user_data_dir=str(profile_path),
+                                    headless=False,
+                                    args=base_args,
+                                    ignore_default_args=["--enable-automation", "--no-sandbox"]
+                                )
                             break
                         except Exception:
                             continue
@@ -1725,14 +1772,15 @@ class BrowserController:
         try:
             with sync_playwright() as p:
                 browser = None
-                for channel in ["chrome", "msedge"]:
+                for channel in cls.get_preferred_channels():
                     try:
-                        browser = p.chromium.launch(channel=channel, headless=headless)
+                        if channel:
+                            browser = p.chromium.launch(channel=channel, headless=headless)
+                        else:
+                            browser = p.chromium.launch(headless=headless)
                         break
                     except Exception:
                         continue
-                if not browser:
-                    browser = p.chromium.launch(headless=headless)
 
                 page = browser.new_page(viewport={"width": 1280, "height": 800})
                 executed_actions.append(f"Navigating to discovery target: {target_url}")

@@ -226,4 +226,71 @@ async def test_autonomous_email_synthesis_and_batch_dispatch():
             assert "body" in call_args.kwargs
 
 
+def test_cross_platform_browser_channels_and_mac_paths():
+    """Verify that macOS, Linux, and Windows browser channels and paths are resolved seamlessly."""
+    from unittest.mock import patch
+    from core.browser_controller import BrowserController
+
+    # 1. macOS channel resolution
+    with patch("sys.platform", "darwin"):
+        mac_channels = BrowserController.get_preferred_channels()
+        assert mac_channels == ["chrome", "chromium", "msedge", None]
+
+    # 2. Linux channel resolution
+    with patch("sys.platform", "linux"):
+        linux_channels = BrowserController.get_preferred_channels()
+        assert linux_channels == ["chrome", "chromium", "msedge", None]
+
+    # 3. Windows channel resolution
+    with patch("sys.platform", "win32"):
+        win_channels = BrowserController.get_preferred_channels()
+        assert win_channels == ["chrome", "msedge", "chromium", None]
+
+    # 4. macOS Chrome user data dir detection
+    with patch("sys.platform", "darwin"), \
+         patch("pathlib.Path.exists", return_value=True):
+        mac_ud = BrowserController.get_host_chrome_user_data_dir()
+        assert mac_ud is not None
+        assert "Library" in str(mac_ud) and "Application Support" in str(mac_ud)
+
+
+@pytest.mark.asyncio
+async def test_cognitive_intent_entity_routing():
+    """Verify that Central Brain cognitive entity extraction bypasses regex entirely."""
+    from unittest.mock import patch, MagicMock
+    from jarvis_cli import JarvisCLI
+
+    cli = JarvisCLI()
+    cli.voice_enabled = False
+
+    cognitive_intent = {
+        "mode": "browser",
+        "sub_action": "email",
+        "recipient": "anshtiwarif17@gmail.com",
+        "count": 2,
+        "goal": "Send two letters to advisor"
+    }
+
+    with patch("core.browser_controller.BrowserController.automate_gmail_dispatch_playwright") as mock_pw, \
+         patch("asyncio.sleep") as _mock_sleep, \
+         patch.object(cli, "speak", MagicMock()):
+        mock_pw.return_value = {
+            "success": True,
+            "sent_automatically": True,
+            "actions": ["Dispatched"],
+            "message": "Sent"
+        }
+
+        # Notice: phrasing has zero digits ("two letters"), yet Central Brain passed count=2
+        await cli.handle_autonomous_browse(
+            goal_or_query="drop two letters to my advisor anshtiwarif17@gmail.com",
+            intent=cognitive_intent
+        )
+
+        assert mock_pw.call_count == 2
+        for call_args in mock_pw.call_args_list:
+            assert call_args.kwargs.get("recipient") == "anshtiwarif17@gmail.com"
+
+
+
 

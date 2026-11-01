@@ -552,6 +552,8 @@ class JarvisCLI:
                     "Chief Systems Architect: Ansh Tiwari.\n"
                     "Analyze the user directive. It may contain a single objective or multiple sequential objectives across web, code, email, or system domains.\n"
                     "Decompose it into a structured execution plan.\n\n"
+                    "Grouping guideline:\n"
+                    "- Group batch dispatches to the same recipient into a single step with their total 'count' (e.g. sending 3 emails to X is ONE step with count=3, NOT 3 separate steps).\n\n"
                     "Mode guidelines:\n"
                     "- 'browser': For all web automation, sending emails, solving LeetCode algorithms, streaming media, and online research.\n"
                     "- 'swarm': For building software applications, APIs, full-stack scaffolds, refactoring codebases.\n"
@@ -588,12 +590,32 @@ class JarvisCLI:
                 )
                 content = resp.choices[0].message.content or "{}"
                 parsed = json.loads(content)
+                raw_steps: list[dict[str, Any]] = []
+                thought = "Autonomous execution plan"
                 if isinstance(parsed, dict) and "steps" in parsed and isinstance(parsed["steps"], list) and len(parsed["steps"]) > 0:
-                    return parsed
+                    raw_steps = parsed["steps"]
+                    thought = str(parsed.get("thought") or thought)
                 elif isinstance(parsed, dict) and "mode" in parsed:
-                    return {"thought": "Single directive", "steps": [parsed]}
+                    raw_steps = [parsed]
+                    thought = str(parsed.get("thought") or thought)
                 elif isinstance(parsed, list) and len(parsed) > 0:
-                    return {"thought": "Multi-step plan", "steps": parsed}
+                    raw_steps = parsed
+
+                # Consolidate consecutive operations targeting same recipient into single batch step
+                consolidated: list[dict[str, Any]] = []
+                for s in raw_steps:
+                    if (
+                        consolidated
+                        and consolidated[-1].get("sub_action") == "email"
+                        and s.get("sub_action") == "email"
+                        and consolidated[-1].get("recipient") == s.get("recipient")
+                    ):
+                        consolidated[-1]["count"] = int(consolidated[-1].get("count", 1)) + int(s.get("count", 1))
+                    else:
+                        consolidated.append(s)
+
+                if consolidated:
+                    return {"thought": thought, "steps": consolidated}
             except Exception:
                 pass
 
@@ -653,8 +675,12 @@ class JarvisCLI:
                     f"Generate exactly {count} distinct, personalized outbound emails for recipient: {recipient}.\n"
                     "CRITICAL GUIDELINES:\n"
                     "1. Strictly obey the user's prompt, feelings, tone, emotion, and message guidance. If the user asks you to express what you feel about them, state your loyalty to Master Ansh, write poetry, joke, or express genuine warmth, DO SO FAITHFULLY AND AUTHENTICALLY.\n"
-                    "2. NEVER revert to generic corporate status updates, metrics, or technical reports unless explicitly instructed by the user.\n"
-                    "3. Keep each email distinct, natural, human-like, and deeply aligned with the user's intent.\n"
+                    "2. SPAM-PREVENTION & MAXIMUM INBOX DELIVERABILITY:\n"
+                    "   - NEVER generate cold marketing or promotional clichés (e.g. avoid 'Invitation: Join our upcoming virtual coffee chat', 'Quick question about your recent project', 'Hey there! Just checking in', 'Exclusive opportunity').\n"
+                    "   - Use authentic, natural, conversational subject lines (e.g. 'Catching up', 'Follow-up regarding our work', 'Sharing some thoughts with you', 'Quick note from Ansh').\n"
+                    "   - Write warm, conversational bodies that feel like a direct human message rather than automated marketing blasts.\n"
+                    "3. NEVER revert to generic corporate status updates, metrics, or technical reports unless explicitly instructed by the user.\n"
+                    "4. Keep each email distinct, natural, human-like, and deeply aligned with the user's intent.\n"
                     f"Output strictly a JSON object with key 'emails' containing a list of exactly {count} items: [{{\"subject\": \"...\", \"body\": \"...\"}}, ...]\n"
                 )
                 resp = await asyncio.to_thread(

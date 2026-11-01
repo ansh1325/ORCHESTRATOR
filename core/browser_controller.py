@@ -842,7 +842,9 @@ class BrowserController:
                         pass
 
                     dispatched_count += 1
-                    await asyncio.sleep(1.2)
+                    if idx < len(emails):
+                        # Human pacing delay to prevent rate-burst spam heuristics
+                        await asyncio.sleep(3.5)
 
                 await page.screenshot(path=str(screenshot_path), full_page=True)
                 executed_actions.append(f"Saved visual proof screenshot to {screenshot_path}")
@@ -1170,7 +1172,9 @@ class BrowserController:
                         pass
 
                     dispatched_count += 1
-                    time.sleep(1.2)
+                    if idx < len(emails):
+                        # Human pacing delay to prevent rate-burst spam heuristics
+                        time.sleep(3.5)
 
                 # Capture final visual proof screenshot
                 page.screenshot(path=str(screenshot_path), full_page=True)

@@ -536,12 +536,18 @@ class JarvisCLI:
             if is_direct_login_cmd and clean_cmd and len(clean_cmd.split()) <= 3:
                 target_svc = clean_cmd
             else:
-                target_svc = "google"
-                for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "instantly", "linear", "beehiiv", "supabase", "google", "gmail"]:
-                    if s in low:
-                        target_svc = s
-                        break
-            return {"thought": "User login session request", "steps": [{"mode": "login", "target": target_svc, "goal": line}]}
+                m_svc = re.search(r'(?:login|sign\s*in|auth)\s+(?:to|on|in|into)\s+([a-zA-Z0-9_\-\.]+)', low)
+                if not m_svc:
+                    m_svc = re.search(r'\bmy\s+([a-zA-Z0-9_\-\.]+)\s+account\b', low)
+                if m_svc and m_svc.group(1).lower() not in ["browser", "window", "account", "accounts", "my", "your", "yours", "the", "a"]:
+                    target_svc = m_svc.group(1).lower()
+                else:
+                    target_svc = "google"
+                    for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "instantly", "linear", "beehiiv", "supabase", "google", "gmail"]:
+                        if s in low:
+                            target_svc = s
+                            break
+            return {"thought": f"User login session request for {target_svc}", "steps": [{"mode": "login", "target": target_svc, "goal": line}]}
 
         from core.config import settings
         llm = settings.get_llm_client()
@@ -621,6 +627,21 @@ class JarvisCLI:
 
         # Robust zero-model fallback
         low = line.lower()
+        emails = list(dict.fromkeys(re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', line)))
+        if len(emails) >= 2 and any(w in low for w in ["mail", "email", "send"]):
+            fallback_steps: list[dict[str, Any]] = []
+            count_match = re.search(r'\b(\d+)\s*(?:mails?|emails?)\b', low)
+            c_val = int(count_match.group(1)) if count_match else 3
+            for em in emails:
+                fallback_steps.append({
+                    "mode": "browser",
+                    "sub_action": "email",
+                    "recipient": em,
+                    "count": c_val,
+                    "goal": f"Send {c_val} emails to {em}"
+                })
+            return {"thought": "Multi-recipient fallback execution plan", "steps": fallback_steps}
+
         if any(w in low for w in ["http://", "https://", "www.", ".com", ".org", "browse", "browser", "youtube", "play", "transcript", "leetcode", "github", "search", "trending", "scrape", "extract from", "web"]):
             return {"thought": "Offline web fallback", "steps": [{"mode": "browser", "goal": line}]}
         if any(w in low for w in ["build", "create", "scaffold", "compile", "develop", "codebase", "api", "backend", "app"]):
@@ -741,12 +762,19 @@ class JarvisCLI:
         if (intent and intent.get("mode") == "login") or (
             any(k in low for k in ["login", "log in", "sign in", "signin", "authenticate", "auth"]) and any(w in low for w in ["browser", "window", "account", "accounts", "google", "gmail", "leetcode", "github", "linkedin", "let me", "i want to", "yours", "so you can"])
         ):
-            target_svc = str(intent.get("target") or "google") if intent else "google"
-            if not intent:
-                for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "google", "gmail"]:
-                    if s in low:
-                        target_svc = s
-                        break
+            target_svc = str(intent.get("target") or "") if intent else ""
+            if not target_svc or target_svc == "google":
+                m_svc = re.search(r'(?:login|sign\s*in|auth)\s+(?:to|on|in|into)\s+([a-zA-Z0-9_\-\.]+)', low)
+                if not m_svc:
+                    m_svc = re.search(r'\bmy\s+([a-zA-Z0-9_\-\.]+)\s+account\b', low)
+                if m_svc and m_svc.group(1).lower() not in ["browser", "window", "account", "accounts", "my", "your", "yours", "the", "a"]:
+                    target_svc = m_svc.group(1).lower()
+                else:
+                    target_svc = "google"
+                    for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "google", "gmail"]:
+                        if s in low:
+                            target_svc = s
+                            break
             print(f"\n{C.CYAN}{C.BOLD}🔐 [Jarvis User Authentication Portal]{C.RESET}")
             print(f"Launching persistent browser window for you to sign into your {target_svc.title()} account...")
             self.speak(f"Opening browser window for you to sign into your {target_svc.title()} account.")
@@ -1288,7 +1316,7 @@ class JarvisCLI:
             else:
                 print(f"{C.RED}Failed to open compose tab.{C.RESET}")
 
-        elif sub == "open" or sub in ["leetcode", "youtube", "github", "google", "linkedin", "gmail"] or any(ext in sub for ext in [".com", ".org", ".io", ".net", ".ai"]):
+        elif sub == "open" or (sub not in ["inbox", "compose", "tab", "tabs", "run", "agent", "email", "login", "auth", "demo", "play"] and (len(parts) == 2 or any(ext in sub for ext in [".com", ".org", ".io", ".net", ".ai", ".co", ".app", ".dev"]))):
             if sub == "open":
                 if len(parts) < 3:
                     print(f"{C.RED}Usage: browser open <url>{C.RESET}")
@@ -1776,11 +1804,17 @@ class JarvisCLI:
             if is_direct_login and clean_cmd and len(clean_cmd.split()) <= 3:
                 target_svc = clean_cmd
             else:
-                target_svc = "google"
-                for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "instantly", "linear", "beehiiv", "supabase", "google", "gmail"]:
-                    if s in low:
-                        target_svc = s
-                        break
+                m_svc = re.search(r'(?:login|sign\s*in|auth)\s+(?:to|on|in|into)\s+([a-zA-Z0-9_\-\.]+)', low)
+                if not m_svc:
+                    m_svc = re.search(r'\bmy\s+([a-zA-Z0-9_\-\.]+)\s+account\b', low)
+                if m_svc and m_svc.group(1).lower() not in ["browser", "window", "account", "accounts", "my", "your", "yours", "the", "a"]:
+                    target_svc = m_svc.group(1).lower()
+                else:
+                    target_svc = "google"
+                    for s in ["leetcode", "github", "linkedin", "aws", "vercel", "stripe", "upwork", "twitter", "x", "instantly", "linear", "beehiiv", "supabase", "google", "gmail"]:
+                        if s in low:
+                            target_svc = s
+                            break
             parts = ["browser", "login", target_svc]
             await self.handle_browser_cmd(parts)
             return True

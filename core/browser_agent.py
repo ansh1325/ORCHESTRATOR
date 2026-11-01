@@ -857,6 +857,78 @@ class BrowserAgent:
             except Exception:
                 return False
 
+    @classmethod
+    def _dismiss_modal_or_bypass_auth(cls, page: Any, goal: str) -> Optional[str]:
+        """
+        Autonomous Modal & Account Barrier Resolver.
+        1. If user directive does NOT require logging in or registering:
+           - Automatically detects and clicks 'Continue as guest', 'Guest checkout',
+             'Use without an account', 'Skip', 'Skip for now', 'Maybe later', 'Not now', 'No thanks', 'Dismiss'.
+           - Dismisses cookie banners ('Accept all', 'Reject all', 'I agree', 'Got it').
+           - Closes promo popups (buttons with aria-label='Close', data-dismiss='modal', etc.).
+        2. If user directive DOES require an account, or if on Google OAuth prompt:
+           - Tries clicking 'Continue as [User]' or 'Sign in with Google' to utilize persistent profile.
+        Returns description of action taken or None.
+        """
+        try:
+            goal_low = goal.lower()
+            needs_auth = any(w in goal_low for w in ["login", "sign in", "signin", "auth", "register", "create account", "my account"])
+
+            if not needs_auth:
+                guest_selectors = [
+                    "button:has-text('Continue as guest')",
+                    "button:has-text('Guest checkout')",
+                    "a:has-text('Continue as guest')",
+                    "button:has-text('Use Chrome without an account')",
+                    "button:has-text('Use without an account')",
+                    "button:has-text('Continue without account')",
+                    "button:has-text('Skip for now')",
+                    "button:has-text('Skip')",
+                    "a:has-text('Skip')",
+                    "button:has-text('Maybe later')",
+                    "button:has-text('Not now')",
+                    "button:has-text('No thanks')",
+                    "button:has-text('Dismiss')",
+                    "button:has-text('Reject all')",
+                    "button:has-text('Accept all')",
+                    "button:has-text('I agree')",
+                    "[aria-label='Reject all']",
+                    "[aria-label='Accept all']",
+                    "[aria-label='Close']",
+                    "button[aria-label='Close dialog']",
+                    "tp-yt-paper-button#dismiss-button"
+                ]
+                for sel in guest_selectors:
+                    try:
+                        loc = page.locator(sel).first
+                        if loc.is_visible(timeout=200):
+                            txt = loc.inner_text(timeout=200) or sel
+                            loc.click(timeout=800)
+                            time.sleep(0.5)
+                            return f"Autonomously bypassed modal/barrier via: '{txt.strip()}'"
+                    except Exception:
+                        continue
+            else:
+                oauth_selectors = [
+                    "button:has-text('Continue as ')",
+                    "button:has-text('Sign in with Google')",
+                    "div[role='button']:has-text('Sign in with Google')",
+                    "button:has-text('Continue with Google')"
+                ]
+                for sel in oauth_selectors:
+                    try:
+                        loc = page.locator(sel).first
+                        if loc.is_visible(timeout=200):
+                            txt = loc.inner_text(timeout=200) or sel
+                            loc.click(timeout=1000)
+                            time.sleep(1.0)
+                            return f"Autonomously connected via persistent OAuth session: '{txt.strip()}'"
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return None
+
     # =========================================================================
     # Brain / Action Decision Loop
     # =========================================================================
@@ -914,6 +986,7 @@ class BrowserAgent:
                     "9. Wait: {\"action\": \"wait\", \"seconds\": 2, \"reason\": \"Wait for load\"}\n"
                     "10. Complete: {\"action\": \"complete\", \"result\": \"Detailed answer or confirmation\", \"reason\": \"Goal finished\"}\n\n"
                     "Special Operational Rules:\n"
+                    "- Account & Obstacle Policy: If a popup, cookie banner, or sign-in gate appears and the user's goal does NOT require logging in, click 'Continue as guest', 'Use without account', 'Skip', 'Maybe later', 'Not now', 'Dismiss', or the Close (X) button. If the user's goal requires an account or personal dashboard, look for 'Sign in with Google' or 'Continue with Google' to utilize the user's persistent profile. If login is strictly required with custom credentials and no guest option exists, mark complete with: 'Account required at current site - please use login <service> to sign in once.' Dismiss cookie banners ('Accept', 'Agree') so they do not block interactions.\n"
                     "- If searching on YouTube, Google, or any site, type ONLY a concise entity or topic name. NEVER type the full user prompt or instructions like 'Navigate to...', 'Choose a problem...', 'Solve and submit...' into search inputs.\n"
                     "- If on a catalog, problemset, or list page (/problemset/, /problems/, /items/) and the goal is to solve/choose a problem, CLICK a problem link directly rather than typing instructions into a search box.\n"
                     "- If searching on YouTube or Google, type a clean search term into the search input with press_enter: true.\n"
@@ -978,6 +1051,22 @@ class BrowserAgent:
 
         # Heuristic Decision Engine (Deterministic fallback for search / navigation / clicking)
         clean_query = self._clean_search_query(goal)
+
+        # Check for guest / skip / dismiss options on barriers if goal does not require auth
+        if not any(w in goal_lower for w in ["login", "sign in", "signin", "auth", "register", "create account"]):
+            guest_elements = [
+                e for e in elements
+                if any(g in (e.text + " " + e.aria_label).lower() for g in [
+                    "continue as guest", "guest checkout", "use without an account", "use without account",
+                    "use chrome without an account", "skip for now", "skip", "maybe later", "not now", "no thanks", "dismiss"
+                ])
+            ]
+            if guest_elements:
+                return {
+                    "action": "click",
+                    "element_id": guest_elements[0].index,
+                    "reason": f"Bypass obstacle via '{guest_elements[0].text or 'guest button'}'"
+                }
 
         # Check if already on video watch page
         if is_on_watch_page:
@@ -1120,7 +1209,7 @@ class BrowserAgent:
     def resolve_target_url_autonomously(cls, goal: str) -> str:
         """
         Cognitive Link & Target Synthesizer (Zero Hardcoded Links).
-        Dynamically deduces the official destination URL for ANY web task or domain.
+        Dynamically deduces the official destination URL for ANY web task, SaaS platform, or domain.
         """
         low = goal.lower()
         clean_q = cls._clean_search_query(goal)
@@ -1130,16 +1219,7 @@ class BrowserAgent:
         if url_match:
             return url_match.group(0)
 
-        # 2. Direct login / authentication portals (Prioritized to avoid search engine misrouting)
-        if any(w in low for w in ["login", "signin", "sign in", "auth"]):
-            for s_name in ["leetcode", "github", "linkedin", "google", "gmail", "aws", "vercel", "stripe", "upwork", "twitter", "x"]:
-                if s_name in low:
-                    login_url, _ = BrowserController.resolve_login_target(s_name)
-                    return login_url
-            login_url, _ = BrowserController.resolve_login_target("google")
-            return login_url
-
-        # 3. Central Brain Autonomous Deduction
+        # 2. Central Brain Autonomous Link Synthesizer (Primary AI Link Resolver)
         llm = settings.get_llm_client()
         if llm and not settings.is_mock():
             try:
@@ -1164,50 +1244,34 @@ class BrowserAgent:
             except Exception:
                 pass
 
-        # 4. Dynamic Heuristic / Domain Resolver
-
-        # Check for explicit domain syntax (e.g., domain.com, sub.domain.io)
-        domain_match = re.search(r'\b([a-z0-9\-]+\.(?:com|org|io|net|edu|ai|co|gov))\b', low)
+        # 3. Dynamic Heuristic & Domain Resolver (First-Principles Fallback)
+        domain_match = re.search(r'\b([a-z0-9\-]+\.(?:com|org|io|net|edu|ai|co|gov|app|dev))\b', low)
         if domain_match:
             return f"https://{domain_match.group(1)}"
 
-        common_platforms = {
-            "youtube": "https://www.youtube.com/results?search_query=" + urllib.parse.quote_plus(clean_q) if clean_q else "https://www.youtube.com",
-            "leetcode": (
-                f"https://leetcode.com/problems/{re.search(r'(?:problems?\/|solve\s+)([a-z0-9\-]+)', low).group(1)}/"
-                if re.search(r'(?:problems?\/|solve\s+)([a-z0-9\-]+)', low) and re.search(r'(?:problems?\/|solve\s+)([a-z0-9\-]+)', low).group(1) not in ["any", "a", "the", "today", "daily", "streak", "problem", "leetcode"]
-                else "https://leetcode.com/problemset/"
-            ),
-            "github": "https://github.com/search?q=" + urllib.parse.quote_plus(clean_q) if clean_q else "https://github.com",
-            "linkedin": "https://www.linkedin.com",
-            "gmail": "https://mail.google.com",
-            "google": "https://www.google.com/search?q=" + urllib.parse.quote_plus(clean_q) if clean_q else "https://www.google.com",
-            "twitter": "https://twitter.com",
-            "x.com": "https://x.com",
-            "upwork": "https://www.upwork.com",
-            "huggingface": "https://huggingface.co",
-            "stripe": "https://dashboard.stripe.com",
-            "aws": "https://aws.amazon.com",
-            "reddit": "https://www.reddit.com",
-            "instantly": "https://app.instantly.ai",
-            "linear": "https://linear.app",
-            "beehiiv": "https://app.beehiiv.com",
-            "supabase": "https://supabase.com/dashboard",
-            "vercel": "https://vercel.com/dashboard"
-        }
-        for name, u in common_platforms.items():
-            if name in low:
-                return u
+        # Check for explicit login / sign-in intent and resolve dynamically
+        if any(w in low for w in ["login", "signin", "sign in", "auth"]):
+            m_target = re.search(r'(?:login|sign\s*in|auth)\s+(?:to|on|in|into)?\s*([a-zA-Z0-9_\-\.]+)', low)
+            if not m_target:
+                m_target = re.search(r'\b([a-zA-Z0-9_\-]+)\s+(?:login|signin|sign in|auth)\b', low)
+            target_str = m_target.group(1) if m_target else "google"
+            login_url, _ = BrowserController.resolve_login_target(target_str)
+            return login_url
 
-        match_site = re.search(r'\b(?:go\s+to|navigate\s+to|open|visit)\s+([a-zA-Z0-9\.\-]+)', low)
+        # Dynamic SaaS / platform entity extraction from navigation directives
+        match_site = re.search(r'\b(?:go\s+to|navigate\s+to|open|visit|head\s+to|find.*on)\s+([a-zA-Z0-9\.\-]+)', low)
         if match_site:
             cand = match_site.group(1).lower().strip()
-            if cand not in ["the", "a", "my", "our", "this", "some", "any"]:
+            if cand not in ["the", "a", "my", "our", "this", "some", "any", "at"]:
                 if "." in cand:
                     return f"https://{cand}"
-                if cand in common_platforms:
-                    return common_platforms[cand]
-                return f"https://{cand}.com"
+                login_url, _ = BrowserController.resolve_login_target(cand)
+                # If target was recognized as a known platform, convert to base URL
+                if "login" in login_url or "accounts" in login_url:
+                    base_domain = urllib.parse.urlparse(login_url).netloc
+                    if base_domain:
+                        return f"https://{base_domain}"
+                return f"https://www.{cand}.com" if not cand.startswith("www.") else f"https://{cand}.com"
 
         # Fallback to privacy-first DuckDuckGo web search
         encoded = urllib.parse.quote_plus(clean_q or goal.strip())
@@ -1414,21 +1478,10 @@ class BrowserAgent:
                 time.sleep(2.0)
                 self.inject_human_cursor_overlay(page)
 
-                # Auto-dismiss YouTube / Google consent or dismissal popups
-                try:
-                    for consent_sel in [
-                        "button:has-text('Reject all')", "button:has-text('Accept all')",
-                        "button:has-text('I agree')", "[aria-label='Reject all']",
-                        "[aria-label='Accept all']", "button:has-text('No thanks')",
-                        "button:has-text('Dismiss')", "tp-yt-paper-button#dismiss-button"
-                    ]:
-                        btn = page.locator(consent_sel).first
-                        if btn.is_visible(timeout=800):
-                            btn.click()
-                            time.sleep(1.0)
-                            break
-                except Exception:
-                    pass
+                # Auto-dismiss initial consent, popups, and bypass guest barriers
+                init_bypass = self._dismiss_modal_or_bypass_auth(page, goal)
+                if init_bypass:
+                    step_logs.append(init_bypass)
 
                 # Check and defeat CAPTCHA / Bot challenges
                 captcha_res = BrowserController.defeat_or_detect_captcha(page)
@@ -1457,6 +1510,11 @@ class BrowserAgent:
                                     page = extra_p
                                     self.inject_human_cursor_overlay(page)
                                     step_logs.append(f"Step {step_idx}: Shifted focus to new active tab: {page.title()} ({page.url[:40]})")
+
+                    # Check for mid-workflow modals, promo popups, or guest barriers
+                    mid_bypass = self._dismiss_modal_or_bypass_auth(page, goal)
+                    if mid_bypass:
+                        step_logs.append(f"Step {step_idx}: {mid_bypass}")
 
                     elements = self._extract_interactive_elements(page)
                     if not elements:

@@ -184,6 +184,13 @@ async def test_browser_login_command_sanitization(tmp_path):
         assert res is True
         mock_login_nat.assert_called_once_with("google", None)
 
+    # 5. Test natural language unlisted service login request (Zero Hardcoding)
+    with patch("core.browser_controller.BrowserController.launch_login_session") as mock_login_cs:
+        mock_login_cs.return_value = {"success": True, "logged_in": True, "service": "Coursera"}
+        res = await cli.process_directive("i want to login to coursera so you can do assignments")
+        assert res is True
+        mock_login_cs.assert_called_once_with("coursera", None)
+
 
 @pytest.mark.asyncio
 async def test_autonomous_email_synthesis_and_batch_dispatch():

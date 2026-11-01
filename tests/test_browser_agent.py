@@ -272,3 +272,70 @@ def test_browser_tab_management_engine():
     assert cl["success"] is True
     page1.close.assert_called_once()
 
+
+def test_autonomous_modal_and_guest_bypass():
+    """Verify autonomous modal & obstacle bypass for non-auth tasks and OAuth federation for auth tasks."""
+    from unittest.mock import MagicMock
+
+    # 1. Non-auth goal with "Use Chrome without an account" / "Continue as guest"
+    mock_page = MagicMock()
+    mock_loc = MagicMock()
+    mock_loc.is_visible.return_value = True
+    mock_loc.inner_text.return_value = "Continue as guest"
+    mock_page.locator.return_value.first = mock_loc
+
+    res = BrowserAgent._dismiss_modal_or_bypass_auth(mock_page, goal="read latest tech articles")
+    assert res is not None
+    assert "Continue as guest" in res
+    mock_loc.click.assert_called_once()
+
+    # 2. Auth goal with "Continue as..." / "Sign in with Google"
+    mock_page_auth = MagicMock()
+    mock_loc_auth = MagicMock()
+    mock_loc_auth.is_visible.return_value = True
+    mock_loc_auth.inner_text.return_value = "Sign in with Google"
+    mock_page_auth.locator.return_value.first = mock_loc_auth
+
+    res_auth = BrowserAgent._dismiss_modal_or_bypass_auth(mock_page_auth, goal="sign in to my dashboard")
+    assert res_auth is not None
+    assert "Sign in with Google" in res_auth
+    mock_loc_auth.click.assert_called_once()
+
+
+def test_heuristic_decision_bypasses_guest_obstacle():
+    """Verify _decide_next_action clicks guest bypass button on barrier without needing account."""
+    agent = BrowserAgent(headless=True)
+    elements = [
+        BrowserElement(1, "button", "button", "Continue as guest", "button:has-text('Continue as guest')"),
+        BrowserElement(2, "button", "button", "Sign In", "button:has-text('Sign In')"),
+        BrowserElement(3, "input", "text", "", "input[placeholder='Search']")
+    ]
+    summary = "URL: https://store.example.com\nTitle: Store\nElements:\n- [#1] Continue as guest\n- [#2] Sign In"
+    decision = agent._decide_next_action(
+        goal="browse catalog and view product reviews",
+        dom_summary=summary,
+        elements=elements,
+        step_history=["Navigated to store.example.com"]
+    )
+    assert decision["action"] == "click"
+    assert decision["element_id"] == 1
+    assert "guest" in decision["reason"].lower()
+
+
+def test_dynamic_target_link_resolution_zero_hardcoding():
+    """Verify arbitrary SaaS & web domains resolve dynamically without hardcoded dictionaries."""
+    # 1. Direct explicit URL
+    assert BrowserAgent.resolve_target_url_autonomously("visit https://huggingface.co/models") == "https://huggingface.co/models"
+
+    # 2. Arbitrary domain deduction
+    url_notion = BrowserAgent.resolve_target_url_autonomously("open notion.so workspaces")
+    assert "notion.so" in url_notion
+
+    url_expedia = BrowserAgent.resolve_target_url_autonomously("navigate to expedia.com flights")
+    assert "expedia.com" in url_expedia
+
+    # 3. Dynamic platform login resolution
+    url_coursera = BrowserAgent.resolve_target_url_autonomously("login to coursera")
+    assert "coursera" in url_coursera.lower()
+
+

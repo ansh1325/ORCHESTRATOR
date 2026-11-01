@@ -583,7 +583,13 @@ class JarvisCLI:
                     response_format={"type": "json_object"},
                     temperature=0.0
                 )
-                return json.loads(resp.choices[0].message.content or "{}")
+                content = resp.choices[0].message.content or "{}"
+                parsed = json.loads(content)
+                if isinstance(parsed, list):
+                    return parsed[0] if (parsed and isinstance(parsed[0], dict)) else {"mode": "chat", "goal": line}
+                if isinstance(parsed, dict):
+                    return parsed
+                return {"mode": "chat", "goal": line}
             except Exception:
                 pass
 
@@ -1584,6 +1590,21 @@ class JarvisCLI:
                 print(f"{C.DIM}[No voice command detected or microphone timed out]{C.RESET}\n")
                 return True
 
+        # Multi-Action Compound Directive Decomposition (e.g. "Task 1 and then Task 2")
+        compound_parts = re.split(r'\s*(?:;\s*then\s+|;\s*and\s+then\s+|\s+and\s+then\s+|\s+after\s+that\s+)\s*', line, flags=re.I)
+        if len(compound_parts) > 1 and all(len(p.strip()) > 5 for p in compound_parts):
+            print(f"\n{C.CYAN}{C.BOLD}⛓️  [JARVIS Compound Directive Pipeline]{C.RESET} Decomposed into {len(compound_parts)} sequential operations:")
+            for idx, p in enumerate(compound_parts, start=1):
+                print(f"  {idx}. {C.YELLOW}{p.strip()}{C.RESET}")
+            print()
+            self.speak(f"Executing compound directive with {len(compound_parts)} sequential operations.")
+            for idx, part in enumerate(compound_parts, start=1):
+                print(f"\n{C.BLUE}{C.BOLD}▶ [Executing Operation {idx}/{len(compound_parts)}]:{C.RESET} {C.YELLOW}{part.strip()}{C.RESET}")
+                ok = await self.process_directive(part.strip())
+                if not ok:
+                    return False
+            return True
+
         # Utility Subcommands
         if low.startswith("audit ") or low.startswith("inspect folder "):
             target = line.split(maxsplit=1)[1].strip().strip("'\"")
@@ -1759,6 +1780,8 @@ class JarvisCLI:
 
         # Autonomous Intent Classification by Central Brain (Zero Templates, Zero Keyword Dictionaries)
         intent = await self.classify_intent_autonomously(line)
+        if not isinstance(intent, dict):
+            intent = {"mode": "chat", "goal": line}
         mode = intent.get("mode", "chat")
         goal = intent.get("goal", line)
 

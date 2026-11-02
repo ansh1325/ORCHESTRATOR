@@ -11,7 +11,7 @@
         "prospects",
         "pipeline"
       ],
-      "created_at": "2026-10-31T06:36:48Z",
+      "created_at": "2026-11-02T19:48:00Z",
       "version": "1.0.0",
       "execution_count": 0,
       "last_executed_at": 0.0,
@@ -32,7 +32,7 @@
         "finance",
         "quantitative"
       ],
-      "created_at": "2026-10-31T06:36:48Z",
+      "created_at": "2026-11-02T19:48:00Z",
       "version": "1.0.0",
       "execution_count": 0,
       "last_executed_at": 0.0,
@@ -43,21 +43,21 @@
       ]
     },
     {
-      "system_id": "sys_testsystem_8864",
-      "name": "TestSystem",
-      "purpose": "Test Task",
-      "entrypoint_file": "D:\\LlamaOrchestrator\\workspaces\\constructed_systems\\sys_testsystem_8864\\main.py",
+      "system_id": "sys_system_1793630461_461",
+      "name": "System_1793630461",
+      "purpose": "Generate 1500 full stack dev leads with name, title, company, email, and proof column and save to leads.csv",
+      "entrypoint_file": "D:\\LlamaOrchestrator\\workspaces\\constructed_systems\\sys_system_1793630461_461\\main.py",
       "tags": [
         "autonomous",
         "custom_built"
       ],
-      "created_at": "2026-10-31T06:37:44Z",
+      "created_at": "2026-11-02T20:11:05Z",
       "version": "1.0.0",
       "execution_count": 0,
       "last_executed_at": 0.0,
       "status": "CERTIFIED",
       "capabilities": [
-        "Test Task"
+        "Generate 1500 full stack dev leads with name, titl"
       ]
     }
   ]

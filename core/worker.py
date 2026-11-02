@@ -25,16 +25,26 @@ class WorkerExecutionError(Exception):
     """Raised when a worker task fails after exhausting self-correction attempts."""
 
 def robust_json_loads(raw: str | None) -> dict:
-    """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    """Robustly extracts and deserializes JSON from LLM outputs without regex."""
     if not raw:
         return {}
     clean = raw.strip()
-    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
-    if match:
-        clean = match.group(1).strip()
+    fence_start = clean.find('```')
+    if fence_start != -1:
+        after_start = clean.find('\n', fence_start)
+        if after_start == -1:
+            after_start = fence_start + 3
+        fence_end = clean.find('```', after_start)
+        if fence_end != -1:
+            clean = clean[after_start:fence_end].strip()
+        else:
+            first_brace = clean.find('{')
+            last_brace = clean.rfind('}')
+            if first_brace != -1 and last_brace > first_brace:
+                clean = clean[first_brace:last_brace + 1]
     else:
-        first_brace = clean.find("{")
-        last_brace = clean.rfind("}")
+        first_brace = clean.find('{')
+        last_brace = clean.rfind('}')
         if first_brace != -1 and last_brace > first_brace:
             clean = clean[first_brace:last_brace + 1]
     return json.loads(clean)

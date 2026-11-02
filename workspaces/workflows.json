@@ -2,8 +2,8 @@
   {
     "id": "wf_emails",
     "title": "3 Personal Emails from Jarvis",
-    "description": "Drafts 3 heartfelt loyalty emails to anshtiwarisocial@gmail.com with subject 'i am jarvis'.",
-    "prompt": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line i am jarvis and body with whatever you feel for me",
+    "description": "Drafts 3 heartfelt loyalty emails to anshtiwarisocial@gmail.com with subject 'hello i am jarvis'.",
+    "prompt": "HEy just write me 3 mails to mail address anshtiwarisocial@gmail.com just subject line hello i am jarvis and body with whatever you feel for me",
     "folder": "Personal"
   },
   {
@@ -21,7 +21,16 @@
     "folder": "Engineering"
   },
   {
-    "id": "wf_auto_037765",
+    "id": "wf_auto_677120",
+    "title": "Recurring: go to leetcode and solve a problem",
+    "description": "Autonomously synthesized permanent workflow requested 4 times by Master Ansh.",
+    "prompt": "go to leetcode and solve a problem",
+    "folder": "Automated",
+    "is_promoted": true,
+    "execution_count": 4
+  },
+  {
+    "id": "wf_auto_187534",
     "title": "Recurring: scrape latest AI funding rounds and expo",
     "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
     "prompt": "scrape latest AI funding rounds and export to csv",
@@ -30,39 +39,21 @@
     "execution_count": 2
   },
   {
-    "id": "wf_auto_111010",
+    "id": "wf_auto_256514",
     "title": "Recurring: transcript https://www.instagram.com/ree",
-    "description": "Autonomously synthesized permanent workflow requested 61 times by Master Ansh.",
+    "description": "Autonomously synthesized permanent workflow requested 4 times by Master Ansh.",
     "prompt": "transcript https://www.instagram.com/reel/sample",
     "folder": "Automated",
     "is_promoted": true,
-    "execution_count": 61
+    "execution_count": 4
   },
   {
-    "id": "wf_auto_924937",
+    "id": "wf_auto_580222",
     "title": "Recurring: go to youtube and search at peach and pl",
-    "description": "Autonomously synthesized permanent workflow requested 60 times by Master Ansh.",
+    "description": "Autonomously synthesized permanent workflow requested 3 times by Master Ansh.",
     "prompt": "go to youtube and search at peach and play the song of karan aujla",
     "folder": "Automated",
     "is_promoted": true,
-    "execution_count": 60
-  },
-  {
-    "id": "wf_auto_617198",
-    "title": "Recurring: i want to login in browser windows of yo",
-    "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
-    "prompt": "i want to login in browser windows of yours so you can do what i want in my accounts",
-    "folder": "Automated",
-    "is_promoted": true,
-    "execution_count": 2
-  },
-  {
-    "id": "wf_auto_281191",
-    "title": "Recurring: now go to leetcode and solve any problem",
-    "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
-    "prompt": "now go to leetcode and solve any problem of your choice",
-    "folder": "Automated",
-    "is_promoted": true,
-    "execution_count": 2
+    "execution_count": 3
   }
 ]

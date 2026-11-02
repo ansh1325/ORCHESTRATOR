@@ -7,8 +7,6 @@ Inspired by AI Founder Interviewer & Continuous Autonomous Software Creators.
 4. Registers the compiled tool with the 24/7 background scheduler for continuous daily execution.
 """
 
-import re
-
 from core.models import ClarificationQuestion, DAGPlan, TaskNode
 
 
@@ -83,8 +81,7 @@ class FounderInterviewEngine:
         Dynamically synthesizes an UNBOUNDED swarm of specialized agents (N agents).
         No hardcoded templates. Tailors agents directly to the founder's software requirements.
         """
-        cleaned = re.sub(r'[^a-zA-Z0-9\s]', ' ', vision)
-        words = [w.capitalize() for w in cleaned.split() if len(w) > 3][:6]
+        words = [w.capitalize() for w in "".join(c if c.isalnum() else " " for c in vision).split() if len(w) > 3][:6]
         system_name = "".join(words) or "CustomAutonomousSystem"
 
         # Determine swarm scale based on complexity (6 to 10+ agents)

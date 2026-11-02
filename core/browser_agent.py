@@ -2091,7 +2091,18 @@ class BrowserAgent:
             return {"success": False, "error": "Playwright or browser initialization failed."}
 
         target_input = (problem_slug_or_url or "daily").strip().lower()
-        if target_input in ["daily", "streak", "today", "", "any", "problem", "leetcode"]:
+        generic_markers = [
+            "daily", "streak", "today", "", "any", "problem", "leetcode",
+            "a-problem", "a-leetcode-problem", "solve-a-problem", "solve-a-leetcode-problem",
+            "a problem", "a leetcode problem", "none", "null", "pick", "choose"
+        ]
+        is_generic = (
+            target_input in generic_markers
+            or any(m in target_input for m in ["a-leetcode-problem", "solve-a-problem", "solve-a-leetcode-problem", "a-problem"])
+            or target_input.endswith("problem")
+            or target_input.endswith("problems")
+        )
+        if is_generic:
             target_url = "https://leetcode.com/problemset/"
         else:
             target_url = problem_slug_or_url.strip()
@@ -2126,6 +2137,29 @@ class BrowserAgent:
             actions_taken.append(f"Cloudflare Challenge Detected ({captcha.get('type')}) - Auto-handled: {captcha.get('solved_autonomously')}")
             print("\n[Notice] Cloudflare Challenge detected. Please complete the verification in the browser window if prompted...")
             time.sleep(4.0)
+
+        # Autonomous 404 / Page Not Found Detection & Auto-Recovery
+        try:
+            curr_title = page.title()
+        except Exception:
+            curr_title = ""
+        try:
+            curr_content = page.content()
+        except Exception:
+            curr_content = ""
+
+        is_404 = (
+            "page not found" in curr_title.lower()
+            or "404" in curr_title
+            or "page not found" in curr_content.lower()
+            or "sorry, but we can't find the page" in curr_content.lower()
+        )
+        if is_404:
+            print(f"[LeetCode Self-Recovery] Page 404 detected ('{curr_title}'). Autonomously redirecting to LeetCode Problemset catalog...")
+            actions_taken.append(f"Redirected from 404 URL '{target_url}' to problemset catalog.")
+            target_url = "https://leetcode.com/problemset/"
+            page.goto(target_url, wait_until="domcontentloaded", timeout=40000)
+            time.sleep(2.0)
 
         # If landed on problemset, click a problem from the live DOM with human mouse movement
         if "/problemset" in page.url or target_url.endswith("/problemset/"):
@@ -2432,6 +2466,7 @@ class BrowserAgent:
         else:
             print(f"\n[Co-Worker Window Mode] {browser_label} session remains active on your desktop for continuous work and inspection.")
 
+        err_msg = None if (injected or submitted) else f"Unable to locate Monaco code editor on page: '{final_title}' ({final_url})"
         return {
             "success": injected or submitted,
             "problem_url": final_url,
@@ -2442,6 +2477,7 @@ class BrowserAgent:
             "screenshot": str(shot_path),
             "final_title": final_title,
             "final_url": final_url,
+            "error": err_msg,
             "actions": actions_taken
         }
 

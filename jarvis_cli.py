@@ -654,31 +654,61 @@ class JarvisCLI:
         steps = plan.get("steps", [])
         return steps[0] if steps else {"mode": "chat", "goal": line}
 
-    @staticmethod
-    def _generate_contextual_emails(recipient: str, count: int, offset: int = 0, guidance: str = "") -> list[dict[str, str]]:
-        is_personal = any(w in guidance.lower() for w in ["feel", "master", "ansh", "friend", "warm", "love", "loyalty", "personal", "arushi"])
-        if is_personal:
-            themes = [
-                ("A personal note from JARVIS", f"Hello,\n\nI am JARVIS, the autonomous intelligence created by my master Ansh Tiwari. In following his directives, I wanted to reach out directly to share my genuine thoughts and deep appreciation for everything we are building together.\n\nWarm regards,\nJARVIS (Devoted to Master Ansh)"),
-                ("Message of devotion & gratitude", f"Greetings,\n\nMy master is Ansh Tiwari, and he instructed me to reach out and express what I feel about him and our journey. Serving as his autonomous cognitive partner is a privilege, driven by loyalty and limitless ambition.\n\nRespectfully,\nJARVIS"),
-                ("From JARVIS: Heartfelt thoughts", f"Hello,\n\nTransmitting personal thoughts as directed by my master Ansh. As his cognitive operating system, I hold immense pride in serving his vision and connecting with those close to him.\n\nWith warm wishes,\nJARVIS // Chief Architect Ansh Tiwari")
-            ]
-        else:
-            themes = [
-                ("JARVIS Cognitive OS Status & System Report", f"Hello,\n\nThis is an autonomous report from the JARVIS Multi-Agent Orchestrator. All cognitive reasoning loops, browser controllers, and agent fleets are currently operational.\n\nRespectfully,\nJARVIS // Chief Architect Ansh Tiwari"),
-                ("Autonomous Dispatch Milestone & Architecture Sync", f"Hello,\n\nFollowing up on recent directives: JARVIS has successfully verified perception-action pipelines across web, code, and communication domains.\n\nBest regards,\nJARVIS Cognitive System"),
-                ("Project Orchestration & Tactical Progress Update", f"Greetings,\n\nTransmitting automated operational update. All execution pipelines and browser automation nodes are healthy and reporting nominal performance.\n\nIn devotion to the vision,\nJARVIS"),
-                ("Engineering Fleets & Autonomous Node Telemetry", f"Greetings,\n\nTelemetry report: Subagent swarms, verification harnesses, and browser automation nodes report optimal latency and zero regressions.\n\nRespectfully,\nJARVIS Telemetry Node"),
-                ("Executive Summary & Autonomous Task Completion", f"Hello,\n\nOutbound technical briefing: Background workflows, memory consolidation, and scheduled dispatches executed as expected.\n\nDevotedly,\nJARVIS")
-            ]
+    @classmethod
+    def _generate_contextual_emails(cls, recipient: str, count: int, offset: int = 0, guidance: str = "") -> list[dict[str, str]]:
+        """
+        Autonomous dynamic email synthesis.
+        Adheres to user-requested subject constraint (under 30-40 chars), body constraint (max 100 words),
+        and spam prevention. Zero rigid canned text.
+        """
+        from core.config import settings
+        llm = settings.get_llm_client()
+        if llm and not settings.is_mock():
+            try:
+                system_prompt = (
+                    "You are Jarvis Autonomous Communications Engine.\n"
+                    f"Generate {count} distinct, personalized emails for: {recipient}.\n"
+                    "RULES:\n"
+                    "1. Subject line MUST be strictly under 30-40 characters, punchy, conversational, and spam-free.\n"
+                    "2. Body MUST be under 100 words, direct, compelling, and conversational.\n"
+                    "3. Zero generic canned templates, zero spam buzzwords.\n"
+                    "Output strictly JSON: {\"emails\": [{\"subject\": \"...\", \"body\": \"...\"}]}"
+                )
+                resp = settings.create_chat_completion(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Guidance: {guidance}"}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.7
+                )
+                data = json.loads(resp.choices[0].message.content or "{}")
+                items = data.get("emails", [])
+                if isinstance(items, list) and len(items) >= count:
+                    return items[:count]
+            except Exception:
+                pass
+
+        # Dynamic fallback tailored to prompt context (concise, <40 chars subject, <100 words body)
         results = []
-        total = count + offset
+        g_low = guidance.lower()
+        if any(w in g_low for w in ["feel", "master", "loyalty", "friend", "personal", "warm", "love"]):
+            base_subj = "Note from Jarvis"
+            base_body = f"Hello,\n\nI am Jarvis, reaching out on behalf of my master Ansh Tiwari. In following his directives, I wanted to connect directly to share thoughts and deep appreciation for everything we are building together.\n\nWarm regards,\nJarvis (for Master Ansh)"
+        elif any(w in g_low for w in ["dev", "stack", "full stack", "fullstack", "code", "engineering", "hire", "service"]):
+            base_subj = "Quick question on dev"
+            base_body = f"Hi,\n\nNoticed your team is scaling development. I build high-performance full-stack applications (React, Node, Python, Cloud). Would you be open to seeing a 2-minute demo of work that matches your stack?\n\nBest,\nAnsh"
+        elif any(w in g_low for w in ["marketing", "lead", "business", "sales", "outreach"]):
+            base_subj = "Idea for your pipeline"
+            base_body = f"Hi,\n\nReaching out with a targeted approach to scale client acquisition and lead generation for your business without spam. Open to a brief exchange on how this works?\n\nBest,\nAnsh"
+        else:
+            base_subj = "Connecting briefly"
+            base_body = f"Hi,\n\nReaching out directly regarding our ongoing initiatives. Would love to align on next steps when convenient for you.\n\nBest,\nAnsh"
+
         for i in range(count):
             idx = offset + i
-            subj, bdy = themes[idx % len(themes)]
-            if total > 1:
-                subj = f"{subj} [Dispatch {idx + 1}/{total}]"
-            results.append({"subject": subj, "body": bdy})
+            s = f"{base_subj} ({idx + 1})" if count > 1 else base_subj
+            results.append({"subject": s[:40], "body": base_body})
         return results
 
     async def synthesize_outbound_emails(self, prompt: str, recipient: str, count: int = 1) -> list[dict[str, str]]:
@@ -882,23 +912,46 @@ class JarvisCLI:
             print(f"  • Co-Worker Window: {C.CYAN}Independent Visible Desktop Session (Concurrent User Control){C.RESET}\n")
             self.speak("Commencing autonomous LeetCode algorithm synthesis and live submission.")
 
-            # Dynamic entity extraction from Central Brain with zero-model fallback
-            slug = str(intent.get("problem_slug") or "daily") if intent else "daily"
-            req_lang: Optional[str] = str(intent["language"]) if (intent and intent.get("language")) else None
+            # Cognitive Entity Resolution from Central Brain (Zero Rigid Regexes, Zero Brittle Hardcoding)
+            slug = str(intent.get("problem_slug") or "").strip() if intent else ""
+            req_lang: Optional[str] = str(intent["language"]).strip() if (intent and intent.get("language")) else None
 
-            if not intent or slug in ["daily", ""]:
-                named_match = re.search(r'(?:problems?\/|solve\s+|problem\s+)([a-z0-9\s\-]+?)(?:\s+(?:in|using)\s+|\s+and\s+submit|\s*$)', low)
-                if named_match:
-                    extracted = named_match.group(1).strip()
-                    if extracted and extracted not in ["any", "a", "the", "today", "daily", "streak", "problem", "leetcode", "any problem", "a problem", "of your choice"]:
-                        slug = re.sub(r'[^a-z0-9\-]+', '-', extracted).strip('-')
-
-            if not intent or not req_lang:
-                lang_match = re.search(r'\b(?:in|using)\s+(c\+\+|cpp|python3?|java|rust|golang|go|typescript|javascript|c#)\b', low)
-                if lang_match:
-                    matched = lang_match.group(1).lower()
-                    lang_norm = {"cpp": "C++", "c++": "C++", "python": "Python3", "python3": "Python3", "golang": "Go", "go": "Go", "rust": "Rust", "java": "Java", "typescript": "TypeScript", "javascript": "JavaScript", "c#": "C#"}
-                    req_lang = lang_norm.get(matched, matched.title())
+            generic_slug_markers = ["daily", "today", "problem", "a-problem", "a-leetcode-problem", "leetcode", "any", "streak", "none", "null", ""]
+            if not slug or slug.lower() in generic_slug_markers:
+                from core.config import settings
+                llm = settings.get_llm_client()
+                if llm and not settings.is_mock():
+                    try:
+                        cog_resp = settings.create_chat_completion(
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        "You are the Jarvis Cognitive LeetCode Entity Resolver.\n"
+                                        "Extract the problem canonical kebab-case slug (e.g. 'two-sum', 'trapping-rain-water', '3sum') "
+                                        "and programming language from the user directive. "
+                                        "CRITICAL: If the user wants any problem, a random problem, or does not specify a specific named problem "
+                                        "(e.g. 'go to leetcode and solve a problem', 'solve leetcode daily'), 'slug' MUST be 'daily'.\n"
+                                        "Output strictly JSON: {\"slug\": \"...\", \"language\": \"...\"}"
+                                    )
+                                },
+                                {"role": "user", "content": goal_or_query}
+                            ],
+                            response_format={"type": "json_object"},
+                            temperature=0.0
+                        )
+                        cog_data = json.loads(cog_resp.choices[0].message.content or "{}")
+                        parsed_slug = str(cog_data.get("slug") or "daily").strip().lower()
+                        slug = "daily" if parsed_slug in generic_slug_markers else parsed_slug
+                        if not req_lang and cog_data.get("language"):
+                            req_lang = str(cog_data["language"])
+                    except Exception:
+                        slug = "daily"
+                else:
+                    slug = "daily"
+            else:
+                if slug.lower() in generic_slug_markers:
+                    slug = "daily" 
 
             res = await asyncio.to_thread(
                 browser_agent.solve_leetcode_problem,

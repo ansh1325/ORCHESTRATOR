@@ -42,18 +42,33 @@ logger = logging.getLogger(__name__)
 
 
 def robust_json_loads(raw: str | None) -> dict:
-    """Robustly extracts and deserializes JSON from LLM outputs containing code fences or prose."""
+    """Extract JSON from LLM output without regex.
+    Looks for a triple‑backtick fence; if not found falls back to the first
+    curly‑brace pair. Mirrors the logic used in `core/evaluator.py`.
+    """
     if not raw:
         return {}
     clean = raw.strip()
-    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
-    if match:
-        clean = match.group(1).strip()
+    # Attempt to extract a JSON code‑fence
+    fence_start = clean.find('```')
+    if fence_start != -1:
+        after_start = clean.find('\n', fence_start)
+        if after_start == -1:
+            after_start = fence_start + 3
+        fence_end = clean.find('```', after_start)
+        if fence_end != -1:
+            clean = clean[after_start:fence_end].strip()
+        else:
+            # fallback to braces
+            first = clean.find('{')
+            last = clean.rfind('}')
+            if first != -1 and last > first:
+                clean = clean[first:last+1]
     else:
-        first_brace = clean.find("{")
-        last_brace = clean.rfind("}")
-        if first_brace != -1 and last_brace > first_brace:
-            clean = clean[first_brace:last_brace + 1]
+        first = clean.find('{')
+        last = clean.rfind('}')
+        if first != -1 and last > first:
+            clean = clean[first:last+1]
     return json.loads(clean)
 
 from core.scheduler import parse_schedule_directive  # pyright: ignore[reportMissingImports]

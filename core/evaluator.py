@@ -7,7 +7,7 @@ sales closing call, or zero-intervention autonomous execution) powered by Meta L
 
 import asyncio
 import json
-import re
+# import re  # removed for option B – regex replaced with string handling
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -26,12 +26,28 @@ def robust_json_loads(raw: str | None) -> dict:
     if not raw:
         return {}
     clean = raw.strip()
-    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean)
-    if match:
-        clean = match.group(1).strip()
+    # Attempt to extract a JSON code‑fence without using regex
+    # Look for the opening triple back‑ticks (optionally followed by 'json')
+    fence_start = clean.find('```')
+    if fence_start != -1:
+        # Find the end of the opening fence (skip any language identifier)
+        after_start = clean.find('\n', fence_start)
+        if after_start == -1:
+            after_start = fence_start + 3
+        fence_end = clean.find('```', after_start)
+        if fence_end != -1:
+            # Extract the block between the fences
+            clean = clean[after_start:fence_end].strip()
+        else:
+            # No closing fence – fall back to brace extraction
+            first_brace = clean.find('{')
+            last_brace = clean.rfind('}')
+            if first_brace != -1 and last_brace > first_brace:
+                clean = clean[first_brace:last_brace + 1]
     else:
-        first_brace = clean.find("{")
-        last_brace = clean.rfind("}")
+        # No fence – fall back to brace extraction
+        first_brace = clean.find('{')
+        last_brace = clean.rfind('}')
         if first_brace != -1 and last_brace > first_brace:
             clean = clean[first_brace:last_brace + 1]
     return json.loads(clean)
@@ -135,7 +151,7 @@ class EvaluatorGatekeeper:
         for lf in lead_files:
             l_content = self.mcp.tool_file_read(lf)
             if l_content.get("success"):
-                emails = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", l_content["content"])
+                emails = [tok for tok in l_content["content"].split() if '@' in tok and '.' in tok]
                 valid_count = sum(1 for e in emails if self.mcp.tool_verify_email_syntax(e).get("valid"))
                 checks.append({
                     "check": f"Lead Email RFC-5322 Syntax ({lf})",

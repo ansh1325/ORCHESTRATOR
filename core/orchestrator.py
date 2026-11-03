@@ -235,9 +235,7 @@ class MetaOrchestrator:
 
             v_low = vision.lower()
             t_type = data.get("track_type", "general").lower()
-            if any(w in v_low for w in ["tool", "software", "creator", "founder", "saas", "app", "daemon", "monitor", "dashboard"]):
-                t_type = "founder_software"
-            elif any(w in v_low for w in ["trading", "trade", "quant", "arbitrage", "alpaca", "binance", "sharpe", "backtest"]):
+            if any(w in v_low for w in ["trading", "trade", "quant", "arbitrage", "alpaca", "binance", "sharpe", "backtest"]):
                 t_type = "quantitative_trading"
             elif any(w in v_low for w in ["robot", "robotics", "humanoid", "kinematics", "actuator"]):
                 t_type = "robotics_humanoid"
@@ -245,6 +243,8 @@ class MetaOrchestrator:
                 t_type = "business_acquisition"
             elif any(w in v_low for w in ["mail", "email", "gmail", "letter"]) and "client" not in v_low and "business" not in v_low:
                 t_type = "communication_assistant"
+            elif any(w in v_low for w in ["tool", "software", "creator", "founder", "saas", "app", "daemon", "monitor", "dashboard"]):
+                t_type = "founder_software"
             elif t_type in ["software_deployment", "fullstack_web", "backend"]:
                 t_type = "technical_software"
             else:
@@ -373,14 +373,14 @@ class MetaOrchestrator:
             "trading", "trade", "quant", "crypto", "equities", "stock", "arbitrage",
             "alpaca", "binance", "sharpe", "backtest", "order flow", "hft", "algorithmic trading"
         ]) and not is_robotics
-        is_founder_software = any(w in v_lower for w in [
-            "tool", "software", "creator", "founder", "saas", "app", "daemon", "monitor", "dashboard", "intelligence tool"
-        ])
         is_business_or_agency = any(w in v_lower for w in [
             "business", "agency", "marketing", "client", "acquisition", "freelance",
             "sales", "money", "earn", "earning", "profit", "affiliate", "firm",
             "aaa", "automation agency", "lead", "omnichannel", "reachout", "linkedin"
-        ]) and not is_robotics and not is_trading and not is_founder_software
+        ]) and not is_robotics and not is_trading
+        is_founder_software = any(w in v_lower for w in [
+            "tool", "software", "creator", "founder", "saas", "app", "daemon", "monitor", "dashboard", "intelligence tool"
+        ]) and not is_robotics and not is_trading and not is_business_or_agency
         is_personal_comm = any(w in v_lower for w in [
             "mail", "email", "gmail", "letter", "message", "write to", "send to"
         ]) and not is_business_or_agency and not is_robotics and not is_trading

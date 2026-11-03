@@ -54,6 +54,7 @@ class KnowledgeBase(BaseModel):
     synthesis_summary: str
     omnichannel_channels: list[dict[str, Any]] = Field(default_factory=list, description="Targeted channels: LinkedIn browser automation, Twitter/X DMs, community groups, and cold email")
     ready_for_permission_actions: list[dict[str, Any]] = Field(default_factory=list, description="Pre-staged autonomous actions awaiting 1-click user authorization")
+    sales_discovery_playbook: dict[str, Any] = Field(default_factory=dict, description="Consultative sales discovery doctrine, price protection protocols, and objection handling matrix")
     updated_at: str = Field(default_factory=utc_now_iso)
 
 class TaskNode(BaseModel):

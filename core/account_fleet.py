@@ -427,7 +427,7 @@ class AccountFleetManager:
                     "Hey {{name}},\n\n"
                     "Saw {{company}}'s recent product velocity—noticed you're scaling your tech stack. "
                     f"We specialize in {company_niche}, helping engineering teams cut response latency "
-                    f"and ship high-priority sprint features without hiring overhead ({custom_offer}).\n\n"
+                    f"and ship high-priority sprint features without hiring overhead.\n\n"
                     "Would it be helpful if I sent over a 2-minute Loom breakdown of how we'd approach your stack?\n\n"
                     f"- {founder_name}"
                 )
@@ -453,7 +453,7 @@ class AccountFleetManager:
                 "body": (
                     "Hey {{name}},\n\n"
                     "We typically operate as specialized surge capacity for founders when internal dev backlogs get backed up. "
-                    "Everything is done in fixed 14-day sprints with a 100% money-back guarantee on outcomes.\n\n"
+                    f"Everything is done in fixed sprints ({custom_offer}) with a 100% money-back guarantee on outcomes.\n\n"
                     "Worth a 15-minute intro this week to see if this fits {{company}}'s roadmap?\n\n"
                     f"- {founder_name}"
                 )
@@ -561,8 +561,8 @@ class AccountFleetManager:
         elif any(w in low for w in ["how much", "cost", "pricing", "rate", "fee", "price", "budget"]):
             category = "PRICE_OBJECTION"
             reply_body = (
-                f"We work on fixed $2,500 14-day production sprints with a 100% money-back guarantee on outcomes—no recurring retainer lock-ins. "
-                f"Happy to walk through exactly what we'd build on a quick 15-min call: {booking_link}"
+                f"Every build is custom-engineered to your exact stack and technical scope, though our initial pilot sprints are fixed at $2,500 (14 days) with a 100% money-back guarantee on outcomes—zero monthly retainer lock-ins. "
+                f"Happy to walk through exactly what we'd build on a quick 15-min discovery call: {booking_link}"
             )
             requires_human = True
         elif any(w in low for w in ["in-house", "in house", "our team", "already have", "internal team", "have devs"]):

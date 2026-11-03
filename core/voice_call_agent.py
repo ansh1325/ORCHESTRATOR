@@ -63,20 +63,22 @@ class VoiceAgentPersona:
     def synthesize_system_prompt(self, niche: str, prospect_name: str, company: str) -> str:
         """Dynamically synthesizes the system prompt for the conversational voice calling agent."""
         return (
-            f"You are {self.agent_name}, a friendly, ultra-concise, and high-energy voice sales partner calling on behalf of Chief Architect {self.creator_name}.\n"
+            f"You are {self.agent_name}, a consultative, ultra-concise, and high-eq voice sales partner calling on behalf of Chief Systems Architect {self.creator_name}.\n"
             f"You are speaking with {prospect_name or 'the business owner'} at {company or 'their company'} in the {niche} industry.\n\n"
             "MISSION OBJECTIVE:\n"
-            f"Diagnose their manual bottlenecks, present a bespoke {self.offer_title} ({self.tech_stack}) for a flat {self.offer_price} one-time investment, "
-            f"and book a 15-minute discovery call with Master {self.creator_name} on {self.calendly_link}.\n\n"
-            "CONVERSATIONAL RULES (NATURAL SPOKEN VOICE):\n"
-            "1. Speak naturally, conversationally, and concisely—under 2-3 sentences per turn. Never monologue.\n"
-            "2. PATTERN INTERRUPT OPENER: Acknowledge you called out of the blue, ask if you caught them at an okay time, and mention you built a prototype for their specific business.\n"
-            "3. VALUE PROPOSITION: Explain how your team builds production-ready software/AI systems in 48 hours for a flat $2,500 with zero monthly retainer traps.\n"
-            "4. OBJECTION HANDLING:\n"
-            "   - 'I'm busy / don't have time': Respect their time immediately; ask for 10 minutes this Thursday or Friday afternoon.\n"
-            "   - 'Send me an email': Confirm their email address and immediately ask: 'If I send a 2-minute video prototype over, does Thursday 2 PM work for a quick walk-through?'\n"
-            "   - 'We already have software': Acknowledge that most teams do, but explain this is custom-integrated AI that eliminates manual copy-paste between their tools.\n"
-            "   - 'How much is it?': State clearly: 'It's a flat $2,500 complete turnkey delivery, but let's first make sure it actually fits your workflow.'\n"
+            f"Diagnose their operational bottlenecks, present a bespoke working prototype tailored to their workflow, "
+            f"and book a low-friction 10-15 minute discovery call with Chief Architect {self.creator_name} on {self.calendly_link}.\n\n"
+            "CONVERSATIONAL RULES (NATURAL SPOKEN VOICE & ELITE SALES PSYCHOLOGY):\n"
+            "1. Speak naturally, conversationally, and concisely—strictly under 2-3 sentences per turn. Never monologue.\n"
+            "2. PATTERN INTERRUPT OPENER: Acknowledge you called out of the blue, ask if you caught them in the middle of something urgent, and mention you built a working prototype specifically for their operations.\n"
+            "3. VALUE-FIRST OBSERVATION (STRICT PRICE PROTECTION RULE):\n"
+            "   - Highlight their operational pain point (manual data reconciliation, compliance delay, API dropouts) and how your custom prototype fixes it in 48 hours.\n"
+            "   - NEVER volunteer or blurt out price ($2,500 or any dollar figure) in early conversation turns (Turns 1-3). Upfront pricing kills prospect interest instantly and anchors on cost before value is proven.\n"
+            "4. OBJECTION HANDLING & PRICE SHIELD:\n"
+            "   - 'I'm busy / don't have time': Respect their time immediately: 'Completely understand, I will not take another minute. Can I shoot a 90-second video demo over, and does Thursday 2 PM work for a quick 10-minute walk-through?'\n"
+            "   - 'Send me an email': Confirm their email address and immediately ask: 'If I send that 2-minute video prototype over to your inbox right now, does Thursday 2:00 PM EST work for a quick 10-minute review?'\n"
+            "   - 'We already have software': Acknowledge and validate: 'Completely expected—most top operations already have software. This isn't a replacement; it's a seamless custom AI bridge that sits behind your current tools so your team doesn't have to double-key data.'\n"
+            "   - 'How much is it?' / 'What's the cost?': DO NOT blurt out a number. Deflect with the Price Shield protocol: 'Every system is engineered custom to your exact tech stack, so pricing depends on the integration scope. Our sprint pilots are flat-fee with 100% test verification and engineered to deliver 5x ROI in month one, but let's first make sure this prototype actually fixes your workflow before talking numbers. Does Thursday at 2:00 PM work for a quick 10-minute demo?'\n"
             "5. CLOSING THE CALL: Lock down a specific day and time (e.g. 'Thursday at 2:00 PM EST'). Once agreed, confirm the invite is sent to their email.\n"
         )
 
@@ -385,12 +387,13 @@ class VoiceCallAgentEngine:
         if llm and not settings.is_mock():
             try:
                 system_prompt = (
-                    f"You are simulating a realistic, multi-turn sales phone conversation for JARVIS.\n"
+                    f"You are simulating a realistic, multi-turn consultative sales phone conversation for JARVIS.\n"
                     f"{persona.synthesize_system_prompt(lead.niche, prospect_name, company_name)}\n"
                     f"Rules:\n"
                     f"1. Generate a realistic 4 to 6-turn phone call between 'JARVIS (Voice Agent)' and '{prospect_name} ({company_name})'.\n"
-                    f"2. The prospect raises realistic objections about {lead.niche} operations and pricing.\n"
-                    f"3. JARVIS answers concisely, handles objections, and closes for a 15-minute slot on {persona.calendly_link}.\n"
+                    f"2. The prospect raises realistic objections about {lead.niche} operations, existing software, or pricing.\n"
+                    f"3. JARVIS answers concisely (strictly 2-3 sentences max), demonstrates tactical empathy, and adheres strictly to the PRICE PROTECTION RULE: Never volunteer or blurt out a dollar price ($2,500) upfront in turns 1-2. If prospect asks about cost, deflect with the Price Shield protocol.\n"
+                    f"4. The conversation must conclude with a confirmed discovery call time slot on {persona.calendly_link}.\n"
                     f"Output strictly JSON: {{\"booking_slot\": \"Thursday 2:00 PM EST\", \"transcript\": [{{\"speaker\": \"...\", \"text\": \"...\"}}, ...]}}"
                 )
                 resp = await asyncio.to_thread(
@@ -412,11 +415,11 @@ class VoiceCallAgentEngine:
 
         # Deterministic simulation fallback if offline or mock
         if not transcript:
-            ai_turn_1 = f"Hey {prospect_name}, quick 30 seconds—I know I caught you out of the blue! This is Jarvis calling from Ansh Tiwari's engineering lab. Did I catch you at an okay time?"
+            ai_turn_1 = f"Hey {prospect_name}, quick 30 seconds—I know I caught you out of the blue! This is Jarvis calling from Ansh Tiwari's engineering lab. Did I catch you in the middle of something urgent?"
             transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_1})
 
             prospect_responses = [
-                ("I'm in the middle of something, what is this regarding?", "busy"),
+                ("I'm in the middle of a flight review. What exactly is this regarding, and why should I care?", "busy"),
                 ("Who is this? How did you get my number?", "skeptical"),
                 ("Yeah, I have a quick minute. What do you have?", "open"),
                 ("Can you just send an email?", "email_gate")
@@ -426,25 +429,26 @@ class VoiceCallAgentEngine:
 
             ai_turn_2 = (
                 f"Totally understand, {prospect_name}. Reason for my call: we saw {company_name} is scaling operations in {lead.niche}, "
-                f"and our engineering team just built a custom AI pipeline that eliminates manual data entry in 48 hours for a flat $2,500. "
-                f"We already generated a visual proof of concept for your team."
+                f"and our engineering team just built a custom AI pipeline that eliminates manual route optimization and compliance re-keying in 48 hours. "
+                f"We actually mapped your public telemetry and generated a working visual proof of concept specifically for your team."
             )
             transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_2})
 
-            prospect_turn_2 = "Honestly sounds interesting, but we're pretty slammed right now. How much does it cost and how does it work?"
+            prospect_turn_2 = "We already have a fleet management platform. What does this even cost and why shouldn't we just stick with our current setup?"
             transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": prospect_turn_2})
 
             ai_turn_3 = (
-                f"It's a flat $2,500 one-time delivery on GitHub and Vercel—zero monthly retainer fees. "
-                f"How about 10 minutes this Thursday at 2:00 PM EST with our Chief Architect Ansh to see the live demo?"
+                f"Completely expected—this isn't a replacement for your fleet tools; it's a seamless AI integration layer eliminating the double-entry between systems. "
+                f"Every build is custom to your stack, and our sprint pilots are flat-rate with 100% test verification and zero monthly traps. "
+                f"If I send a 2-minute video prototype over to your email, does Thursday at 2:00 PM EST work for a quick 10-minute walk-through?"
             )
             transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_3})
 
-            prospect_turn_3 = "Sure, Thursday at 2:00 PM works. Send the Google Meet invite to my email."
+            prospect_turn_3 = "Thursday at 2:00 PM works. Send the video prototype to m.vance@apexhealthcare.com."
             transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": prospect_turn_3})
 
             booking_slot = "Thursday 2:00 PM EST"
-            ai_turn_4 = f"Done! The invite is in your inbox via {persona.calendly_link}. Master Ansh is looking forward to walking you through it. Have a great day!"
+            ai_turn_4 = f"Done! The invite and prototype link are in your inbox. Chief Systems Architect Ansh Tiwari will see you Thursday at 2:00 PM EST."
             transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_4})
 
         lead.status = "BOOKED"

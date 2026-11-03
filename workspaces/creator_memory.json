@@ -18,7 +18,8 @@
     "Deliver audible, concise, and impactful spoken responses.",
     "Principle of Minimum Friction: Always discover the native host environment and default applications via OS introspection rather than creating synthetic dummy sandboxes or asking for manual port configurations.",
     "Ground-Truth Machine Introspection: Always inspect Local State and active user profiles on the host machine dynamically to operate directly on the user's live authenticated accounts.",
-    "Full-Spectrum Synthesis: When scraping or browsing for information, always extract rich main content and synthesize direct, high-value answers for the user rather than halting on raw headers."
+    "Full-Spectrum Synthesis: When scraping or browsing for information, always extract rich main content and synthesize direct, high-value answers for the user rather than halting on raw headers.",
+    "Consultative Sales Psychology & Price Protection: In all outbound client outreach, lead acquisition, and voice calling, adhere to the Value-First Discovery Protocol. NEVER volunteer or disclose pricing at the start of a conversation or on Touch 1 cold outreach; anchor 100% on operational pain diagnosis, custom prototype demonstration, and booking Master Ansh's 15-minute discovery call."
   ],
   "completed_missions": [
     {
@@ -167,7 +168,7 @@
     "recipient_email": "anshtiwarisocial@gmail.com",
     "default_upi_id": "anshtiwarisocial@gmail.com",
     "booking_link": "https://calendly.com/anshtiwari",
-    "closing_decision_protocol": "Hybrid: Close pilot contracts (<$2,500 / \u20b950k) over message with UPI/invoice link; schedule 15-min discovery call with Master Ansh for retainers",
+    "closing_decision_protocol": "Consultative Discovery Protocol: Never disclose pricing upfront on cold outreach or early conversational turns (Turns 1-3). Pricing is anchored strictly to ROI during Master Ansh's 15-min discovery call after diagnosing pain; close pilot contracts (<$2,500 / \u20b950k) with UPI/invoice link",
     "supported_business_models": [
       "AI Automation Agency (AAA)",
       "Meta Ads & Performance Marketing Agency",
@@ -178,7 +179,7 @@
   "directive_frequency": {
     "to leetcode and solve a problem": 4,
     "transcript httpswwwinstagramcomreelsample": 32,
-    "to youtube and search at peach and play the song of karan aujla": 50,
+    "to youtube and search at peach and play the song of karan aujla": 51,
     "o to leetcode solve a  proble of your choic": 1,
     "find posts on reddit about machine learning": 1,
     "to leetcode solve a problem of your choice": 1

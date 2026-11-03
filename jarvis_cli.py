@@ -108,41 +108,37 @@ class JarvisCLI:
         if not clean:
             return
 
-        def _do_speak():
-            with self._speech_lock:
-                if self._sapi_speaker:
-                    try:
-                        self._sapi_speaker.Speak(clean[:400], 0)
-                        return
-                    except Exception:
-                        pass
-                try:
-                    p = subprocess.Popen(
-                        [
-                            "powershell",
-                            "-NoProfile",
-                            "-Command",
-                            "Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak([Console]::In.ReadToEnd())"
-                        ],
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        text=True
-                    )
-                    p.communicate(input=clean[:250])
-                except Exception:
-                    pass
+        if self._sapi_speaker:
+            try:
+                # SAPI Flags: SVSFlagsAsync = 1 (plays in background C++ audio thread)
+                self._sapi_speaker.Speak(clean[:400], 1)
+                if wait:
+                    self._sapi_speaker.WaitUntilDone(3500)
+                return
+            except Exception:
+                pass
 
-        t = threading.Thread(target=_do_speak, daemon=False)
-        self._active_speech_thread = t
-        t.start()
-        if wait:
-            t.join()
+        try:
+            escaped = clean[:250].replace("'", "''")
+            ps_cmd = (
+                f"Add-Type -AssemblyName System.Speech; "
+                f"$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+                f"$s.Speak('{escaped}')"
+            )
+            if wait:
+                subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=10)
+            else:
+                subprocess.Popen(["powershell", "-NoProfile", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
 
     def wait_for_speech(self, timeout_sec: float = 6.0):
         """Ensures pending speech finishes before process exit."""
-        if self._active_speech_thread and self._active_speech_thread.is_alive():
-            self._active_speech_thread.join(timeout=timeout_sec)
+        if self._sapi_speaker:
+            try:
+                self._sapi_speaker.WaitUntilDone(int(timeout_sec * 1000))
+            except Exception:
+                pass
 
     def listen_for_voice(self, timeout_sec: int = 5) -> Optional[str]:
         """
@@ -2380,25 +2376,25 @@ class JarvisCLI:
 
         elif sub in ["simulate", "sim"]:
             niche = " ".join(parts[2:]) if len(parts) > 2 else "Autonomous Drone Delivery"
-            print(f"\n{C.CYAN}📞 [Simulating Conversational Voice Call in {niche}]{C.RESET}")
+            print(f"\n{C.CYAN}📞 [Simulating Conversational Voice Call in {niche}]{C.RESET}", flush=True)
             self.speak(f"Simulating outbound sales call in {niche}.")
             lead = VoiceCallLead(phone="+1555019999", name="Dr. Marcus Vance", company="Apex Healthcare", niche=niche)
             res = await voice_call_engine.dispatch_single_call(lead)
-            print(f"\n{C.BOLD}Call Dialogue Trace ({res.get('transcript_turns')} turns):{C.RESET}")
+            print(f"\n{C.BOLD}Call Dialogue Trace ({res.get('transcript_turns')} turns):{C.RESET}", flush=True)
             t_file = res.get("transcript_file")
             if t_file and Path(t_file).exists():
                 with open(t_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 for t in data.get("transcript", []):
                     col = C.CYAN if "JARVIS" in t["speaker"] else C.YELLOW
-                    print(f"  {col}{t['speaker']}:{C.RESET} {t['text']}")
+                    print(f"  {col}{t['speaker']}:{C.RESET} {t['text']}", flush=True)
                     if self.voice_enabled:
                         clean_text = re.sub(r'\(.*?\)', '', t['text']).strip()
                         speaker_label = "JARVIS says" if "JARVIS" in t["speaker"] else "Prospect says"
-                        self.speak(f"{speaker_label}: {clean_text}", wait=True)
+                        self.speak(f"{speaker_label}: {clean_text}", wait=False)
 
-            print(f"\n{C.GREEN}✓ Outcome: Booked Discovery Call for {res.get('booking_slot')}{C.RESET}\n")
-            self.speak(f"Discovery call confirmed for {res.get('booking_slot')}.", wait=True)
+            print(f"\n{C.GREEN}✓ Outcome: Booked Discovery Call for {res.get('booking_slot')}{C.RESET}\n", flush=True)
+            self.speak(f"Discovery call confirmed for {res.get('booking_slot')}.")
 
         elif sub in ["list", "campaigns", "history"]:
             camps = voice_call_engine.list_campaigns()

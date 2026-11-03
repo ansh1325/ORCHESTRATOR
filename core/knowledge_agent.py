@@ -38,6 +38,79 @@ def robust_json_loads(raw: str | None) -> dict:
 
 MASTER_KB_FILE = settings.WORKSPACE_DIR / "master_knowledge_base.json"
 
+
+def synthesize_sales_discovery_playbook(niche: str, pain_points: list[str] | None = None, offer_title: str = "Custom AI & Full-Stack System") -> dict[str, Any]:
+    """
+    Synthesizes the enterprise Consultative Value-First Discovery Playbook.
+    Strictly prohibits premature price dropping on Touch 1 or Call Turns 1-3.
+    """
+    primary_pain = pain_points[0] if (pain_points and len(pain_points) > 0) else "manual operational friction"
+    return {
+        "doctrine": "Consultative Value-First Discovery (Zero Upfront Price Dropping)",
+        "core_maxim": (
+            "Never volunteer or blurt out pricing ($2,500, fees, rates) in cold outreach (touch 1) "
+            "or in early conversational turns (Turns 1-3). Upfront pricing triggers defensive prospect rejection "
+            "before value is established."
+        ),
+        "price_protection_rule": {
+            "mandate": "STRICT_PRICE_SHIELD",
+            "rule": "Price is protected and confidential until problem diagnosis is complete.",
+            "early_touch_directive": "Zero price tags in Touch 1 cold email, LinkedIn notes, or Turns 1-3 of phone calls.",
+            "discovery_timing": (
+                "Pricing is presented only during Minutes 12-15 of the Discovery Call with Master Ansh "
+                "after diagnosing the prospect's tech stack and quantifying their cost of inaction."
+            )
+        },
+        "price_deflection_protocol": {
+            "trigger": "Prospect asks: 'How much does it cost?', 'What is your price?', or 'What are your rates?'",
+            "response": (
+                f"Every system is engineered custom to your exact tech stack and operational workflow, so investment depends on integration scope. "
+                f"Our pilot sprints are flat-fee with 100% test-verified delivery and designed to pay for themselves in month one, but before we talk numbers, "
+                f"let's first verify that the prototype actually solves {primary_pain} for your team. "
+                f"Does Thursday at 2:00 PM EST work for a quick 10-minute walk-through?"
+            )
+        },
+        "cold_discovery_sequence": [
+            {
+                "step": 1,
+                "name": "Pattern Interrupt & Permission",
+                "goal": "Acknowledge unexpected intrusion; request 30 seconds permission."
+            },
+            {
+                "step": 2,
+                "name": "Defect / Operational Observation",
+                "goal": f"Demonstrate deep understanding of {primary_pain} without pitching cost."
+            },
+            {
+                "step": 3,
+                "name": "Zero-Friction Value Offer",
+                "goal": "Offer a pre-built 2-minute video prototype or architectural teardown."
+            },
+            {
+                "step": 4,
+                "name": "Low-Friction Call-to-Action",
+                "goal": "Secure a 10-15 minute discovery walk-through with Master Ansh on Calendly."
+            }
+        ],
+        "objection_handling_matrix": {
+            "already_have_software": (
+                "Completely expected—most top operations already have software. "
+                "This isn't a replacement; it's a seamless custom AI bridge that sits behind your current tools so your team doesn't have to double-key data."
+            ),
+            "busy_no_time": (
+                "Understood, your time is valuable. I won't take another minute. "
+                "Can I shoot a 90-second video demo over to your email, and if it makes sense, we spend 10 minutes Thursday?"
+            ),
+            "send_an_email": (
+                "Will do. If I send that 2-minute video breakdown to your email right now, does Thursday at 2:00 PM EST work for a quick 10-minute review?"
+            ),
+            "how_much_is_it": (
+                "Deflect with price_deflection_protocol: Anchor on custom scope and 5x ROI before booking discovery call."
+            )
+        }
+    }
+
+
 class KnowledgeAgent:
     """Autonomous research agent compiling comprehensive domain knowledge before task execution."""
     
@@ -153,7 +226,12 @@ class KnowledgeAgent:
                     ]
                 },
                 scraped_sources=search_results.get("results", []),
-                synthesis_summary="Synthesized complete autonomous humanoid robotics control architecture for Master Ansh."
+                synthesis_summary="Synthesized complete autonomous humanoid robotics control architecture for Master Ansh.",
+                sales_discovery_playbook=synthesize_sales_discovery_playbook(
+                    niche="Autonomous Humanoid Robotics Control",
+                    pain_points=["Kinematic divergence", "Actuator latency"],
+                    offer_title="28-DOF Humanoid Firmware & Inverse Kinematics Core"
+                )
             )
         elif track_type == "communication_assistant":
             kb = KnowledgeBase(
@@ -179,7 +257,12 @@ class KnowledgeAgent:
                     "subject": "i am jarvis"
                 },
                 scraped_sources=[{"title": "Jarvis Loyalty Protocol & Tone Guidelines", "snippet": "Unwavering loyalty, technical precision, and personal devotion to creator Ansh Tiwari.", "source": "local://core/creator_memory"}],
-                synthesis_summary="Synthesized personal executive communication blueprint for Ansh Tiwari."
+                synthesis_summary="Synthesized personal executive communication blueprint for Ansh Tiwari.",
+                sales_discovery_playbook=synthesize_sales_discovery_playbook(
+                    niche="Personal Executive Communications",
+                    pain_points=["Time constraints", "Context fragmentation"],
+                    offer_title="Autonomous Executive Support System"
+                )
             )
         elif track_type == "quantitative_trading":
             target_niche = clarification_answers.get("target_niche", "Autonomous Multi-Asset Algorithmic Trading & High-Frequency Signals")
@@ -230,7 +313,12 @@ class KnowledgeAgent:
                         "status": "ready_for_permission",
                         "execution_mode": "1-Click Launch Live Trading"
                     }
-                ]
+                ],
+                sales_discovery_playbook=synthesize_sales_discovery_playbook(
+                    niche=target_niche,
+                    pain_points=["Execution latency and slippage", "Drawdown risk in volatile regimes"],
+                    offer_title="Algorithmic Trading & High-Frequency Alpha Generator"
+                )
             )
         elif track_type == "business_acquisition":
             closing_strategy = clarification_answers.get("closing_strategy", "Hybrid: Close low-friction pilots over direct message; schedule 15-min discovery call with Master Ansh for retainers")
@@ -349,7 +437,15 @@ class KnowledgeAgent:
                     scraped_sources=search_results.get("results", []),
                     synthesis_summary="Synthesized omnichannel Meta Ads client acquisition agency blueprint tailored for Ansh Tiwari with non-blocking ready-for-permission queue.",
                     omnichannel_channels=omni_channels,
-                    ready_for_permission_actions=staged_actions
+                    ready_for_permission_actions=staged_actions,
+                    sales_discovery_playbook=synthesize_sales_discovery_playbook(
+                        niche=target_niche,
+                        pain_points=[
+                            "Rising Customer Acquisition Costs (CAC) and iOS tracking loss",
+                            "Creative fatigue causing ad performance decay every 10 days"
+                        ],
+                        offer_title="Performance Meta Ads & Dynamic Creative Engine"
+                    )
                 )
             else:
                 target_niche = clarification_answers.get("target_niche", "Seed & Series A AI & SaaS Startups")
@@ -403,7 +499,15 @@ class KnowledgeAgent:
                     scraped_sources=search_results.get("results", []),
                     synthesis_summary="Synthesized omnichannel client acquisition blueprint for full-stack engineering partners with non-blocking ready-for-permission queue.",
                     omnichannel_channels=omni_channels,
-                    ready_for_permission_actions=staged_actions
+                    ready_for_permission_actions=staged_actions,
+                    sales_discovery_playbook=synthesize_sales_discovery_playbook(
+                        niche=target_niche,
+                        pain_points=[
+                            "Backlogged full-stack engineering roadmaps",
+                            "High cost of full-time developer hiring ($160k+/yr)"
+                        ],
+                        offer_title="Senior Full-Stack & AI Engineering Sprint Pods"
+                    )
                 )
         else:
             # Technical Software Track
@@ -433,7 +537,12 @@ class KnowledgeAgent:
                     "testing": "Pytest sandbox with test client fixtures"
                 },
                 scraped_sources=search_results.get("results", []),
-                synthesis_summary="Synthesized production telemetry specification with strict zero-trust JWT authentication."
+                synthesis_summary="Synthesized production telemetry specification with strict zero-trust JWT authentication.",
+                sales_discovery_playbook=synthesize_sales_discovery_playbook(
+                    niche=target_niche,
+                    pain_points=["Unauthenticated telemetry leakage", "Missing p99 latency alerts"],
+                    offer_title="Zero-Trust Authenticated Telemetry Microservice"
+                )
             )
 
         # Step 4: Write knowledge_base.json to sandboxed workspace via MCP
@@ -524,6 +633,16 @@ class KnowledgeAgent:
             '    {"tier": "Pilot / MVP", "price": "$2,500", "deliverables": "Initial production sprint"},\n'
             '    {"tier": "Production Retainer", "price": "$4,500/mo", "deliverables": "Full deployment & maintenance"}\n'
             '  ],\n'
+            '  "sales_discovery_playbook": {\n'
+            '    "doctrine": "Consultative Value-First Discovery (Zero Upfront Price Dropping)",\n'
+            '    "price_protection_rule": "NEVER volunteer or disclose pricing in cold outreach (touch 1) or early call turns 1-3. Pricing is anchored to ROI on the discovery call.",\n'
+            '    "price_deflection_script": "Every system is custom-built; pilots are flat-rate with 100% test verification, but before talking investment let us make sure the prototype fixes your core bottleneck first.",\n'
+            '    "objection_matrix": {\n'
+            '      "already_have_software": "Acknowledge existing tools; position solution as API bridge eliminating manual copy-pasting.",\n'
+            '      "busy_no_time": "Offer 90-second video demo to email; request 10-min Thursday discovery.",\n'
+            '      "how_much_is_it": "Deflect to custom scope and 5x ROI before booking discovery call."\n'
+            '    }\n'
+            '  },\n'
             '  "milestone_1": "Description of Milestone 1",\n'
             '  "milestone_2": "Description of Milestone 2",\n'
             '  "technical_blueprint": {\n'
@@ -581,5 +700,10 @@ class KnowledgeAgent:
             scraped_sources=[{"title": s.get("title", "Source"), "url": s.get("url") or s.get("link", "")} for s in sources],
             synthesis_summary=data.get("synthesis_summary", "Knowledge base synthesized for autonomous execution."),
             omnichannel_channels=data.get("omnichannel_channels", []),
-            ready_for_permission_actions=data.get("ready_for_permission_actions", [])
+            ready_for_permission_actions=data.get("ready_for_permission_actions", []),
+            sales_discovery_playbook=data.get("sales_discovery_playbook") or synthesize_sales_discovery_playbook(
+                niche=data.get("target_niche", "Custom Autonomous Domain"),
+                pain_points=data.get("icp", {}).get("pain_points", ["Manual operational bottlenecks"]),
+                offer_title="Autonomous System"
+            )
         )

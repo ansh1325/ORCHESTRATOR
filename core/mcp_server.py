@@ -23,6 +23,12 @@ class MCPServer:
     def __init__(self, workspace_path: Path | str):
         self.workspace_path = Path(workspace_path).resolve()
         self.workspace_path.mkdir(parents=True, exist_ok=True)
+        self._dynamic_tools: dict[str, Any] = {}
+        try:
+            from core.tool_synthesizer import tool_synthesizer
+            tool_synthesizer.reload_all_tools(self)
+        except Exception:
+            pass
 
     def _resolve_safe_path(self, relative_path: str) -> Path:
         """
@@ -1002,8 +1008,23 @@ class MCPServer:
         from core.jarvis_daemon import JarvisDaemon
         return JarvisDaemon.check_hardware_telemetry()
 
+    def tool_synthesize_tool(self, name: str, description: str, python_code: str, test_code: str = "") -> dict[str, Any]:
+        """Tool Synthesizer: Dynamically compiles, verifies, and hot-reloads a new tool into MCP runtime."""
+        from core.tool_synthesizer import tool_synthesizer
+        return tool_synthesizer.synthesize_tool(name, description, python_code, test_code, mcp_target=self)
+
+    def tool_executive_briefing(self, speak: bool = False) -> dict[str, Any]:
+        """Executive Briefing Tool: Returns comprehensive debrief across Git, leads, builds, and hardware."""
+        from core.executive_briefing import executive_briefing
+        return executive_briefing.deliver_briefing(speak_aloud=speak)
+
+    def tool_ambient_vision_status(self) -> dict[str, Any]:
+        """Ambient Vision Tool: Returns status and recent optical change events from screen stream."""
+        from core.ambient_vision import ambient_vision_engine
+        return ambient_vision_engine.get_status()
+
     def get_tool_definitions(self) -> list[dict[str, Any]]:
-        return [
+        defs_list = [
             {"name": "file_write", "description": "Write text content to a sandboxed file inside the workspace."},
             {"name": "file_read", "description": "Read content of a file located within the workspace sandbox."},
             {"name": "file_list", "description": "List files in the workspace sandbox."},
@@ -1080,8 +1101,15 @@ class MCPServer:
             {"name": "desktop_focus_app", "description": "Bring an open desktop software window to the foreground."},
             {"name": "desktop_list_apps", "description": "List running desktop applications and PIDs."},
             {"name": "voice_duplex_control", "description": "Control streaming voice duplex session with acoustic barge-in."},
-            {"name": "system_health_check", "description": "Inspect CPU, RAM, disk usage, and development port availability."}
+            {"name": "system_health_check", "description": "Inspect CPU, RAM, disk usage, and development port availability."},
+            {"name": "synthesize_tool", "description": "Dynamically create, compile, and hot-reload a new tool at runtime."},
+            {"name": "executive_briefing", "description": "Generate comprehensive 5-feed executive status debrief."},
+            {"name": "ambient_vision_status", "description": "Inspect ambient screen change detection stream."}
         ]
+        if hasattr(self, "_dynamic_tools"):
+            for d in self._dynamic_tools.values():
+                defs_list.append({"name": d["name"], "description": d["description"]})
+        return defs_list
 
     def handle_jsonrpc(self, request_data: dict[str, Any]) -> dict[str, Any]:
         req_id = request_data.get("id", 1)
@@ -1326,6 +1354,19 @@ class MCPServer:
                     res = self.tool_voice_duplex_control(action=tool_args.get("action", "status"))
                 elif tool_name == "system_health_check":
                     res = self.tool_system_health_check()
+                elif tool_name == "synthesize_tool":
+                    res = self.tool_synthesize_tool(
+                        name=tool_args.get("name", ""),
+                        description=tool_args.get("description", ""),
+                        python_code=tool_args.get("python_code", ""),
+                        test_code=tool_args.get("test_code", "")
+                    )
+                elif tool_name == "executive_briefing":
+                    res = self.tool_executive_briefing(speak=tool_args.get("speak", False))
+                elif tool_name == "ambient_vision_status":
+                    res = self.tool_ambient_vision_status()
+                elif hasattr(self, "_dynamic_tools") and tool_name in self._dynamic_tools:
+                    res = self._dynamic_tools[tool_name]["func"](**tool_args)
 
                 else:
                     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Tool '{tool_name}' not found."}}

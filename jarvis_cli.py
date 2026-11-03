@@ -222,6 +222,10 @@ class JarvisCLI:
         print(f"  {C.CYAN}desktop click <x> <y>{C.RESET}      Click at desktop coordinates using native hardware mouse events")
         print(f"  {C.CYAN}duplex [start|stop|status]{C.RESET} Streaming ambient voice duplex session with acoustic barge-in")
         print(f"  {C.CYAN}daemon [status|health]{C.RESET}     Inspect CPU/RAM telemetry, port safety, and hardware alerts")
+        print(f"  {C.CYAN}briefing{C.RESET}                   Deliver comprehensive 5-feed executive status debrief")
+        print(f"  {C.CYAN}vision [start|stop|status]{C.RESET} Ambient continuous screen change detection stream")
+        print(f"  {C.CYAN}tools synthesize <name>{C.RESET}   Dynamically compile, test, and hot-reload new MCP tool")
+
 
         print(f"  {C.CYAN}workflows{C.RESET}                View saved recurring workflows")
         print(f"  {C.CYAN}schedules{C.RESET}                View active background cron schedules")
@@ -2922,6 +2926,36 @@ class JarvisCLI:
                 print(f"  • State: {C.GREEN}{telem['state']}{C.RESET} | Active: {telem['active']}")
                 print(f"  • Barge-in Events Interrupted: {telem['barge_in_events']}")
                 print(f"  • Total Turns: {telem['total_turns']}")
+            return True
+
+        # Proactive Executive Briefing Commands
+        if low in ("briefing", "debrief", "executive briefing", "status report"):
+            from core.executive_briefing import executive_briefing
+            print(f"\n{C.CYAN}{C.BOLD}🎙️ [JARVIS Executive Briefing]:{C.RESET}")
+            report = executive_briefing.deliver_briefing(speak_aloud=True)
+            print(f"  • {C.GREEN}{report['greeting']}{C.RESET}")
+            print(f"  • Time: {report['formatted_time']}")
+            print(f"  • Git Branch: {C.YELLOW}{report['git']['branch']}{C.RESET} ({report['git']['latest_commit']})")
+            print(f"  • Outreach Queue: {report['fleet']['total_verified_leads']} verified leads | {report['fleet']['inbound_replies']} replies | {report['fleet']['booked_calls']} booked calls")
+            print(f"  • Hardware: CPU {report['hardware']['cpu_percent']}% | RAM {report['hardware']['memory_percent']}% ({report['hardware']['memory_available_gb']} GB Free)")
+            return True
+
+        # Ambient Visual Streaming Commands
+        if low.startswith("vision"):
+            from core.ambient_vision import ambient_vision_engine
+            parts = line.split()
+            sub = parts[1].lower() if len(parts) > 1 else "status"
+            if sub == "start":
+                ambient_vision_engine.start_streaming()
+                print(f"\n{C.GREEN}✓ Ambient visual streaming started (1 FPS change detection).{C.RESET}\n")
+            elif sub == "stop":
+                ambient_vision_engine.stop_streaming()
+                print(f"\n{C.YELLOW}Ambient visual streaming stopped.{C.RESET}\n")
+            else:
+                stat = ambient_vision_engine.get_status()
+                print(f"\n{C.CYAN}{C.BOLD}👁️ [Ambient Visual Stream Status]:{C.RESET}")
+                print(f"  • Active: {stat['active']} | Sampling Interval: {stat['sample_interval']}s")
+                print(f"  • Total Events Captured: {stat['total_events_captured']}")
             return True
 
         # Proactive Ambient System Daemon Commands

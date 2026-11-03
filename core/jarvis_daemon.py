@@ -93,10 +93,14 @@ class JarvisDaemon:
         """Called when Master Ansh presses Ctrl + Alt + J anywhere on Windows."""
         logger.info("JARVIS Hotkey Summoned by Master Ansh.")
         try:
-            from core.voice_duplex import VoiceSynthesizer
-            VoiceSynthesizer().speak_async("JARVIS online, Master Ansh. How can I assist you?")
-        except Exception:
-            pass
+            from core.executive_briefing import executive_briefing
+            executive_briefing.deliver_briefing(speak_aloud=True)
+        except Exception as e:
+            try:
+                from core.voice_identity import voice_identity
+                voice_identity.speak("JARVIS online, Master Ansh. Standing by.")
+            except Exception:
+                pass
 
     def _ensure_alerts_file(self):
         settings.WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)

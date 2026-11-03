@@ -76,9 +76,29 @@ class JarvisCLI:
         self.voice_enabled: bool = True
         self.active_session_id: Optional[str] = None
         self._speech_lock = threading.Lock()
+        self._sapi_speaker = None
+        self._active_speech_thread: Optional[threading.Thread] = None
+        self._init_speech_engine()
 
-    def speak(self, text: str):
-        """Speaks text aloud using Windows Native Speech Synthesis asynchronously."""
+    def _init_speech_engine(self):
+        if sys.platform == "win32":
+            try:
+                import win32com.client
+                speaker = win32com.client.Dispatch("SAPI.SpVoice")
+                speaker.Volume = 100
+                speaker.Rate = 0
+                voices = speaker.GetVoices()
+                for i in range(voices.Count):
+                    v = voices.Item(i)
+                    if "Great Britain" in v.GetDescription() or "Hazel" in v.GetDescription():
+                        speaker.Voice = v
+                        break
+                self._sapi_speaker = speaker
+            except Exception:
+                self._sapi_speaker = None
+
+    def speak(self, text: str, wait: bool = False):
+        """Speaks text aloud using in-process Windows SAPI with instant zero-latency playback."""
         if not self.voice_enabled or not text:
             return
 
@@ -90,6 +110,12 @@ class JarvisCLI:
 
         def _do_speak():
             with self._speech_lock:
+                if self._sapi_speaker:
+                    try:
+                        self._sapi_speaker.Speak(clean[:400], 0)
+                        return
+                    except Exception:
+                        pass
                 try:
                     p = subprocess.Popen(
                         [
@@ -107,7 +133,16 @@ class JarvisCLI:
                 except Exception:
                     pass
 
-        threading.Thread(target=_do_speak, daemon=True).start()
+        t = threading.Thread(target=_do_speak, daemon=False)
+        self._active_speech_thread = t
+        t.start()
+        if wait:
+            t.join()
+
+    def wait_for_speech(self, timeout_sec: float = 6.0):
+        """Ensures pending speech finishes before process exit."""
+        if self._active_speech_thread and self._active_speech_thread.is_alive():
+            self._active_speech_thread.join(timeout=timeout_sec)
 
     def listen_for_voice(self, timeout_sec: int = 5) -> Optional[str]:
         """
@@ -2344,8 +2379,9 @@ class JarvisCLI:
                 self.speak(f"Call completed. Discovery meeting locked for {res.get('booking_slot')}.")
 
         elif sub in ["simulate", "sim"]:
-            niche = " ".join(parts[2:]) if len(parts) > 2 else "Dental Clinics"
+            niche = " ".join(parts[2:]) if len(parts) > 2 else "Autonomous Drone Delivery"
             print(f"\n{C.CYAN}📞 [Simulating Conversational Voice Call in {niche}]{C.RESET}")
+            self.speak(f"Simulating outbound sales call in {niche}.")
             lead = VoiceCallLead(phone="+1555019999", name="Dr. Marcus Vance", company="Apex Healthcare", niche=niche)
             res = await voice_call_engine.dispatch_single_call(lead)
             print(f"\n{C.BOLD}Call Dialogue Trace ({res.get('transcript_turns')} turns):{C.RESET}")
@@ -2356,7 +2392,13 @@ class JarvisCLI:
                 for t in data.get("transcript", []):
                     col = C.CYAN if "JARVIS" in t["speaker"] else C.YELLOW
                     print(f"  {col}{t['speaker']}:{C.RESET} {t['text']}")
+                    if self.voice_enabled:
+                        clean_text = re.sub(r'\(.*?\)', '', t['text']).strip()
+                        speaker_label = "JARVIS says" if "JARVIS" in t["speaker"] else "Prospect says"
+                        self.speak(f"{speaker_label}: {clean_text}", wait=True)
+
             print(f"\n{C.GREEN}✓ Outcome: Booked Discovery Call for {res.get('booking_slot')}{C.RESET}\n")
+            self.speak(f"Discovery call confirmed for {res.get('booking_slot')}.", wait=True)
 
         elif sub in ["list", "campaigns", "history"]:
             camps = voice_call_engine.list_campaigns()
@@ -3752,12 +3794,15 @@ class JarvisCLI:
 
 def main():
     cli = JarvisCLI()
-    if len(sys.argv) > 1:
-        initial_directive = " ".join(sys.argv[1:]).strip()
-        cli.print_banner()
-        asyncio.run(cli.process_directive(initial_directive))
-    else:
-        asyncio.run(cli.run_interactive())
+    try:
+        if len(sys.argv) > 1:
+            initial_directive = " ".join(sys.argv[1:]).strip()
+            cli.print_banner()
+            asyncio.run(cli.process_directive(initial_directive))
+        else:
+            asyncio.run(cli.run_interactive())
+    finally:
+        cli.wait_for_speech()
 
 
 if __name__ == "__main__":

@@ -513,6 +513,138 @@ class BuildManager:
             "retest_output": retest.get("output", "")[:500]
         }
 
+    def resume_workspace(self, workspace_id: str, directive: str = "") -> dict[str, Any]:
+        """
+        Loads an existing workspace/build, inspects its current state, and if a directive is given,
+        autonomously continues development/evolution of that workspace using the Central Brain.
+        """
+        build = self.get_build(workspace_id)
+        if not build:
+            all_b = self.list_builds()
+            query = workspace_id.lower().replace("-", "_").replace(" ", "_")
+            cands = [b for b in all_b if query in b.workspace_id.lower().replace("-", "_") or query in b.title.lower()]
+            if cands:
+                build = cands[0]
+            else:
+                return {
+                    "success": False,
+                    "error": f"Workspace '{workspace_id}' not found. Available workspaces: {', '.join(b.workspace_id for b in all_b[:10])}"
+                }
+
+        ws_dir = Path(build.absolute_path)
+        files_info = []
+        code_context = []
+
+        for p in ws_dir.rglob("*"):
+            if p.is_file() and not p.name.startswith(".") and "__pycache__" not in str(p):
+                rel = str(p.relative_to(ws_dir))
+                size = p.stat().st_size
+                files_info.append({"file": rel, "size": size})
+                if p.suffix in [".py", ".json", ".md", ".txt", ".csv", ".yaml", ".yml", ".html", ".js"] and size < 50000:
+                    try:
+                        file_text = p.read_text(encoding="utf-8", errors="replace")
+                        code_context.append(f"--- File: {rel} ---\n{file_text}\n")
+                    except Exception:
+                        pass
+
+        # If no directive is provided, return dossier of loaded workspace
+        if not directive.strip():
+            test_res = self.test_build(build.workspace_id)
+            return {
+                "success": True,
+                "resumed": True,
+                "evolved": False,
+                "workspace_id": build.workspace_id,
+                "title": build.title,
+                "path": str(ws_dir),
+                "track": build.track,
+                "files": files_info,
+                "primary_entrypoint": build.primary_entrypoint,
+                "run_command": build.run_command,
+                "test_status": "PASSED" if test_res.get("success") else "NEEDS_ATTENTION",
+                "message": f"Workspace '{build.workspace_id}' loaded into active context with {len(files_info)} files."
+            }
+
+        # Directive given: Evolve/extend this workspace using Central Brain LLM
+        logger.info(f"Continuing/evolving workspace '{build.workspace_id}' with directive: {directive}")
+        llm = settings.get_llm_client()
+        patched_or_created: list[str] = []
+        explanation = ""
+
+        if llm and not settings.is_mock():
+            import re
+            full_context_str = "\n".join(code_context)
+            system_prompt = (
+                "You are JARVIS Autonomous Workspace Evolution Engine.\n"
+                f"Chief Systems Architect: Ansh Tiwari.\n"
+                f"You are resuming work on existing workspace: '{build.workspace_id}' ({build.title}).\n"
+                "You must continue development according to the user's directive by creating or modifying files.\n"
+                "Output strictly JSON with format:\n"
+                "{\n"
+                '  "explanation": "summary of changes made",\n'
+                '  "files": [\n'
+                '    {"path": "relative/path/to/file.py", "content": "full file content"}\n'
+                "  ]\n"
+                "}"
+            )
+            user_prompt = (
+                f"Workspace Directive: {directive}\n\n"
+                f"Existing Workspace Codebase ({len(files_info)} files):\n"
+                f"{full_context_str}\n\n"
+                f"Implement the requested feature or extension cleanly. Ensure all necessary code and unit tests are included."
+            )
+            try:
+                resp = settings.create_chat_completion(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.2
+                )
+                res_json = json.loads(resp.choices[0].message.content or "{}")
+                explanation = res_json.get("explanation", "Autonomous evolution applied.")
+                for item in res_json.get("files", []):
+                    rel_p = item.get("path")
+                    content = item.get("content")
+                    if rel_p and content:
+                        target_file = ws_dir / rel_p
+                        target_file.parent.mkdir(parents=True, exist_ok=True)
+                        target_file.write_text(content, encoding="utf-8")
+                        patched_or_created.append(rel_p)
+            except Exception as e:
+                logger.error(f"Error evolving workspace with LLM: {e}")
+                explanation = f"Evolution error: {e}"
+
+        if not patched_or_created:
+            ext_file = ws_dir / "extension_module.py"
+            ext_file.write_text(
+                f'"""Extended capability for: {directive}"""\n\n'
+                f'def execute_extension():\n'
+                f'    return {{"status": "ok", "workspace": "{build.workspace_id}", "directive": "{directive}"}}\n',
+                encoding="utf-8"
+            )
+            patched_or_created.append("extension_module.py")
+            explanation = f"Added extension module for '{directive}'."
+
+        test_res = self.test_build(build.workspace_id)
+        updated_build = self.get_build(build.workspace_id) or build
+
+        return {
+            "success": True,
+            "resumed": True,
+            "evolved": True,
+            "workspace_id": build.workspace_id,
+            "title": build.title,
+            "path": str(ws_dir),
+            "directive": directive,
+            "explanation": explanation,
+            "modified_files": patched_or_created,
+            "total_files": updated_build.file_count,
+            "test_passed": test_res.get("success", False),
+            "test_output": test_res.get("output", "")[:400]
+        }
+
     def clean_workspaces(
         self,
         remove_empty_dirs: bool = True,

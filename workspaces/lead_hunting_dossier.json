@@ -1,31 +1,31 @@
 {
-  "directive": "find private dental practices in Florida",
+  "directive": "Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV.",
   "deduced_strategy": {
-    "directive": "find private dental practices in Florida",
-    "target_industry": "Healthcare",
-    "target_persona": "Private Dental Practice Owners",
-    "primary_channel": "HEALTHCARE_DIRECTORIES_AND_REGISTRIES",
-    "channel_justification": "Dental practices are regulated healthcare entities that are systematically indexed in specialized medical directories and state dental society registries, making these the most accurate and comprehensive sources for identifying private practices in a specific geographic region.",
+    "directive": "Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV.",
+    "target_industry": "Business Consulting",
+    "target_persona": "C-level Executives",
+    "primary_channel": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES",
+    "channel_justification": "Provides verified, high-intent contacts suitable for proof-of-need lead generation.",
     "search_queries": [
-      "site:florida.org private dental practices",
-      "Florida Dental Association member directory private practices",
-      "top private dental clinics in Florida list"
+      "B2B lead list for consulting firms",
+      "Verified executive contacts for business services",
+      "Lead generation for C-level decision makers"
     ],
-    "proof_archetype": "Directory Listing",
+    "proof_archetype": "ROI Case Study",
     "recommended_sources": [
-      "Florida Dental Association (FDA) Member Directory",
-      "Zocdoc Florida Dental Providers",
-      "Healthgrades Florida Dentists"
+      "LinkedIn Sales Navigator",
+      "Crunchbase",
+      "ZoomInfo"
     ]
   },
   "execution_metrics": {
-    "duration_seconds": 9.4,
-    "total_probed": 5,
-    "verified_sendable": 5,
-    "quarantined_invalid": 0,
-    "deliverability_rate": "100.0%",
-    "csv_deliverable": "C:\\Users\\NK321WS\\AppData\\Local\\Temp\\pytest-of-NK321WS\\pytest-331\\test_mcp_autonomous_lead_hunt_0\\leads.csv",
-    "quarantine_ledger": null
+    "duration_seconds": 31.33,
+    "total_probed": 38,
+    "verified_sendable": 26,
+    "quarantined_invalid": 12,
+    "deliverability_rate": "68.4%",
+    "csv_deliverable": "C:\\Users\\NK321WS\\AppData\\Local\\Temp\\pytest-of-NK321WS\\pytest-347\\test_worker_fallback_includes_0\\leads.csv",
+    "quarantine_ledger": "D:\\LlamaOrchestrator\\workspaces\\quarantined_leads.json"
   },
-  "timestamp": "2026-11-03 19:24:54"
+  "timestamp": "2026-11-04 03:28:36"
 }

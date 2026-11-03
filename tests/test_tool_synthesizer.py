@@ -79,3 +79,38 @@ def greet_creator(name: str = "Master Ansh") -> str:
     rpc_res = mcp.handle_jsonrpc(rpc_req)
     assert rpc_res["result"] == "Salutations, Chief Architect!"
 
+
+def test_unicode_normalization_in_tool_synthesis(tmp_path):
+    """Verifies that non-standard unicode characters like U+2011 non-breaking hyphen and smart quotes are sanitized."""
+    synth = ToolSynthesizer()
+    synth.TOOLS_DIR = tmp_path
+    synth.MANIFEST_FILE = tmp_path / "manifest.json"
+    synth._ensure_dir()
+
+    # Code containing non-breaking hyphen \u2011 and curly quotes \u2018 \u2019
+    py_code = """
+def ping_latency_test(host: str = "localhost") -> dict:
+    \"\"\"Latency calculation \u2011 ping verification \u2018fast\u2019\"\"\"
+    diff = 100 \u2011 80
+    return {"host": host, "ping_ms": diff}
+"""
+    test_code = """
+res = tool_func("127.0.0.1")
+assert res[\u2018ping_ms\u2019] == 20
+assert res[\u201chost\u201d] == \u2018127.0.0.1\u2019
+"""
+
+    res = synth.synthesize_tool(
+        tool_name="ping_latency_test",
+        description="Measures ping latency",
+        python_code=py_code,
+        test_code=test_code
+    )
+
+    assert res["success"] is True
+    assert res["tool_name"] == "ping_latency_test"
+    saved_code = (tmp_path / "ping_latency_test.py").read_text(encoding="utf-8")
+    assert "\u2011" not in saved_code
+    assert "-" in saved_code
+
+

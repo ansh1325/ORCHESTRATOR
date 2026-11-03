@@ -63,6 +63,14 @@ class C:
     BG_BLUE = "\033[44m"
 
 
+def safe_split_args(line: str) -> list[str]:
+    """Quote-aware argument tokenizer. Preserves quoted multi-word strings."""
+    try:
+        return shlex.split(line)
+    except Exception:
+        return line.split()
+
+
 class JarvisCLI:
     def __init__(self):
         self.voice_enabled: bool = True
@@ -2695,20 +2703,28 @@ class JarvisCLI:
         elif low in ["list builds", "show builds", "get builds", "show workspaces", "list workspaces"]:
             subcmd = "list"
             parts = ["builds", "list"]
+        elif low.startswith("resume build ") or low.startswith("resume workspace "):
+            subcmd = "resume"
+            toks = safe_split_args(clean_line)
+            parts = ["builds", "resume"] + toks[2:]
+        elif low.startswith("resume ") or low.startswith("continue "):
+            subcmd = "resume"
+            toks = safe_split_args(clean_line)
+            parts = ["builds", "resume"] + toks[1:]
         elif low.startswith("run build "):
             subcmd = "run"
-            parts = ["builds", "run"] + clean_line.split()[2:]
+            parts = ["builds", "run"] + safe_split_args(clean_line)[2:]
         elif low.startswith("test build "):
             subcmd = "test"
-            parts = ["builds", "test"] + clean_line.split()[2:]
+            parts = ["builds", "test"] + safe_split_args(clean_line)[2:]
         elif low.startswith("open build ") or low.startswith("open workspace "):
             subcmd = "open"
-            parts = ["builds", "open"] + clean_line.split()[2:]
+            parts = ["builds", "open"] + safe_split_args(clean_line)[2:]
         elif low.startswith("info build ") or low.startswith("build info "):
             subcmd = "info"
-            parts = ["builds", "info"] + clean_line.split()[2:]
+            parts = ["builds", "info"] + safe_split_args(clean_line)[2:]
         else:
-            parts = clean_line.split()
+            parts = safe_split_args(clean_line)
             subcmd = parts[1].lower() if len(parts) > 1 else "list"
 
         if subcmd in ["list", "all", "ls", "show"]:
@@ -2727,11 +2743,50 @@ class JarvisCLI:
                 print(f"{C.CYAN}{b.workspace_id:<28}{C.RESET} | {b.title:<30} | {b.track:<20} | {b.file_count:<5} | {st_color}{b.status}{C.RESET}")
             print("-" * 100)
             print(f"{C.DIM}Quick Commands:{C.RESET}")
-            print(f"  {C.GREEN}builds run <id>{C.RESET}         Execute the build entrypoint directly")
-            print(f"  {C.GREEN}builds info <id>{C.RESET}        View complete files, PRD, and architecture")
-            print(f"  {C.GREEN}builds test <id>{C.RESET}        Execute unit test suite for this build")
-            print(f"  {C.GREEN}builds open <id>{C.RESET}        Open build folder in Windows File Explorer")
-            print(f"  {C.GREEN}builds clean{C.RESET}            Safely prune empty ghost directories\n")
+            print(f"  {C.GREEN}builds resume [id] [prompt]{C.RESET} Continue working or evolve an existing workspace")
+            print(f"  {C.GREEN}builds run [id]{C.RESET}             Execute the build entrypoint directly")
+            print(f"  {C.GREEN}builds info [id]{C.RESET}            View complete files, PRD, and architecture")
+            print(f"  {C.GREEN}builds test [id]{C.RESET}            Execute unit test suite for this build")
+            print(f"  {C.GREEN}builds open [id]{C.RESET}            Open build folder in Windows File Explorer")
+            print(f"  {C.GREEN}builds clean{C.RESET}                Safely prune empty ghost directories\n")
+            return True
+
+        elif subcmd in ["resume", "continue"]:
+            if len(parts) < 3:
+                print(f"\n{C.YELLOW}Usage: builds resume [workspace_id] [optional directive]{C.RESET}")
+                print(f"Example: builds resume sys_arbitrage_monitor_v1 \"add mock websocket stream and stop loss\"\n")
+                return True
+            raw_ws_id = parts[2].strip("<>").strip("<>").strip("<>").strip("<>").strip("<>")
+            directive = " ".join(parts[3:]) if len(parts) > 3 else ""
+            print(f"\n{C.CYAN}🔄 [JARVIS Workspace Resumption]{C.RESET} Loading workspace: {C.YELLOW}{raw_ws_id}{C.RESET}...")
+            self.speak(f"Resuming workspace {raw_ws_id}.")
+            res = build_manager.resume_workspace(workspace_id=raw_ws_id, directive=directive)
+            if not res.get("success"):
+                print(f"\n{C.RED}✗ {res.get('error')}{C.RESET}\n")
+                return True
+
+            self.active_session_id = res.get("workspace_id")
+            if res.get("evolved"):
+                print(f"\n{C.GREEN}{C.BOLD}✓ Workspace Evolved & Certified:{C.RESET}")
+                print(f"  • Workspace: {C.CYAN}{res.get('workspace_id')}{C.RESET} ({res.get('title')})")
+                print(f"  • Directory: {res.get('path')}")
+                print(f"  • Directive: {C.YELLOW}{res.get('directive')}{C.RESET}")
+                print(f"  • Summary:   {res.get('explanation')}")
+                print(f"  • Modified:  {', '.join(res.get('modified_files', []))}")
+                print(f"  • Total Files: {res.get('total_files')}")
+                print(f"  • Tests:     {C.GREEN if res.get('test_passed') else C.YELLOW}{'ALL PASSED' if res.get('test_passed') else 'COMPLETED'}{C.RESET}\n")
+                self.speak("Workspace successfully updated and certified.")
+            else:
+                print(f"\n{C.GREEN}{C.BOLD}✓ Workspace Resumed in Active Context:{C.RESET}")
+                print(f"  • Workspace: {C.CYAN}{res.get('workspace_id')}{C.RESET} ({res.get('title')})")
+                print(f"  • Directory: {res.get('path')}")
+                print(f"  • Track:     {res.get('track')}")
+                print(f"  • Entrypoint: {res.get('primary_entrypoint') or 'None'} ({res.get('run_command') or 'python main.py'})")
+                print(f"  • Files ({len(res.get('files', []))}):")
+                for f in res.get("files", [])[:10]:
+                    print(f"    - {f['file']} ({f['size']} bytes)")
+                print(f"\n{C.DIM}Ready for instructions! Type 'builds run {res.get('workspace_id')}' or 'builds resume {res.get('workspace_id')} \"<feature>\"'{C.RESET}\n")
+                self.speak(f"Workspace {res.get('title')} loaded into active memory.")
             return True
 
         elif subcmd in ["clean", "prune"]:
@@ -2744,7 +2799,7 @@ class JarvisCLI:
             return True
 
         elif subcmd in ["open", "explore", "view"]:
-            ws_id = parts[2] if len(parts) > 2 else "workspaces"
+            ws_id = parts[2].strip("<>") if len(parts) > 2 else "workspaces"
             res = build_manager.open_in_explorer(ws_id)
             if res.get("success"):
                 print(f"\n{C.GREEN}✓ Opened in File Explorer: {C.BOLD}{res.get('path')}{C.RESET}\n")
@@ -2931,7 +2986,7 @@ class JarvisCLI:
         # Builds & Workspaces Management Commands
         if (
             low in ["builds", "build", "workspaces", "workspace", "list builds", "show builds", "get builds", "list workspaces", "show workspaces"]
-            or low.startswith(("builds ", "build ", "workspaces ", "workspace ", "run build ", "test build ", "open build ", "open workspace ", "clean workspace", "clean workspaces", "cleanup workspace", "cleanup workspaces", "clean up the workspace folder"))
+            or low.startswith(("builds ", "build ", "workspaces ", "workspace ", "resume ", "continue ", "resume build ", "resume workspace ", "continue build ", "continue workspace ", "run build ", "test build ", "open build ", "open workspace ", "clean workspace", "clean workspaces", "cleanup workspace", "cleanup workspaces", "clean up the workspace folder"))
         ):
             return await self.handle_builds_command(line)
 
@@ -3183,19 +3238,19 @@ class JarvisCLI:
 
         # Autonomous Multi-Account Fleet Management (20 Inboxes, Anti-Spam Jitter, Reply Monitor)
         if low.startswith("fleet") or low in ["accounts", "fleet status", "fleet replies"]:
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_fleet_cmd(parts)
             return True
 
         # Autonomous Self-Constructing Software Systems
         if low.startswith("system") or low in ["systems", "software", "catalog"]:
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_system_cmd(parts)
             return True
 
         # Hermes Cognitive Supercharger (Skills, Tiered Memory, Autonomous Learning)
         if low.startswith("hermes") or low.startswith("skills"):
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_hermes_cmd(parts)
             return True
 
@@ -3207,43 +3262,43 @@ class JarvisCLI:
 
         # Agent-Reach Multi-Platform Intelligence (LinkedIn, Reddit, Twitter, YouTube, GitHub)
         if low.startswith("reach ") or low == "reach":
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_reach_cmd(parts)
             return True
 
         # Crawl4AI Stealth Web Crawler & Scraper
         if low.startswith("crawl ") or low == "crawl":
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_crawl_cmd(parts)
             return True
 
         # REA (Reverse Engineer Anything) Engine
         if low.startswith("rea"):
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_rea_cmd(parts)
             return True
 
         # Autonomous AI Voice Calling Agents (Telephony, Cold Calling, Objection Handling)
         if low.startswith("call ") or low.startswith("calls ") or low.startswith("dial ") or low in ["calls", "call agent", "call agents", "voice agent"]:
-            parts = line.split()
+            parts = safe_split_args(line)
             await self.handle_call_cmd(parts)
             return True
 
         # Autonomous Terminal Execution & Desktop Window Spawning
         if low.startswith("terminal ") or low.startswith("term ") or low.startswith("cmd ") or low in ["terminal", "term"]:
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_terminal_cmd(parts)
             return True
 
         # Autonomous Git Lifecycle Management
         if low.startswith("git ") or low == "git":
-            parts = line.split()
+            parts = safe_split_args(line)
             self.handle_git_cmd(parts)
             return True
 
         # Direct Natural Language Git Actions (e.g. "commit it to github", "commit to github", "commit changes", "git push")
         if low.startswith("commit") or (("commit" in low or "push" in low) and any(w in low for w in ["github", "repo", "origin"])):
-            parts = ["git", "commit"] + line.split()[1:]
+            parts = ["git", "commit"] + safe_split_args(line)[1:]
             self.handle_git_cmd(parts)
             return True
 

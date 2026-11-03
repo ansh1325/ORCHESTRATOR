@@ -9,6 +9,42 @@
     "automated_response": "Totally understand\u2014most of our partners have strong in-house engineering teams! We act as specialized surge capacity for high-friction backlog items so your core team stays focused on product. Would a 15-min sync make sense to see if we can save your team 20 hrs/week? https://calendly.com/anshtiwari",
     "booking_link": "https://calendly.com/anshtiwari",
     "requires_human_intervention": false,
+    "timestamp": "2026-11-04 03:27:59"
+  },
+  {
+    "lead_email": "cto@techgrowth.io",
+    "lead_name": "Sarah Connor",
+    "lead_company": "TechGrowth",
+    "touches_received": 0,
+    "sentiment_category": "PRICE_OBJECTION",
+    "incoming_reply": "What are your rates and pricing structure?",
+    "automated_response": "We work on fixed $2,500 14-day production sprints with a 100% money-back guarantee on outcomes\u2014no recurring retainer lock-ins. Happy to walk through exactly what we'd build on a quick 15-min call: https://calendly.com/anshtiwari",
+    "booking_link": "https://calendly.com/anshtiwari",
+    "requires_human_intervention": true,
+    "timestamp": "2026-11-04 03:27:59"
+  },
+  {
+    "lead_email": "cto@techgrowth.io",
+    "lead_name": "Sarah Connor",
+    "lead_company": "TechGrowth",
+    "touches_received": 0,
+    "sentiment_category": "MEETING_REQUEST",
+    "incoming_reply": "Sounds interesting. Do you have 15 mins this Thursday to chat?",
+    "automated_response": "Awesome, Sarah! Let's hop on a brief 15-minute intro call to align on TechGrowth roadmap. Pick whatever time works best on your calendar here: https://calendly.com/anshtiwari\n\nLooking forward to speaking!",
+    "booking_link": "https://calendly.com/anshtiwari",
+    "requires_human_intervention": true,
+    "timestamp": "2026-11-04 03:27:59"
+  },
+  {
+    "lead_email": "cto@techgrowth.io",
+    "lead_name": "Sarah Connor",
+    "lead_company": "TechGrowth",
+    "touches_received": 0,
+    "sentiment_category": "IN_HOUSE_OBJECTION",
+    "incoming_reply": "We already have an in-house engineering team handling this.",
+    "automated_response": "Totally understand\u2014most of our partners have strong in-house engineering teams! We act as specialized surge capacity for high-friction backlog items so your core team stays focused on product. Would a 15-min sync make sense to see if we can save your team 20 hrs/week? https://calendly.com/anshtiwari",
+    "booking_link": "https://calendly.com/anshtiwari",
+    "requires_human_intervention": false,
     "timestamp": "2026-11-03 19:18:08"
   },
   {

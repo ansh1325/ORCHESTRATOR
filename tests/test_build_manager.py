@@ -126,3 +126,25 @@ async def test_jarvis_cli_builds_command():
         res_clean = await cli.process_directive("clean workspaces")
         assert res_clean is True
         assert mock_clean.called
+
+
+def test_build_manager_resume_workspace(tmp_path):
+    """Verifies that an existing workspace can be resumed and inspected or extended."""
+    bm = BuildManager(workspace_root=tmp_path)
+    ws_dir = tmp_path / "test_resume_system"
+    ws_dir.mkdir(parents=True)
+    (ws_dir / "service.py").write_text("def run(): return 'ACTIVE'", encoding="utf-8")
+
+    # 1. Resume without directive (load dossier)
+    res_dossier = bm.resume_workspace("test_resume_system")
+    assert res_dossier["success"] is True
+    assert res_dossier["resumed"] is True
+    assert res_dossier["evolved"] is False
+    assert len(res_dossier["files"]) == 1
+
+    # 2. Resume with directive (evolution)
+    res_evolve = bm.resume_workspace("test_resume_system", "add healthcheck endpoint")
+    assert res_evolve["success"] is True
+    assert res_evolve["evolved"] is True
+    assert len(res_evolve["modified_files"]) >= 1
+

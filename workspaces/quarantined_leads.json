@@ -792,5 +792,253 @@
     "dns_valid": true,
     "mx_valid": false,
     "audit_timestamp": "2026-11-03 19:24:44"
+  },
+  {
+    "raw_input": {
+      "Name": "David Gitlin",
+      "Email": "david@corporate.carrier.com",
+      "Company": "Carrier Global",
+      "Role": "Chairman & CEO",
+      "Website": "https://corporate.carrier.com",
+      "ProofOfNeed": "Local Business Directory Listing",
+      "ObservedSignal": "Verified LOCAL_DIRECTORIES_AND_MAPS Registry & DNS Audit",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS",
+      "DNS_IP": "172.64.154.31"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'corporate.carrier.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:27:42"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Virtual Identity",
+      "Email": "contact@virtualidentity.com",
+      "Company": "Virtual Identity",
+      "Role": "C-level Executives",
+      "Website": "https://virtualidentity.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Forward Deployed Engineer (m/f/x)' (Job URL: https://www.arbeitnow.com/jobs/companies/virtual-identity/forward-deployed-engineer-munich-225183))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'virtualidentity.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:31"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Senior Materials Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/senior-materials-engineer-all-genders-munich-296940))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Senior Battery Management System (BMS) Hardware Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/senior-battery-management-system-bms-hardware-engineer-all-genders-munich-425728))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Senior High-Voltage Electrical Design Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/senior-high-voltage-electrical-design-engineer-all-genders-munich-349797))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Senior Test Engineer \u2013 Mechanical Flight Control System (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/senior-test-engineer-mechanical-flight-control-system-all-genders-munich-155876))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Senior Requirements Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/senior-requirements-engineer-all-genders-munich-139612))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Senior Mass Properties Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/senior-mass-properties-engineer-all-genders-munich-236481))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'EMI, HIRF, Lightning Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/emi-hirf-lightning-engineer-all-genders-munich-383345))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Senior Aircraft Performance Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/senior-aircraft-performance-engineer-all-genders-munich-287390))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ v\u00e6ridion",
+      "Email": "contact@vridion.com",
+      "Company": "v\u00e6ridion",
+      "Role": "C-level Executives",
+      "Website": "https://vridion.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Aerodynamics Engineer (all genders)' (Job URL: https://www.arbeitnow.com/jobs/companies/vaeridion/aerodynamics-engineer-all-genders-munich-358301))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'vridion.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Amber",
+      "Email": "contact@amber.com",
+      "Company": "Amber",
+      "Role": "C-level Executives",
+      "Website": "https://amber.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Werkstudent Sales (F/M/*)' (Job URL: https://www.arbeitnow.com/jobs/companies/amber/werkstudent-sales-f-m-koln-233271))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'amber.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Right Search",
+      "Email": "contact@rightsearch.com",
+      "Company": "Right Search",
+      "Role": "C-level Executives",
+      "Website": "https://rightsearch.com",
+      "ProofOfNeed": "ROI Case Study (Actively hiring for 'Sustainability Consultant \u2013 PCF/LCA / Climate Tech (w/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/right-search/sustainability-consultant-pcf-lca-climate-tech-berlin-204291))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rightsearch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 03:28:34"
   }
 ]

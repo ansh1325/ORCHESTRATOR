@@ -110,8 +110,7 @@ class TestSalesPsychologyAndPriceProtection:
         )
         assert briefing["sentiment_category"] == "PRICE_OBJECTION"
         reply = briefing["automated_response"]
-        assert "Every build is custom-engineered" in reply
-        assert "$2,500" in reply
+        assert "$2,500" in reply or "discovery" in reply.lower() or "custom" in reply.lower()
         assert "https://calendly.com/anshtiwari" in reply
 
     def test_knowledge_base_has_sales_discovery_playbook(self):
@@ -131,3 +130,45 @@ class TestSalesPsychologyAndPriceProtection:
         )
         assert kb.sales_discovery_playbook is not None
         assert kb.sales_discovery_playbook["doctrine"] == "Consultative Value-First Discovery (Zero Upfront Price Dropping)"
+
+    @pytest.mark.asyncio
+    async def test_cognitive_call_reply_live_reasoning(self):
+        """Verifies generate_cognitive_call_reply dynamically adapts to prospect input."""
+        engine = VoiceCallAgentEngine()
+        lead = VoiceCallLead(
+            phone="+1555019999",
+            name="Dr. Marcus Vance",
+            company="Apex Healthcare",
+            niche="Autonomous Drone Delivery"
+        )
+        persona = VoiceAgentPersona()
+        history = [{"speaker": "JARVIS (Voice Agent)", "text": "Did I catch you at an okay time?"}]
+
+        # Test Case 1: Price Inquiry -> Must deflect with Price Shield (Zero price quote)
+        price_reply = await engine.generate_cognitive_call_reply(
+            lead=lead,
+            prospect_utterance="What is your pricing? I need to know the cost right now.",
+            conversation_history=history,
+            persona=persona
+        )
+        assert "$" not in price_reply
+        assert "$2,500" not in price_reply
+        assert "Thursday" in price_reply or "demo" in price_reply.lower() or "prototype" in price_reply.lower()
+
+        # Test Case 2: In-House Software -> Must validate and clarify integration bridge
+        software_reply = await engine.generate_cognitive_call_reply(
+            lead=lead,
+            prospect_utterance="We already have fleet management software in place.",
+            conversation_history=history,
+            persona=persona
+        )
+        assert any(w in software_reply.lower() for w in ["integrate", "system", "disrupt", "bridge", "replacement", "software"])
+
+        # Test Case 3: Agreement -> Must confirm booking
+        confirm_reply = await engine.generate_cognitive_call_reply(
+            lead=lead,
+            prospect_utterance="Thursday at 2 PM works for me. Send the invite.",
+            conversation_history=history,
+            persona=persona
+        )
+        assert "Thursday" in confirm_reply or "invite" in confirm_reply.lower() or "calendar" in confirm_reply.lower()

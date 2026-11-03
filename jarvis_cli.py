@@ -230,6 +230,8 @@ class JarvisCLI:
         print(f"  {C.CYAN}chat <message>{C.RESET}           Multi-turn dialogue with Chain-of-Thought (CoT) reasoning & voice narration")
         print(f"  {C.CYAN}call campaign <niche> [count]{C.RESET} Autonomous AI Voice Calling Agent (Dials leads, handles objections, books calls)")
         print(f"  {C.CYAN}call dispatch <phone> <name>{C.RESET} Outbound call dispatch with dynamic objection matrix & Calendly close")
+        print(f"  {C.CYAN}call simulate <niche>{C.RESET}         Simulate conversational sales call with objection handling")
+        print(f"  {C.CYAN}call interactive [niche]{C.RESET}      Live interactive roleplay: test JARVIS dynamically with any objection")
         print(f"  {C.CYAN}call doctor / calls{C.RESET}          Inspect voice calling telephony connectivity and booked meetings")
         print(f"  {C.CYAN}terminal <command>{C.RESET}       Execute any shell command directly with real-time output and safety controls")
         print(f"  {C.CYAN}terminal open [cmd]{C.RESET}      Open interactive visible desktop terminal window (wt.exe/PowerShell)")
@@ -2395,6 +2397,43 @@ class JarvisCLI:
 
             print(f"\n{C.GREEN}✓ Outcome: Booked Discovery Call for {res.get('booking_slot')}{C.RESET}\n", flush=True)
             self.speak(f"Discovery call confirmed for {res.get('booking_slot')}.")
+
+        elif sub in ["interactive", "roleplay", "live", "test"]:
+            niche = " ".join(parts[2:]) if len(parts) > 2 else "Autonomous Drone Delivery"
+            prospect_name = "Dr. Marcus Vance"
+            company = "Apex Healthcare"
+            lead = VoiceCallLead(phone="+1555019999", name=prospect_name, company=company, niche=niche)
+            persona = VoiceAgentPersona()
+            print(f"\n{C.CYAN}{C.BOLD}📞 [Interactive Voice Sales Simulator — Live Roleplay]{C.RESET}", flush=True)
+            print(f"{C.DIM}You are roleplaying as {prospect_name} at {company} in {niche}.{C.RESET}")
+            print(f"{C.DIM}Test JARVIS with any objection, question, or pushback. Type 'hang up' to conclude.\n{C.RESET}", flush=True)
+
+            opener = f"Hey {prospect_name}, quick 30 seconds—I know I caught you out of the blue! This is Jarvis calling from Ansh Tiwari's engineering lab. Did I catch you in the middle of something urgent?"
+            print(f"  {C.CYAN}JARVIS (Voice Agent):{C.RESET} {opener}\n", flush=True)
+            self.speak(opener, wait=False)
+
+            history = [{"speaker": "JARVIS (Voice Agent)", "text": opener}]
+
+            while True:
+                try:
+                    user_input = input(f"  {C.YELLOW}You ({prospect_name}) > {C.RESET}").strip()
+                except (KeyboardInterrupt, EOFError):
+                    print()
+                    break
+                if not user_input or user_input.lower() in ["hang up", "exit", "quit", "bye"]:
+                    print(f"\n{C.DIM}Call ended.{C.RESET}\n")
+                    self.speak("Call ended.")
+                    break
+
+                history.append({"speaker": f"{prospect_name} ({company})", "text": user_input})
+                reply = await voice_call_engine.generate_cognitive_call_reply(lead, user_input, history, persona)
+                history.append({"speaker": "JARVIS (Voice Agent)", "text": reply})
+                print(f"  {C.CYAN}JARVIS (Voice Agent):{C.RESET} {reply}\n", flush=True)
+                self.speak(reply, wait=False)
+
+                if any(w in reply.lower() for w in ["will see you thursday", "invite is on its way", "invite and prototype link are in your inbox"]):
+                    print(f"{C.GREEN}✓ Discovery Call Successfully Locked Down on Calendly!{C.RESET}\n")
+                    break
 
         elif sub in ["list", "campaigns", "history"]:
             camps = voice_call_engine.list_campaigns()

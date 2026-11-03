@@ -887,6 +887,44 @@ class DynamicWorkerEngine:
             combined_text = f"{task.description} {spec.system_prompt}"
             ctx = _deduce_campaign_context(combined_text)
 
+            # ── Dynamic Cognitive Copywriting Synthesis via LLM ──
+            dynamic_copy: dict[str, str] = {}
+            llm = settings.get_llm_client()
+            if llm and not settings.is_mock():
+                try:
+                    copyprompt = (
+                        "You are the Lead B2B Growth Copywriter for Chief Systems Architect Ansh Tiwari.\n"
+                        "Generate completely original, compelling, and context-specific outreach copy tailored to this mission.\n"
+                        "STRICT DOCTRINE:\n"
+                        "- No generic corporate buzzwords. Write authentic, human, high-converting copy.\n"
+                        "- Strictly ZERO pricing in cold email Touch 1 or LinkedIn connection notes.\n"
+                        "- Output JSON with keys:\n"
+                        "  'linkedin_notes': markdown content with connection note and post-connect follow-up,\n"
+                        "  'community_posts': markdown content with 2 high-value community breakdown posts,\n"
+                        "  'twitter_pitches': markdown content with DM pitch and authority thread,\n"
+                        "  'email_sequences': markdown content with initial email hook (<85 words, subject <30 chars) and 4-touch follow-up cadence."
+                    )
+                    user_brief = (
+                        f"Service: {ctx['service_title']}\n"
+                        f"Target Niche: {ctx['target_niche']}\n"
+                        f"Target Persona: {ctx['target_persona']}\n"
+                        f"Value Hook: {ctx['value_hook']}\n"
+                        f"Pain Point: {ctx['pain_point']}\n"
+                        f"Subject Hook: {ctx['subject_hook']}\n"
+                        f"Pilot Sprint: {ctx['pricing_pilot']}"
+                    )
+                    resp = settings.create_chat_completion(
+                        messages=[
+                            {"role": "system", "content": copyprompt},
+                            {"role": "user", "content": user_brief}
+                        ],
+                        response_format={"type": "json_object"},
+                        temperature=0.3
+                    )
+                    dynamic_copy = json.loads(resp.choices[0].message.content or "{}")
+                except Exception as e:
+                    logger.debug(f"Dynamic copywriting synthesis fallback: {e}")
+
             # 1. LinkedIn Connection Notes & InMails
             linkedin_notes = (
                 f"# High-Converting LinkedIn Connection Notes & Follow-up InMails\n"
@@ -902,6 +940,8 @@ class DynamicWorkerEngine:
                 f"Thanks for connecting, {{first_name}}! Here is the 1-page solution teardown resolving {ctx['pain_point']}: https://calendly.com/anshtiwari. If you want us to share the implementation details for {{company}} this week, let me know!\n"
                 f"```\n"
             )
+            if dynamic_copy.get("linkedin_notes"):
+                linkedin_notes = dynamic_copy["linkedin_notes"]
             self.mcp.tool_file_write("campaigns/linkedin/connection_notes.md", linkedin_notes)
             artifacts.append("campaigns/linkedin/connection_notes.md")
 
@@ -975,6 +1015,8 @@ class DynamicWorkerEngine:
                 f"Decision makers do not want endless sales meetings—they want concrete problems fixed in 7 days.\n"
                 f"We structured a fixed outcome pilot sprint with 100% test-verified deliverables. Result? 3x higher conversion rate.\n"
             )
+            if dynamic_copy.get("community_posts"):
+                community_posts = dynamic_copy["community_posts"]
             self.mcp.tool_file_write("campaigns/communities/high_value_posts.md", community_posts)
             artifacts.append("campaigns/communities/high_value_posts.md")
 
@@ -993,6 +1035,8 @@ class DynamicWorkerEngine:
                 f"5/ Step 3: Clear human hand-off gates: zero surprises, full control.\n"
                 f"6/ If you want our full playbook for {ctx['service_title']}, DM me!\n"
             )
+            if dynamic_copy.get("twitter_pitches"):
+                twitter_pitches = dynamic_copy["twitter_pitches"]
             self.mcp.tool_file_write("campaigns/twitter_x/dm_pitches.md", twitter_pitches)
             artifacts.append("campaigns/twitter_x/dm_pitches.md")
 
@@ -1037,6 +1081,8 @@ class DynamicWorkerEngine:
                 f"If addressing {ctx['pain_point']} resurfaces as a priority in the future, feel free to reply to this thread anytime.\n\n"
                 f"Wishing you and the team the best,\nAnsh Tiwari\n"
             )
+            if dynamic_copy.get("email_sequences"):
+                templates = dynamic_copy["email_sequences"]
             self.mcp.tool_file_write("campaigns/cold_email/sequences.md", templates)
             artifacts.append("campaigns/cold_email/sequences.md")
             self.mcp.tool_file_write("cold_outreach_templates.md", templates)

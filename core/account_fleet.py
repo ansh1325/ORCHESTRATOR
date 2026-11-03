@@ -412,11 +412,43 @@ class AccountFleetManager:
     ) -> list[dict[str, Any]]:
         """
         Synthesizes an 8-touch human-like follow-up cadence engineered for 98%+ Primary Inbox placement:
+        - Dynamic LLM synthesis when active; adaptive heuristic fallback when offline.
         - Plain text formatting with zero marketing tracking pixels.
         - Lowercase / conversational subject lines (<35 characters).
         - Value-first brevity (<80-100 words per body).
         - Spaced over 24 days to avoid spam triggers.
         """
+        from core.config import settings
+        llm = settings.get_llm_client()
+        if llm and not settings.is_mock():
+            try:
+                system_prompt = (
+                    f"You are an elite B2B sales copywriter for Chief Systems Architect {founder_name}.\n"
+                    f"Synthesize an authentic, high-converting 8-touch cold email cadence tailored specifically to '{company_niche}'.\n"
+                    "CRITICAL SALES PSYCHOLOGY:\n"
+                    "- Plain text, human, concise (<80 words per body).\n"
+                    "- Touch 1: Value observation and offer for a 2-minute video prototype or workflow teardown. STRICTLY ZERO PRICING in Touch 1.\n"
+                    "- Touch 2: Peer metric benchmark in-thread.\n"
+                    "- Touch 3: Bespoke implementation scope ({custom_offer}) with 100% money-back guarantee.\n"
+                    "- Touch 4: Time-saver question.\n"
+                    "- Touch 5: Checklist / SOP share.\n"
+                    "- Touch 6: Routing / referral check.\n"
+                    "- Touch 7: Low-friction re-engagement.\n"
+                    "- Touch 8: Graceful break-up.\n"
+                    "Output strictly JSON: {\"sequence\": [{\"touch\": 1, \"day_offset\": 0, \"strategy\": \"...\", \"subject\": \"...\", \"body\": \"...\"}, ...]}"
+                )
+                resp = settings.create_chat_completion(
+                    messages=[{"role": "system", "content": system_prompt}],
+                    response_format={"type": "json_object"},
+                    temperature=0.3
+                )
+                data = json.loads(resp.choices[0].message.content or "{}")
+                seq = data.get("sequence")
+                if isinstance(seq, list) and len(seq) == 8:
+                    return seq
+            except Exception as e:
+                logger.debug(f"LLM 8-touch sequence generation fallback: {e}")
+
         return [
             {
                 "touch": 1,
@@ -545,43 +577,83 @@ class AccountFleetManager:
         category = "GENERAL_INTEREST"
         reply_body = ""
         requires_human = False
+        used_llm = False
 
-        if any(w in low for w in ["unsubscribe", "remove me", "stop", "not interested", "dont email"]):
-            category = "OPTOUT"
-            lead.status = "UNSUBSCRIBED"
-            reply_body = "Understood. You have been removed from our list. Wishing you the best."
-        elif any(w in low for w in ["call", "calendly", "zoom", "meet", "schedule", "talk", "chat", "time", "calendar", "thursday", "friday", "monday", "tuesday", "wednesday"]):
-            category = "MEETING_REQUEST"
-            reply_body = (
-                f"Awesome, {lead.name.split()[0] if lead.name else 'there'}! Let's hop on a brief 15-minute intro call "
-                f"to align on {lead.company or 'your'} roadmap. "
-                f"Pick whatever time works best on your calendar here: {booking_link}\n\nLooking forward to speaking!"
-            )
-            requires_human = True
-        elif any(w in low for w in ["how much", "cost", "pricing", "rate", "fee", "price", "budget"]):
-            category = "PRICE_OBJECTION"
-            reply_body = (
-                f"Every build is custom-engineered to your exact stack and technical scope, though our initial pilot sprints are fixed at $2,500 (14 days) with a 100% money-back guarantee on outcomes—zero monthly retainer lock-ins. "
-                f"Happy to walk through exactly what we'd build on a quick 15-min discovery call: {booking_link}"
-            )
-            requires_human = True
-        elif any(w in low for w in ["in-house", "in house", "our team", "already have", "internal team", "have devs"]):
-            category = "IN_HOUSE_OBJECTION"
-            reply_body = (
-                f"Totally understand—most of our partners have strong in-house engineering teams! "
-                f"We act as specialized surge capacity for high-friction backlog items so your core team stays focused on product. "
-                f"Would a 15-min sync make sense to see if we can save your team 20 hrs/week? {booking_link}"
-            )
-        elif any(w in low for w in ["out of office", "away from", "vacation", "annual leave", "autoreply", "automatic reply"]):
-            category = "OUT_OF_OFFICE"
-            reply_body = ""
-        else:
-            category = "INFO_REQUEST"
-            reply_body = (
-                f"Thanks for getting back to me, {lead.name.split()[0] if lead.name else 'there'}. "
-                f"We help high-growth tech teams ship sprint deliverables and eliminate cold-start/API bottlenecks. "
-                f"Let's do a quick 15-minute intro call to see if there's a fit: {booking_link}"
-            )
+        # ── Autonomous Cognitive Intent Decoding & Tailored Response Synthesis via LLM ──
+        from core.config import settings
+        llm = settings.get_llm_client()
+        if llm and not settings.is_mock():
+            try:
+                system_prompt = (
+                    "You are the Cognitive Inbound Reply Agent in LlamaOrchestrator for Chief Systems Architect Ansh Tiwari.\n"
+                    "Analyze the prospect's incoming email reply with deep sales psychology and emotional intelligence.\n"
+                    "Analyze:\n"
+                    "1. 'category': Exactly one of ['MEETING_REQUEST', 'PRICE_OBJECTION', 'IN_HOUSE_OBJECTION', 'INFO_REQUEST', 'OPTOUT', 'OUT_OF_OFFICE', 'GENERAL_INTEREST']\n"
+                    "2. 'requires_human': boolean (True if they want a meeting, ask about price/custom scope, or have specific technical questions)\n"
+                    "3. 'response_body': A highly contextual, empathetic, and natural 2-3 sentence response. If they ask about pricing (PRICE_OBJECTION), clarify that our initial 14-day sprint pilots are fixed at $2,500 with a 100% money-back guarantee (zero retainer traps) while full systems are custom-scoped, and invite them to Master Ansh's 15-minute discovery call at the provided booking link.\n"
+                    "Output strictly JSON: {\"category\": \"...\", \"requires_human\": bool, \"response_body\": \"...\"}"
+                )
+                user_prompt = (
+                    f"Prospect: {lead.name} at {lead.company}\n"
+                    f"Incoming Reply: {reply_snippet}\n"
+                    f"Booking Link: {booking_link}"
+                )
+                resp = settings.create_chat_completion(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.2
+                )
+                data = json.loads(resp.choices[0].message.content or "{}")
+                if data.get("category"):
+                    category = data["category"]
+                    reply_body = data.get("response_body", "")
+                    requires_human = data.get("requires_human", False)
+                    if category == "OPTOUT":
+                        lead.status = "UNSUBSCRIBED"
+                    used_llm = True
+            except Exception as e:
+                logger.debug(f"Cognitive reply LLM synthesis fallback: {e}")
+
+        if not used_llm:
+            if any(w in low for w in ["unsubscribe", "remove me", "stop", "not interested", "dont email"]):
+                category = "OPTOUT"
+                lead.status = "UNSUBSCRIBED"
+                reply_body = "Understood. You have been removed from our list. Wishing you the best."
+            elif any(w in low for w in ["call", "calendly", "zoom", "meet", "schedule", "talk", "chat", "time", "calendar", "thursday", "friday", "monday", "tuesday", "wednesday"]):
+                category = "MEETING_REQUEST"
+                reply_body = (
+                    f"Awesome, {lead.name.split()[0] if lead.name else 'there'}! Let's hop on a brief 15-minute intro call "
+                    f"to align on {lead.company or 'your'} roadmap. "
+                    f"Pick whatever time works best on your calendar here: {booking_link}\n\nLooking forward to speaking!"
+                )
+                requires_human = True
+            elif any(w in low for w in ["how much", "cost", "pricing", "rate", "fee", "price", "budget"]):
+                category = "PRICE_OBJECTION"
+                reply_body = (
+                    f"Every build is custom-engineered to your exact stack and technical scope, though our initial pilot sprints are fixed at $2,500 (14 days) with a 100% money-back guarantee on outcomes—zero monthly retainer lock-ins. "
+                    f"Happy to walk through exactly what we'd build on a quick 15-min discovery call: {booking_link}"
+                )
+                requires_human = True
+            elif any(w in low for w in ["in-house", "in house", "our team", "already have", "internal team", "have devs"]):
+                category = "IN_HOUSE_OBJECTION"
+                reply_body = (
+                    f"Totally understand—most of our partners have strong in-house engineering teams! "
+                    f"We act as specialized surge capacity for high-friction backlog items so your core team stays focused on product. "
+                    f"Would a 15-min sync make sense to see if we can save your team 20 hrs/week? {booking_link}"
+                )
+            elif any(w in low for w in ["out of office", "away from", "vacation", "annual leave", "autoreply", "automatic reply"]):
+                category = "OUT_OF_OFFICE"
+                reply_body = ""
+            else:
+                category = "INFO_REQUEST"
+                reply_body = (
+                    f"Thanks for getting back to me, {lead.name.split()[0] if lead.name else 'there'}. "
+                    f"We help high-growth tech teams ship sprint deliverables and eliminate cold-start/API bottlenecks. "
+                    f"Let's do a quick 15-minute intro call to see if there's a fit: {booking_link}"
+                )
 
         self._save()
 

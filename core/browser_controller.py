@@ -278,9 +278,17 @@ class BrowserController:
         """
         Autonomous Anti-Bot & CAPTCHA Defense Engine.
         1. Probes for Cloudflare Turnstile, reCAPTCHA v2/v3, and hCaptcha.
-        2. Autonomously navigates coordinates with human Bezier glide and triggers verification checkboxes.
+        2. Delegates to CaptchaSolver for multi-modal audio Whisper bypass, Turnstile glide, and stealth evasions.
         3. Waits for challenge resolution and returns verified status without prompting human.
         """
+        try:
+            from core.captcha_solver import CaptchaSolver
+            solver_res = CaptchaSolver.solve_any_captcha(page)
+            if solver_res.get("detected"):
+                return solver_res
+        except Exception:
+            pass
+
         result = {"detected": False, "type": "none", "solved_autonomously": False}
         try:
             # 1. Proactive Search in Frames for Turnstile / Cloudflare challenges

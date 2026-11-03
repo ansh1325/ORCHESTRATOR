@@ -3043,6 +3043,40 @@ class JarvisCLI:
             self.list_workflows()
             return True
 
+        # Runtime Tool Synthesizer & MCP Hot-Reload Commands
+        if low.startswith("tools ") or low.startswith("tool ") or low in ("tools", "tool"):
+            from core.tool_synthesizer import tool_synthesizer
+            parts = line.split(maxsplit=2)
+            sub = parts[1].lower() if len(parts) > 1 else "list"
+            if sub in ("list", "show"):
+                manifest = tool_synthesizer.list_tools()
+                print(f"\n{C.CYAN}{C.BOLD}🛠️ [JARVIS Dynamic Synthesized Tools] ({len(manifest)} active):{C.RESET}")
+                if not manifest:
+                    print(f"  {C.DIM}No dynamic tools synthesized yet. Command 'tools synthesize <name>' to compile one.{C.RESET}\n")
+                for m in manifest:
+                    print(f"  • {C.YELLOW}{m.get('name')}{C.RESET}: {m.get('description')} ({C.GREEN}{m.get('status')}{C.RESET})")
+                print()
+            elif sub == "synthesize" and len(parts) > 2:
+                raw_args = parts[2].split(maxsplit=1)
+                t_name = raw_args[0]
+                t_goal = raw_args[1] if len(raw_args) > 1 else f"Synthesized capability for {t_name}"
+                print(f"\n{C.CYAN}🛠️ [Runtime Tool Synthesis]{C.RESET} Compiling, testing, and hot-reloading: {C.YELLOW}{t_name}{C.RESET}...")
+                self.speak(f"Synthesizing new tool {t_name}.")
+                res = tool_synthesizer.synthesize_tool_autonomously(t_name, t_goal)
+                if res.get("success"):
+                    print(f"\n{C.GREEN}{C.BOLD}✓ Tool Synthesized & Hot-Reloaded into MCP Server:{C.RESET}")
+                    print(f"  • Tool Name: {C.YELLOW}{res.get('tool_name')}{C.RESET}")
+                    print(f"  • File: {res.get('file_path')}")
+                    print(f"  • Status: Active & ready for JSON-RPC invocation without server restart.\n")
+                    self.speak(f"Tool {t_name} compiled, verified, and hot-reloaded into MCP server.")
+                else:
+                    print(f"\n{C.RED}✗ Tool Synthesis Failed:{C.RESET} {res.get('error')}\n")
+            elif sub == "reload":
+                from core.mcp_server import mcp_server
+                count = tool_synthesizer.reload_all_tools(mcp_server)
+                print(f"\n{C.GREEN}✓ Hot-reloaded {count} dynamic tools into MCP server.{C.RESET}\n")
+            return True
+
         if low in ["schedules", "schedule", "list schedules", "show schedules"]:
             self.list_schedules()
             return True

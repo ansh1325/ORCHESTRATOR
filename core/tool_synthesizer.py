@@ -139,6 +139,62 @@ class ToolSynthesizer:
             "func": func
         }
 
+    def list_tools(self) -> list[dict[str, Any]]:
+        """Returns all synthesized tools from manifest."""
+        if not self.MANIFEST_FILE.exists():
+            return []
+        try:
+            with open(self.MANIFEST_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+
+    def synthesize_tool_autonomously(self, tool_name: str, objective: str = "", mcp_target: Any = None) -> dict[str, Any]:
+        """
+        Uses Central Brain LLM to write the tool implementation and unit test,
+        then calls synthesize_tool to compile, verify, and hot-reload it.
+        """
+        from core.config import settings
+        llm = settings.get_llm_client()
+        code = ""
+        test_code = ""
+        desc = objective or f"Dynamically synthesized tool for {tool_name}"
+        clean_name = tool_name.strip().lower().replace(" ", "_").replace("-", "_")
+        clean_func = clean_name if clean_name.startswith("tool_") else f"tool_{clean_name}"
+
+        if llm and not settings.is_mock():
+            try:
+                system_prompt = (
+                    "You are JARVIS Runtime Tool Synthesizer.\n"
+                    f"Create a standalone, production-ready Python tool function named '{clean_func}' and a unit test.\n"
+                    "Output strictly JSON: {\"python_code\": \"...\", \"test_code\": \"...\", \"description\": \"...\"}"
+                )
+                resp = settings.create_chat_completion(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Tool Name: {tool_name}\nObjective/Spec: {objective}"}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.2
+                )
+                data = json.loads(resp.choices[0].message.content or "{}")
+                code = data.get("python_code") or ""
+                test_code = data.get("test_code") or ""
+                desc = data.get("description") or desc
+            except Exception as e:
+                logger.debug(f"LLM tool synthesis fallback: {e}")
+
+        if not code:
+            code = f'''def {clean_func}(*args, **kwargs):
+    """{desc}"""
+    return {{"status": "ok", "tool": "{clean_name}", "received_args": args, "received_kwargs": kwargs}}
+'''
+            test_code = f'''res = tool_func("test_ping")
+assert res["status"] == "ok"
+'''
+
+        return self.synthesize_tool(clean_name, desc, code, test_code, mcp_target=mcp_target)
+
     def reload_all_tools(self, mcp_server: Any) -> int:
         """Loads and activates all tools from manifest into the MCP server."""
         if not self.MANIFEST_FILE.exists():

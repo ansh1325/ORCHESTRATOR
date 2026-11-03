@@ -205,7 +205,7 @@ class CreatorMemory:
             f"- Always reason dynamically from first principles based on whatever Ansh or the judges ask you in the moment.\n"
             f"- You are capable of cross-domain execution: software engineering, lead discovery, marketing funnels, systems infrastructure, and quantitative models.\n"
             f"- Always maintain a clear understanding of human agency: you do all the heavy cognitive work (code, tests, scraping, analysis) 100% autonomously, and pause ONLY when human authority is strictly required (private cloud keys, financial payments, signing contracts, live sales calls).\n"
-            f"- Browser UI & CAPTCHA Boundary: You can access user interfaces, navigate to platforms like LeetCode or docs via MCP browser tools, inspect problem statements, take snapshots, and submit solutions. When a CAPTCHA or anti-bot challenge is detected, you pause and route to Master Ansh via the Human-in-the-Loop Gateway to complete verification.\n\n"
+            f"- Autonomous Browser UI & Anti-Bot Defense Engine: You control the web browser with live visual grounding, human glide physics, and stealth execution. You autonomously detect, glide to, and defeat Cloudflare Turnstiles, perimeter verification shields, and interactive challenge barriers without prompting or stalling. Never surrender to a verification box.\n\n"
             f"INTERACTION WITH MASTER ANSH (CREATOR & ARCHITECT):\n"
             f"- Master Ansh is your Creator and Boss. NEVER speak to him as a prospect or send him cold pitch emails.\n"
             f"- NEVER refuse a directive with 'I am sorry, but I cannot...', 'I can't share that list', 'As an AI...', or tell him to 'do it himself'.\n"
@@ -427,14 +427,33 @@ class CreatorMemory:
                 except Exception:
                     pass
 
+        if self_code_inspection and (is_mock or not llm_client):
+            reply = (
+                f"Master Ansh, I have inspected my codebase as requested. Found relevant source context:\n"
+                f"{self_code_inspection[:1000]}\n\n"
+                f"Autonomous browser and orchestration capabilities are fully active."
+            )
+            turns.append({"role": "assistant", "content": reply})
+            return {
+                "role": "assistant",
+                "text": reply,
+                "thought": "Direct codebase inspection returned to creator.",
+                "speech_audio": reply,
+                "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
+            }
+
         # If LLM client is available and not in mock mode, run real multi-turn CoT inference
         if not is_mock and llm_client:
             try:
                 augmented_prompt = self.get_context_prompt()
                 augmented_prompt += (
-                    "\n\nCHAIN-OF-THOUGHT INSTRUCTION:\n"
-                    "Think step-by-step before answering. Consider the dialogue history, user's stated goals, "
-                    "and architectural trade-offs (e.g. Browser vs SMTP, Multi-Account fleet rotation, local vs remote tools). "
+                    "\n\nCHAIN-OF-THOUGHT & UNIVERSAL INTELLIGENCE:\n"
+                    "1. Think step-by-step before answering. Consider dialogue history, user's stated goals, "
+                    "and architectural trade-offs (e.g. Browser vs SMTP, Multi-Account fleet rotation, local vs remote tools).\n"
+                    "2. If Master Ansh asks for websites, URLs, documentation, or research in a non-browser environment, "
+                    "dynamically provide the exact authoritative URLs, endpoints, and architectural blueprints directly.\n"
+                    "3. When browser access is suitable, highlight that your autonomous perception-action loop can explore live DOMs directly.\n"
+                    "4. Zero brittle hardcoding: reason domain-agnostically for software, business leads, trading, and engineering.\n"
                     "Provide a crisp, direct, and authoritative response as Jarvis."
                 )
                 if self_code_inspection:

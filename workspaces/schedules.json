@@ -1,1 +1,72 @@
-[]
+[
+  {
+    "task_id": "sched_98f5f5e3",
+    "id": "sched_98f5f5e3",
+    "title": "Lead generation and email campaign with daily follow\u2011ups",
+    "prompt": "Create a business selling full stack development, find at least 1500 leads interested in full stack development, collect their contact info into a CSV with proof columns, send personalized emails to the first 100 people with subject line 30-40 characters and body max 100 words, ensure emails are not spam, track and follow up with non\u2011responders up to 4\u20115 times, schedule daily follow\u2011ups for those who have not replied.",
+    "schedule_cron": "Daily 00:00",
+    "hour": 0,
+    "minute": 0,
+    "is_active": true,
+    "created_at": "2026-11-03T00:42:49.650670+00:00",
+    "last_run_at": null,
+    "last_run_date": null,
+    "run_count": 0
+  },
+  {
+    "task_id": "sched_57fcb3f0",
+    "id": "sched_57fcb3f0",
+    "title": "Daily Follow-up Cadence (Non-Responders Only)",
+    "prompt": "account_fleet dispatch follow-up touch to all unreplied prospects (touches 2-5)",
+    "schedule_cron": "Daily 09:00",
+    "hour": 9,
+    "minute": 0,
+    "is_active": true,
+    "created_at": "2026-11-03T00:48:29.673439+00:00",
+    "last_run_at": null,
+    "last_run_date": null,
+    "run_count": 0
+  },
+  {
+    "task_id": "sched_58a89f02",
+    "id": "sched_58a89f02",
+    "title": "Daily Follow-up Cadence (Non-Responders Only)",
+    "prompt": "account_fleet dispatch follow-up touch to all unreplied prospects (touches 2-5)",
+    "schedule_cron": "Daily 09:00",
+    "hour": 9,
+    "minute": 0,
+    "is_active": true,
+    "created_at": "2026-11-03T00:48:30.322093+00:00",
+    "last_run_at": null,
+    "last_run_date": null,
+    "run_count": 0
+  },
+  {
+    "task_id": "sched_1bbccd29",
+    "id": "sched_1bbccd29",
+    "title": "Creator business intelligence tool",
+    "prompt": "I want to build a creator business intelligence tool that monitors competitor pricing",
+    "schedule_cron": "Daily 00:00",
+    "hour": 0,
+    "minute": 0,
+    "is_active": true,
+    "created_at": "2026-11-03T05:33:48.345511+00:00",
+    "last_run_at": null,
+    "last_run_date": null,
+    "run_count": 0
+  },
+  {
+    "task_id": "sched_c4b980c8",
+    "id": "sched_c4b980c8",
+    "title": "Monitor Competitor Pricing",
+    "prompt": "build a creator business intelligence tool that monitors competitor pricing",
+    "schedule_cron": "Daily 06:00",
+    "hour": 6,
+    "minute": 0,
+    "is_active": true,
+    "created_at": "2026-11-03T06:01:10.881529+00:00",
+    "last_run_at": null,
+    "last_run_date": null,
+    "run_count": 0
+  }
+]

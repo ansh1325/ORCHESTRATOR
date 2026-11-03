@@ -26,6 +26,7 @@ class Settings:
     BASETEN_API_KEY: str | None = os.getenv("BASETEN_API_KEY")
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
     OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL")
+    LOCAL_LLM_URL: str | None = os.getenv("LOCAL_LLM_URL") or os.getenv("OLLAMA_BASE_URL")
     
     # Meta Llama & High-Capacity Models
     META_MODEL_ORCHESTRATOR: str = os.getenv("META_MODEL_ORCHESTRATOR", "openai/gpt-oss-120b")
@@ -44,7 +45,9 @@ class Settings:
 
     @classmethod
     def has_active_api_key(cls) -> bool:
-        """Checks if any supported LLM provider API key is provided and non-placeholder."""
+        """Checks if any supported LLM provider API key or local model endpoint is provided."""
+        if cls.LOCAL_LLM_URL and len(cls.LOCAL_LLM_URL.strip()) > 5:
+            return True
         keys = [cls.GROQ_API_KEY, cls.FIREWORKS_API_KEY, cls.BASETEN_API_KEY, cls.OPENAI_API_KEY]
         for key in keys:
             if key and not key.startswith("your_") and len(key.strip()) > 8:
@@ -66,6 +69,10 @@ class Settings:
             
         try:
             from openai import OpenAI
+            # 0. Local Model Endpoint (Ollama, vLLM, LM Studio) - Zero Token Limits, Unlimited Swarms
+            if cls.LOCAL_LLM_URL:
+                local_key = os.getenv("LOCAL_LLM_KEY", "local_jarvis")
+                return OpenAI(api_key=local_key, base_url=cls.LOCAL_LLM_URL.rstrip("/"), max_retries=1, timeout=60.0)
             if cls.GROQ_API_KEY and not cls.GROQ_API_KEY.startswith("your_"):
                 return OpenAI(api_key=cls.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0, timeout=12.0)
             if cls.FIREWORKS_API_KEY and not cls.FIREWORKS_API_KEY.startswith("your_"):

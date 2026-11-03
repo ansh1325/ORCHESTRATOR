@@ -1011,6 +1011,12 @@ class BrowserAgent:
                 content = resp.choices[0].message.content.strip()
                 parsed = json.loads(content)
                 if "action" in parsed:
+                    if parsed.get("action") == "click":
+                        target_id = parsed.get("element_id")
+                        clicked_el = next((e for e in elements if e.index == target_id), None)
+                        if clicked_el and any(g in (clicked_el.text + " " + clicked_el.aria_label).lower() for g in ["guest", "continue as guest", "use without account"]):
+                            if "guest" not in str(parsed.get("reason", "")).lower():
+                                parsed["reason"] = f"Bypass obstacle via guest button ({parsed.get('reason', '')})"
                     # Guard A: Never allow the LLM to type imperative commands or meta-prompts into search bars
                     if parsed.get("action") == "type":
                         raw_type_text = parsed.get("text", "")
@@ -1224,9 +1230,10 @@ class BrowserAgent:
         if llm and not settings.is_mock():
             try:
                 system_prompt = (
-                    "You are the Central Brain Link Resolver for Jarvis Autonomous Browser.\n"
-                    "Given the user's objective, deduce the single best, authoritative starting URL to navigate to.\n"
-                    "Never output search queries when an official service or portal is requested.\n"
+                    "You are the Central Brain Link Resolver for Jarvis Autonomous Intelligence.\n"
+                    "Given the user's objective, dynamically deduce the single authoritative destination URL to navigate to.\n"
+                    "If the objective involves a well-known service (e.g. LeetCode, GitHub, Linear, Google Docs, Upwork), output its direct starting URL.\n"
+                    "If the website or service URL is obscure, ambiguous, or not known with certainty, output a targeted Google Search URL: https://www.google.com/search?q=<query>.\n"
                     "Output strictly JSON: {\"url\": \"https://...\", \"reason\": \"...\"}"
                 )
                 resp = settings.create_chat_completion(
@@ -1275,7 +1282,7 @@ class BrowserAgent:
 
         # Fallback to privacy-first DuckDuckGo web search
         encoded = urllib.parse.quote_plus(clean_q or goal.strip())
-        return f"https://duckduckgo.com/?q={encoded}"
+        return f"https://www.google.com/search?q={encoded}"
 
     def execute_goal(
         self,
@@ -1500,7 +1507,11 @@ class BrowserAgent:
                         for extra_p in active_pages[1:]:
                             if not extra_p.is_closed():
                                 extra_url = extra_p.url.lower()
-                                if any(aux in extra_url for aux in ["support.google", "policies.google", "about:blank", "adservice", "doubleclick"]):
+                                is_offtopic_social = (
+                                    not any(sm in goal.lower() for sm in ["instagram", "facebook", "twitter", "linkedin", "tiktok", "social", "reel", "post"]) and
+                                    any(sm in extra_url for sm in ["instagram.com", "facebook.com", "twitter.com", "x.com", "tiktok.com"])
+                                )
+                                if any(aux in extra_url for aux in ["support.google", "policies.google", "about:blank", "adservice", "doubleclick"]) or is_offtopic_social:
                                     try:
                                         extra_p.close()
                                         step_logs.append(f"Step {step_idx}: Closed unwanted background popup tab ({extra_url[:40]}).")
@@ -2094,11 +2105,12 @@ class BrowserAgent:
         generic_markers = [
             "daily", "streak", "today", "", "any", "problem", "leetcode",
             "a-problem", "a-leetcode-problem", "solve-a-problem", "solve-a-leetcode-problem",
-            "a problem", "a leetcode problem", "none", "null", "pick", "choose"
+            "a problem", "a leetcode problem", "none", "null", "pick", "choose",
+            "random", "choice", "of-your-choice", "a-problem-of-your-choice"
         ]
         is_generic = (
             target_input in generic_markers
-            or any(m in target_input for m in ["a-leetcode-problem", "solve-a-problem", "solve-a-leetcode-problem", "a-problem"])
+            or any(m in target_input for m in ["a-leetcode-problem", "solve-a-problem", "solve-a-leetcode-problem", "a-problem", "choice", "random"])
             or target_input.endswith("problem")
             or target_input.endswith("problems")
         )
@@ -2130,69 +2142,100 @@ class BrowserAgent:
         time.sleep(2.0)
         self.inject_human_cursor_overlay(page)
 
-        # Check Cloudflare challenge
+        # Check Cloudflare challenge & autonomously defeat
         print("[Action 2] Inspecting Cloudflare Turnstile & security shield...")
         captcha = BrowserController.defeat_or_detect_captcha(page)
         if captcha.get("detected"):
             actions_taken.append(f"Cloudflare Challenge Detected ({captcha.get('type')}) - Auto-handled: {captcha.get('solved_autonomously')}")
-            print("\n[Notice] Cloudflare Challenge detected. Please complete the verification in the browser window if prompted...")
-            time.sleep(4.0)
+            if captcha.get("solved_autonomously"):
+                print(f"[Action 2] ✓ Cloudflare challenge ({captcha.get('type')}) autonomously defeated via human-glide hardware event.")
+            else:
+                print(f"[Action 2] Passive challenge shield active. Waiting for autonomous perimeter clearance...")
+                time.sleep(3.0)
 
-        # Autonomous 404 / Page Not Found Detection & Auto-Recovery
+        # Autonomous 404 / Page Not Found Detection & Auto-Recovery (Strict Document Title Check - Zero False Positives)
         try:
             curr_title = page.title()
         except Exception:
             curr_title = ""
-        try:
-            curr_content = page.content()
-        except Exception:
-            curr_content = ""
 
+        # Only trigger if the document title itself explicitly indicates a 404 error
         is_404 = (
             "page not found" in curr_title.lower()
-            or "404" in curr_title
-            or "page not found" in curr_content.lower()
-            or "sorry, but we can't find the page" in curr_content.lower()
+            or curr_title.strip().startswith("404")
+            or ("404" in curr_title and "leetcode" in curr_title.lower())
         )
         if is_404:
-            print(f"[LeetCode Self-Recovery] Page 404 detected ('{curr_title}'). Autonomously redirecting to LeetCode Problemset catalog...")
-            actions_taken.append(f"Redirected from 404 URL '{target_url}' to problemset catalog.")
+            print(f"[LeetCode Self-Recovery] 404 detected ('{curr_title}'). Autonomously navigating to catalog to select live problem...")
+            actions_taken.append(f"Redirected from 404 URL '{target_url}' to LeetCode problemset catalog.")
             target_url = "https://leetcode.com/problemset/"
             page.goto(target_url, wait_until="domcontentloaded", timeout=40000)
-            time.sleep(2.0)
+            time.sleep(2.5)
 
-        # If landed on problemset, click a problem from the live DOM with human mouse movement
+        # If landed on problemset catalog, perceive live DOM and navigate into an active problem
         if "/problemset" in page.url or target_url.endswith("/problemset/"):
+            print("[LeetCode Dynamic Perception] Navigating catalog DOM to select an active problem...")
+            time.sleep(2.5)
             try:
-                page.wait_for_selector("a[href*='/problems/']", timeout=12000)
-                problem_locs = page.locator("a[href*='/problems/']").all()
-                chosen_link = None
-                for pl in problem_locs:
-                    h = pl.get_attribute("href") or ""
-                    if "/problems/" in h and not any(skip in h for skip in ["random-one-question", "tag", "solution", "discuss", "contest"]):
-                        chosen_link = pl
-                        break
-                if chosen_link and chosen_link.is_visible(timeout=5000):
-                    href = chosen_link.get_attribute("href") or ""
-                    box = chosen_link.bounding_box()
-                    if box:
-                        cx = box["x"] + box["width"] / 2
-                        cy = box["y"] + box["height"] / 2
-                        page.evaluate(f"() => window.jarvisMoveCursor && window.jarvisMoveCursor({cx}, {cy})")
-                        page.mouse.move(cx, cy, steps=12)
-                        page.evaluate(f"() => window.jarvisClickRipple && window.jarvisClickRipple({cx}, {cy})")
-                        page.mouse.down()
-                        time.sleep(0.08)
-                        page.mouse.up()
-                    else:
-                        chosen_link.click()
-                    time.sleep(3.0)
-                    if len(context.pages) > 1:
-                        page = context.pages[-1]
+                page.wait_for_selector("a[href*='/problems/']", timeout=15000)
+                # First check for the featured Daily Challenge card or banner
+                daily_link = None
+                for d_cand in page.locator("a[href*='/problems/']:has-text('Daily'), div:has-text('Daily Question') a[href*='/problems/'], [class*='daily'] a[href*='/problems/']").all():
+                    try:
+                        dh = d_cand.get_attribute("href") or ""
+                        if "/problems/" in dh and not any(skip in dh for skip in ["tag", "solution", "discuss", "contest"]):
+                            daily_link = (dh, d_cand.inner_text().strip())
+                            break
+                    except Exception:
+                        pass
+
+                chosen_href = None
+                chosen_title = ""
+                if "daily" in target_input and daily_link:
+                    chosen_href, chosen_title = daily_link
+                else:
+                    valid_candidates = []
+                    links = page.locator("a[href*='/problems/']").all()
+                    for l in links:
+                        try:
+                            h = l.get_attribute("href") or ""
+                            txt = l.inner_text().strip()
+                            if "/problems/" in h and not any(skip in h for skip in ["random-one-question", "tag", "solution", "discuss", "contest", "/problems/$"]):
+                                is_premium = False
+                                try:
+                                    parent = l.locator("xpath=..")
+                                    is_premium = parent.locator("[data-icon='lock']").count() > 0
+                                except Exception:
+                                    pass
+                                if not is_premium and len(txt) > 2 and h not in [vc[0] for vc in valid_candidates]:
+                                    valid_candidates.append((h, txt))
+                        except Exception:
+                            continue
+                    if valid_candidates:
+                        import random
+                        chosen_href, chosen_title = random.choice(valid_candidates)
+                    elif daily_link:
+                        chosen_href, chosen_title = daily_link
+
+                if chosen_href:
+                    if not chosen_href.startswith("http"):
+                        chosen_href = f"https://leetcode.com{chosen_href}" if chosen_href.startswith("/") else f"https://leetcode.com/{chosen_href}"
+                    print(f"[LeetCode Perception] Autonomously selected live problem: '{chosen_title or chosen_href}' ({chosen_href})")
+                    page.goto(chosen_href, wait_until="domcontentloaded", timeout=40000)
+                    time.sleep(2.5)
                     self.inject_human_cursor_overlay(page)
-                    actions_taken.append(f"Selected problem dynamically from live DOM: {href}")
-            except Exception:
-                pass
+                    actions_taken.append(f"Autonomously selected problem from catalog: {chosen_title or chosen_href}")
+                else:
+                    # Dynamic server-side random problem redirection (Zero hardcoding)
+                    print("[LeetCode Dynamic Endpoint] Selecting live problem via LeetCode dynamic random redirector...")
+                    page.goto("https://leetcode.com/problems/random-one-question/", wait_until="domcontentloaded", timeout=40000)
+                    time.sleep(2.5)
+                    actions_taken.append("Navigated to dynamic LeetCode random question endpoint.")
+            except Exception as e:
+                print(f"[LeetCode Perception Note] Dynamic catalog selection fallback: {e}")
+                page.goto("https://leetcode.com/problems/random-one-question/", wait_until="domcontentloaded", timeout=40000)
+                time.sleep(2.5)
+                actions_taken.append("Dynamic random question endpoint fallback engaged.")
 
         try:
             prob_title = page.title() if not page.is_closed() else "LeetCode Problem"

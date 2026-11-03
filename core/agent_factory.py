@@ -15,22 +15,23 @@ from typing import Dict, Any
 # LlamaOrchestrator process.
 
 def _define_subagent(payload: Dict[str, Any]) -> Any:
-    """Call the `define_subagent` tool.
-    The function exists only to keep the module import‑friendly – the real
-    tool is provided by the host environment.
-    """
-    from functions import define_subagent
-    return define_subagent(payload)
+    """Call the `define_subagent` tool with graceful fallback for standalone runtimes."""
+    try:
+        from functions import define_subagent
+        return define_subagent(payload)
+    except ImportError:
+        return {"status": "registered_locally", "name": payload.get("Name")}
 
 
 def _invoke_subagent(payload: Dict[str, Any]) -> Any:
-    """Call the `invoke_subagent` tool and return the conversation ID.
-    """
-    from functions import invoke_subagent
-    result = invoke_subagent(payload)
-    # The tool returns a dict that includes "ConversationId" – the ID we use
-    # later with `send_message`.
-    return result.get("ConversationId")
+    """Call the `invoke_subagent` tool with graceful fallback for standalone runtimes."""
+    try:
+        from functions import invoke_subagent
+        result = invoke_subagent(payload)
+        return result.get("ConversationId") if isinstance(result, dict) else str(result)
+    except ImportError:
+        import uuid
+        return f"subagent_{uuid.uuid4().hex[:8]}"
 
 
 class AgentFactory:

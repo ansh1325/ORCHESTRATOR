@@ -578,7 +578,7 @@ class KnowledgeAgent:
             milestone_1=data.get("milestone_1", "Autonomous scaffolding & test verification"),
             milestone_2=data.get("milestone_2", "Production scaling & deployment"),
             technical_blueprint=data.get("technical_blueprint", {"architecture": "Modular Micro-Services"}),
-            scraped_sources=[{"title": s.get("title", "Source"), "url": s.get("url", "https://example.com")} for s in sources],
+            scraped_sources=[{"title": s.get("title", "Source"), "url": s.get("url") or s.get("link", "")} for s in sources],
             synthesis_summary=data.get("synthesis_summary", "Knowledge base synthesized for autonomous execution."),
             omnichannel_channels=data.get("omnichannel_channels", []),
             ready_for_permission_actions=data.get("ready_for_permission_actions", [])

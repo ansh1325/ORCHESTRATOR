@@ -2606,3 +2606,196 @@ async function triggerWebBrowserUseTask() {
   }
 }
 window.triggerWebBrowserUseTask = triggerWebBrowserUseTask;
+
+
+// ==========================================
+// BUILDS & WORKSPACES OPERATING HUB (FRONTEND)
+// ==========================================
+let activeBuildsList = [];
+
+async function openBuildsModal() {
+  const modal = document.getElementById("buildsModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  if (window.lucide) lucide.createIcons();
+  await loadBuilds();
+}
+window.openBuildsModal = openBuildsModal;
+
+function closeBuildsModal() {
+  const modal = document.getElementById("buildsModal");
+  if (modal) modal.classList.add("hidden");
+}
+window.closeBuildsModal = closeBuildsModal;
+
+async function loadBuilds() {
+  const container = document.getElementById("buildsContainer");
+  const countEl = document.getElementById("buildsCountBadge");
+  if (!container) return;
+  container.innerHTML = `<div class="p-8 text-center text-gemini-subtle font-mono text-xs">Scanning workspaces and indexing builds...</div>`;
+
+  try {
+    const res = await fetch("/api/builds");
+    const data = await res.json();
+    if (data.success && data.builds) {
+      activeBuildsList = data.builds;
+      if (countEl) countEl.innerText = `${data.count} Verified Builds`;
+      renderBuildsCards(data.builds);
+    } else {
+      container.innerHTML = `<div class="p-8 text-center text-red-400 text-xs">Failed to load builds: ${data.error || "Unknown error"}</div>`;
+    }
+  } catch (err) {
+    container.innerHTML = `<div class="p-8 text-center text-red-400 text-xs">Error connecting to builds registry: ${err.message}</div>`;
+  }
+}
+window.loadBuilds = loadBuilds;
+
+function renderBuildsCards(builds) {
+  const container = document.getElementById("buildsContainer");
+  if (!container) return;
+  if (!builds || builds.length === 0) {
+    container.innerHTML = `<div class="p-8 text-center text-gemini-subtle text-xs">No active builds registered yet. Directives like 'build fullstack app' will synthesize one.</div>`;
+    return;
+  }
+
+  container.innerHTML = builds.map(b => {
+    const isCert = b.status === "CERTIFIED";
+    const statusBadge = isCert
+      ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">CERTIFIED</span>`
+      : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-950 text-blue-400 border border-blue-800">READY</span>`;
+
+    const epBtn = b.primary_entrypoint
+      ? `<button onclick="runBuildUI('${b.workspace_id}', '${b.primary_entrypoint}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm">
+           <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Run Build
+         </button>`
+      : '';
+
+    const testBtn = b.test_command
+      ? `<button onclick="testBuildUI('${b.workspace_id}')" class="px-3 py-1.5 rounded-lg bg-gemini-cardHover hover:border-gemini-blue/50 border border-gemini-border text-gemini-text font-semibold text-xs transition cursor-pointer flex items-center gap-1.5">
+           <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-gemini-blue"></i> Test
+         </button>`
+      : '';
+
+    return `
+      <div class="p-4 rounded-xl bg-gemini-card hover:bg-gemini-cardHover/80 border border-gemini-border transition space-y-3">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="font-bold text-sm text-white">${b.title}</h4>
+              ${statusBadge}
+            </div>
+            <p class="text-[11px] text-gemini-subtle font-mono pt-0.5">${b.workspace_id} • <span class="text-gemini-blue">${b.track}</span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            ${epBtn}
+            ${testBtn}
+            <button onclick="openBuildFolderUI('${b.workspace_id}')" class="px-2.5 py-1.5 rounded-lg bg-gemini-cardHover hover:bg-white/10 text-gemini-muted hover:text-white transition cursor-pointer text-xs flex items-center gap-1" title="Open in Windows Explorer">
+              <i data-lucide="folder" class="w-3.5 h-3.5"></i> Open Folder
+            </button>
+          </div>
+        </div>
+
+        <p class="text-xs text-gemini-muted line-clamp-2 leading-relaxed">${b.documentation || 'Autonomous build generated and verified by Jarvis.'}</p>
+
+        <div class="flex items-center justify-between text-[11px] text-gemini-subtle border-t border-gemini-border/40 pt-2.5">
+          <div class="flex items-center gap-3">
+            <span><strong>Files:</strong> ${b.file_count} (${b.total_size_human})</span>
+            <span><strong>Entry:</strong> <code class="text-emerald-400 font-mono">${b.primary_entrypoint || 'None'}</code></span>
+          </div>
+          <span class="font-mono text-[10px]">${b.modified_at}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function runBuildUI(workspaceId, entrypoint) {
+  const consoleBox = document.getElementById("buildRunOutputConsole");
+  const consoleText = document.getElementById("buildRunOutputContent");
+  if (consoleBox) consoleBox.classList.remove("hidden");
+  if (consoleText) consoleText.innerText = `[JARVIS RUNNER] Launching execution for '${workspaceId}' (${entrypoint || 'default'})...\n`;
+
+  try {
+    const res = await fetch(`/api/builds/${encodeURIComponent(workspaceId)}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entrypoint: entrypoint, timeout_sec: 45 })
+    });
+    const data = await res.json();
+    if (consoleText) {
+      if (data.success) {
+        consoleText.innerText = `[SUCCESS] Exited with code 0 in ${data.elapsed_sec}s:\n\n` + (data.stdout || "[No stdout output]");
+        if (data.stderr) consoleText.innerText += `\n\n[STDERR]:\n` + data.stderr;
+      } else {
+        consoleText.innerText = `[FAILED] Exit code ${data.exit_code} in ${data.elapsed_sec}s:\n\n` + (data.stderr || data.error || data.stdout || "[No output]");
+      }
+    }
+  } catch (err) {
+    if (consoleText) consoleText.innerText += `\n[ERROR] Network error: ${err.message}`;
+  }
+}
+window.runBuildUI = runBuildUI;
+
+async function testBuildUI(workspaceId) {
+  const consoleBox = document.getElementById("buildRunOutputConsole");
+  const consoleText = document.getElementById("buildRunOutputContent");
+  if (consoleBox) consoleBox.classList.remove("hidden");
+  if (consoleText) consoleText.innerText = `[JARVIS RUNNER] Running pytest unit test suite for '${workspaceId}'...\n`;
+
+  try {
+    const res = await fetch(`/api/builds/${encodeURIComponent(workspaceId)}/test`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    const data = await res.json();
+    if (consoleText) {
+      consoleText.innerText = `[TEST SUITE RESULT] (Exit ${data.exit_code} in ${data.elapsed_sec}s):\n\n` + (data.output || data.error || "[No output]");
+    }
+  } catch (err) {
+    if (consoleText) consoleText.innerText += `\n[ERROR] Network error: ${err.message}`;
+  }
+}
+window.testBuildUI = testBuildUI;
+
+async function openBuildFolderUI(workspaceId) {
+  try {
+    const res = await fetch(`/api/builds/${encodeURIComponent(workspaceId)}/open`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(`Opened folder in File Explorer:\n${data.path}`);
+    } else {
+      alert(`Notice: ${data.error}`);
+    }
+  } catch (err) {
+    alert(`Could not open folder: ${err.message}`);
+  }
+}
+window.openBuildFolderUI = openBuildFolderUI;
+
+async function cleanGhostWorkspacesUI() {
+  if (!confirm("Safely prune empty ghost folders (0 files) and deduplicate test artifacts? Real deliverables, databases, and certified systems will remain untouched.")) {
+    return;
+  }
+  try {
+    const res = await fetch("/api/builds/clean", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dry_run: false })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(`Clean Complete!\n• Empty Ghost Dirs Removed: ${data.cleaned_empty_directories_count}\n• Duplicate Test Runs Pruned: ${data.pruned_duplicate_test_runs_count}\n• Active Verified Builds: ${data.active_preserved_builds_count}`);
+      await loadBuilds();
+    } else {
+      alert(`Error cleaning workspaces: ${data.error}`);
+    }
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+window.cleanGhostWorkspacesUI = cleanGhostWorkspacesUI;

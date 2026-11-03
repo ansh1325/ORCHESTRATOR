@@ -1,0 +1,796 @@
+[
+  {
+    "raw_input": {
+      "Name": "Fake Guy",
+      "Company": "GhostCo",
+      "Email": "fake@mailinator.com",
+      "Website": "https://nxdomain-bogus-999.xyz"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Disposable/burner email domain rejected",
+      "Website domain 'nxdomain-bogus-999.xyz' failed DNS resolution (NXDOMAIN)"
+    ],
+    "email_valid": false,
+    "dns_valid": false,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 11:59:45"
+  },
+  {
+    "raw_input": {
+      "Name": "No Email",
+      "Company": "Broken",
+      "Email": "",
+      "Website": "https://google.com"
+    },
+    "rejection_reasons": [
+      "Missing email address",
+      "Email deliverability rejected: No email provided"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 11:59:45"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Commercial Solar Installers and Contractors",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "Local Project Portfolio & Licensing (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:08:22"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:09:02"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:09:53"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:10:39"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Managing Partner / Senior Partner",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "Document drafting backlog and non-automated client intake causing delayed retainer execution (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LEGAL_BAR_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:11:01"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:11:43"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:13:59"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:14:18"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Constructor Labs",
+      "Email": "contact@constructorlabs.com",
+      "Company": "Constructor Labs",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://constructorlabs.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Ph.D. Researcher. Knowledge Discovery: From Unstructured Data to Shared Cognitive Maps' (Job URL: https://www.arbeitnow.com/jobs/companies/constructor-labs/phd-researcher-knowledge-discovery-from-unstructured-data-to-shared-cognitive-maps-bremen-189975))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'constructorlabs.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:14:20"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Constructor Labs",
+      "Email": "contact@constructorlabs.com",
+      "Company": "Constructor Labs",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://constructorlabs.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Ph.D. Position in Computer Science (Wearable Intelligence & Data Fusion)' (Job URL: https://www.arbeitnow.com/jobs/companies/constructor-labs/phd-position-in-computer-science-wearable-intelligence-data-fusion-bremen-467290))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'constructorlabs.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:14:20"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Creative Dreams",
+      "Email": "contact@creativedreams.com",
+      "Company": "Creative Dreams",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://creativedreams.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Chief of Staff (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/creative-dreams/chief-of-staff-dusseldorf-363056))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'creativedreams.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:14:24"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:38:28"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Rocket Lab Corporation",
+      "Email": "contact@rocketlabcorporation.com",
+      "Company": "Rocket Lab Corporation",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://rocketlabcorporation.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Director, European Government Operations' (Job URL: https://www.arbeitnow.com/jobs/companies/rocket-lab-corporation/director-european-government-operations-munich-37411))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rocketlabcorporation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:38:49"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Constructor Labs",
+      "Email": "contact@constructorlabs.com",
+      "Company": "Constructor Labs",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://constructorlabs.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Ph.D. Researcher. Knowledge Discovery: From Unstructured Data to Shared Cognitive Maps' (Job URL: https://www.arbeitnow.com/jobs/companies/constructor-labs/phd-researcher-knowledge-discovery-from-unstructured-data-to-shared-cognitive-maps-bremen-189975))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'constructorlabs.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:38:52"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Constructor Labs",
+      "Email": "contact@constructorlabs.com",
+      "Company": "Constructor Labs",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://constructorlabs.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Ph.D. Position in Computer Science (Wearable Intelligence & Data Fusion)' (Job URL: https://www.arbeitnow.com/jobs/companies/constructor-labs/phd-position-in-computer-science-wearable-intelligence-data-fusion-bremen-467290))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'constructorlabs.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:38:52"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Creative Dreams",
+      "Email": "contact@creativedreams.com",
+      "Company": "Creative Dreams",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://creativedreams.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Chief of Staff (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/creative-dreams/chief-of-staff-dusseldorf-363056))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'creativedreams.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 12:38:54"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Roger",
+      "Email": "contact@roger.com",
+      "Company": "Roger",
+      "Role": "Business Development Executives",
+      "Website": "https://roger.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'Senior Product Engineer (Software) (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/roger/senior-product-engineer-software-berlin-429947))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'roger.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:35"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Microagi",
+      "Email": "contact@microagi.com",
+      "Company": "Microagi",
+      "Role": "Business Development Executives",
+      "Website": "https://microagi.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'Country Manager - Germany (Shift)' (Job URL: https://www.arbeitnow.com/jobs/companies/microagi/country-manager-germany-shift-munich-420859))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'microagi.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:36"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Basecompute",
+      "Email": "contact@basecompute.com",
+      "Company": "Basecompute",
+      "Role": "Business Development Executives",
+      "Website": "https://basecompute.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'ML Researcher' (Job URL: https://www.arbeitnow.com/jobs/companies/basecompute/ml-researcher-berlin-478768))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'basecompute.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:36"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Development Executives",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'Staff Backend Software Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/staff-backend-software-engineer-berlin-23096))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Development Executives",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'Staff AI Software Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/remote-staff-ai-software-engineer-302654))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Development Executives",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'Senior Frontend Software Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/senior-frontend-software-engineer-berlin-90062))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Development Executives",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'B2B Marketing Lead (PromoRepublic)' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/remote-b2b-marketing-lead-promorepublic-230901))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ IX Gruppe",
+      "Email": "contact@ixgruppe.com",
+      "Company": "IX Gruppe",
+      "Role": "Business Development Executives",
+      "Website": "https://ixgruppe.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'Bauleiter TGA / Versorgungstechnik (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/ix-gruppe/bauleiter-tga-versorgungstechnik-coburg-169790))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'ixgruppe.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:44"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ IX Gruppe",
+      "Email": "contact@ixgruppe.com",
+      "Company": "IX Gruppe",
+      "Role": "Business Development Executives",
+      "Website": "https://ixgruppe.com",
+      "ProofOfNeed": "Proof of Need Observation (Actively hiring for 'Sachgebietsleitung Versorgungs- und Ausr\u00fcstungstechnik (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/ix-gruppe/sachgebietsleitung-versorgungs-und-ausrustungstechnik-coburg-485912))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'ixgruppe.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:14:44"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Roger",
+      "Email": "contact@roger.com",
+      "Company": "Roger",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://roger.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Senior Product Engineer (Software) (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/roger/senior-product-engineer-software-berlin-429947))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'roger.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:17:50"
+  },
+  {
+    "raw_input": {
+      "Name": "David Gitlin",
+      "Email": "david@corporate.carrier.com",
+      "Company": "Carrier Global",
+      "Role": "Chairman & CEO",
+      "Website": "https://corporate.carrier.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website",
+      "ObservedSignal": "Verified LOCAL_DIRECTORIES_AND_MAPS Registry & DNS Audit",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS",
+      "DNS_IP": "172.64.154.31"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'corporate.carrier.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:17:52"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Roger",
+      "Email": "contact@roger.com",
+      "Company": "Roger",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://roger.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Senior Product Engineer (Software) (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/roger/senior-product-engineer-software-berlin-429947))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'roger.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:31"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Microagi",
+      "Email": "contact@microagi.com",
+      "Company": "Microagi",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://microagi.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Country Manager - Germany (Shift)' (Job URL: https://www.arbeitnow.com/jobs/companies/microagi/country-manager-germany-shift-munich-420859))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'microagi.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:31"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Basecompute",
+      "Email": "contact@basecompute.com",
+      "Company": "Basecompute",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://basecompute.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'ML Researcher' (Job URL: https://www.arbeitnow.com/jobs/companies/basecompute/ml-researcher-berlin-478768))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'basecompute.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:32"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Staff Backend Software Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/staff-backend-software-engineer-berlin-23096))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Staff AI Software Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/remote-staff-ai-software-engineer-302654))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Senior Frontend Software Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/senior-frontend-software-engineer-berlin-90062))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Matchmatch",
+      "Email": "contact@matchmatch.com",
+      "Company": "Matchmatch",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://matchmatch.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'B2B Marketing Lead (PromoRepublic)' (Job URL: https://www.arbeitnow.com/jobs/companies/matchmatch/remote-b2b-marketing-lead-promorepublic-230901))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'matchmatch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Maple Aviation",
+      "Email": "contact@mapleaviation.com",
+      "Company": "Maple Aviation",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://mapleaviation.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Working Student - Flight Test & Manufacturing' (Job URL: https://www.arbeitnow.com/jobs/companies/maple-aviation/working-student-flight-test-manufacturing-ottobrunn-79476))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'mapleaviation.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:41"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ IX Gruppe",
+      "Email": "contact@ixgruppe.com",
+      "Company": "IX Gruppe",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://ixgruppe.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Bauleiter TGA / Versorgungstechnik (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/ix-gruppe/bauleiter-tga-versorgungstechnik-coburg-169790))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'ixgruppe.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:42"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ IX Gruppe",
+      "Email": "contact@ixgruppe.com",
+      "Company": "IX Gruppe",
+      "Role": "Business Executives and Consultants",
+      "Website": "https://ixgruppe.com",
+      "ProofOfNeed": "Public Activity Signal (Actively hiring for 'Sachgebietsleitung Versorgungs- und Ausr\u00fcstungstechnik (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/ix-gruppe/sachgebietsleitung-versorgungs-und-ausrustungstechnik-coburg-485912))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'ixgruppe.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:18:42"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Roger",
+      "Email": "contact@roger.com",
+      "Company": "Roger",
+      "Role": "Commercial Solar Installers and Contractors",
+      "Website": "https://roger.com",
+      "ProofOfNeed": "Local Project Portfolio & Utility Interconnection Certifications (Actively hiring for 'Senior Product Engineer (Software) (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/roger/senior-product-engineer-software-berlin-429947))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'roger.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:23:37"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Roger",
+      "Email": "contact@roger.com",
+      "Company": "Roger",
+      "Role": "Commercial Solar Installers & Contractors",
+      "Website": "https://roger.com",
+      "ProofOfNeed": "Local Business Directory (Actively hiring for 'Senior Product Engineer (Software) (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/roger/senior-product-engineer-software-berlin-429947))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'roger.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:24:38"
+  },
+  {
+    "raw_input": {
+      "Name": "David Gitlin",
+      "Email": "david@corporate.carrier.com",
+      "Company": "Carrier Global",
+      "Role": "Chairman & CEO",
+      "Website": "https://corporate.carrier.com",
+      "ProofOfNeed": "Local Business Directory",
+      "ObservedSignal": "Verified LOCAL_DIRECTORIES_AND_MAPS Registry & DNS Audit",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS",
+      "DNS_IP": "104.18.33.225"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'corporate.carrier.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-03 19:24:44"
+  }
+]

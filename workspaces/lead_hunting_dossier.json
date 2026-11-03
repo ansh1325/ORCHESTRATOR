@@ -1,0 +1,31 @@
+{
+  "directive": "find private dental practices in Florida",
+  "deduced_strategy": {
+    "directive": "find private dental practices in Florida",
+    "target_industry": "Healthcare",
+    "target_persona": "Private Dental Practice Owners",
+    "primary_channel": "HEALTHCARE_DIRECTORIES_AND_REGISTRIES",
+    "channel_justification": "Dental practices are regulated healthcare entities that are systematically indexed in specialized medical directories and state dental society registries, making these the most accurate and comprehensive sources for identifying private practices in a specific geographic region.",
+    "search_queries": [
+      "site:florida.org private dental practices",
+      "Florida Dental Association member directory private practices",
+      "top private dental clinics in Florida list"
+    ],
+    "proof_archetype": "Directory Listing",
+    "recommended_sources": [
+      "Florida Dental Association (FDA) Member Directory",
+      "Zocdoc Florida Dental Providers",
+      "Healthgrades Florida Dentists"
+    ]
+  },
+  "execution_metrics": {
+    "duration_seconds": 9.4,
+    "total_probed": 5,
+    "verified_sendable": 5,
+    "quarantined_invalid": 0,
+    "deliverability_rate": "100.0%",
+    "csv_deliverable": "C:\\Users\\NK321WS\\AppData\\Local\\Temp\\pytest-of-NK321WS\\pytest-331\\test_mcp_autonomous_lead_hunt_0\\leads.csv",
+    "quarantine_ledger": null
+  },
+  "timestamp": "2026-11-03 19:24:54"
+}

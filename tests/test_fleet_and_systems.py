@@ -312,3 +312,107 @@ def test_granular_rea_surgical_tools(tmp_path):
     assert "VirtualAlloc" in audit_res["suspicious_apis_imported"]
     assert audit_res["risk_tier"] == "ELEVATED"
 
+
+def test_email_sendability_validation():
+    # Valid syntax & domain
+    res_valid = AccountFleetManager.validate_email_sendability("test.developer@gmail.com")
+    assert res_valid["sendable"] is True
+    assert res_valid["mx_valid"] is True
+
+    # Bad RFC syntax
+    res_syntax = AccountFleetManager.validate_email_sendability("invalid_email_without_at.com")
+    assert res_syntax["sendable"] is False
+    assert "Invalid RFC-5322" in res_syntax["reason"] or "Missing '@'" in res_syntax["reason"]
+
+    # Disposable domain
+    res_disp = AccountFleetManager.validate_email_sendability("hacker@mailinator.com")
+    assert res_disp["sendable"] is False
+    assert "Disposable" in res_disp["reason"]
+
+
+def test_filter_sendable_prospects(tmp_path):
+    store_file = tmp_path / "test_filter_fleet.json"
+    fleet = AccountFleetManager(storage_path=store_file)
+
+    leads = [
+        {"email": "founder@google.com", "name": "Sundar", "company": "Alphabet"},
+        {"email": "fake@mailinator.com", "name": "Fake", "company": "SpamCo"},
+        {"email": "notanemail", "name": "None", "company": "Broken"}
+    ]
+    audit = fleet.filter_sendable_prospects(leads)
+    assert audit["total_evaluated"] == 3
+    assert audit["sendable_count"] >= 1
+    assert audit["rejected_count"] >= 2
+    assert any(p["email"] == "founder@google.com" for p in audit["sendable_leads"])
+
+
+def test_generate_8_touch_sequence():
+    touches = AccountFleetManager.generate_8_touch_sequence(
+        company_niche="Full-Stack Dev & AI",
+        custom_offer="$2,500 14-day production sprint",
+        founder_name="Ansh Tiwari"
+    )
+    assert len(touches) == 8
+    # Validate touch numbers and increasing day offsets
+    for i, t in enumerate(touches, 1):
+        assert t["touch"] == i
+        assert len(t["subject"]) <= 45  # Short, non-spammy subject line
+        assert len(t["body"].split()) <= 100  # Under 100 words
+        assert "Ansh Tiwari" in t["body"]
+
+    # Check Day 0 to Day 24 timeline
+    assert touches[0]["day_offset"] == 0
+    assert touches[7]["day_offset"] == 24
+
+
+def test_autonomous_reply_synthesis_and_calendly(tmp_path):
+    store_file = tmp_path / "test_reply_fleet.json"
+    fleet = AccountFleetManager(storage_path=store_file)
+    fleet.campaigns_path = tmp_path / "test_campaigns.json"
+
+    # Register lead
+    lead = ProspectLead(email="cto@techgrowth.io", name="Sarah Connor", company="TechGrowth")
+    fleet.prospects[lead.email] = lead
+
+    # Case 1: Meeting Request
+    briefing1 = fleet.synthesize_autonomous_reply(
+        "cto@techgrowth.io",
+        "Sounds interesting. Do you have 15 mins this Thursday to chat?",
+        booking_link="https://calendly.com/anshtiwari"
+    )
+    assert briefing1["sentiment_category"] == "MEETING_REQUEST"
+    assert "https://calendly.com/anshtiwari" in briefing1["automated_response"]
+    assert briefing1["requires_human_intervention"] is True
+
+    # Case 2: Price Objection
+    briefing2 = fleet.synthesize_autonomous_reply(
+        "cto@techgrowth.io",
+        "What are your rates and pricing structure?",
+        booking_link="https://calendly.com/anshtiwari"
+    )
+    assert briefing2["sentiment_category"] == "PRICE_OBJECTION"
+    assert "$2,500" in briefing2["automated_response"]
+    assert "https://calendly.com/anshtiwari" in briefing2["automated_response"]
+    assert briefing2["requires_human_intervention"] is True
+
+    # Case 3: In-House Dev Objection
+    briefing3 = fleet.synthesize_autonomous_reply(
+        "cto@techgrowth.io",
+        "We already have an in-house engineering team handling this.",
+        booking_link="https://calendly.com/anshtiwari"
+    )
+    assert briefing3["sentiment_category"] == "IN_HOUSE_OBJECTION"
+    assert "surge capacity" in briefing3["automated_response"]
+    assert "https://calendly.com/anshtiwari" in briefing3["automated_response"]
+
+
+def test_fleet_scaling_topology(tmp_path):
+    store_file = tmp_path / "test_scale_fleet.json"
+    fleet = AccountFleetManager(storage_path=store_file)
+
+    scale_res = fleet.scale_fleet_topology(target_account_count=50, is_workspace=True)
+    assert scale_res["total_accounts"] == 50
+    assert scale_res["account_type"] == "Google Workspace"
+    assert int(scale_res["total_daily_fleet_capacity"].split()[0]) >= 2500
+
+

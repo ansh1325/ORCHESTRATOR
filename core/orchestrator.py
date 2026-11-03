@@ -69,7 +69,22 @@ def robust_json_loads(raw: str | None) -> dict:
         last = clean.rfind('}')
         if first != -1 and last > first:
             clean = clean[first:last+1]
-    return json.loads(clean)
+    try:
+        return json.loads(clean)
+    except Exception:
+        try:
+            import re
+            cleaned_trailing = re.sub(r',\s*([\]\}])', r'\1', clean)
+            return json.loads(cleaned_trailing)
+        except Exception:
+            try:
+                import ast
+                res = ast.literal_eval(clean)
+                if isinstance(res, dict):
+                    return res
+            except Exception:
+                pass
+        return {}
 
 from core.scheduler import parse_schedule_directive  # pyright: ignore[reportMissingImports]
 from core.workflow_manager import HistoryManager, history_manager  # pyright: ignore[reportMissingImports]
@@ -498,20 +513,39 @@ class MetaOrchestrator:
                 "Sandboxed verification of leads before outbound dispatch"
             ]
             missing_parameters = ["Target industry niche", "Pricing retainer model", "Closing decision protocol", "Master's payment details"]
+            # Dynamic Domain Niche Deduction from vision
+            deduced_niche = "Seed & Series A AI/SaaS Startups"
+            if any(w in v_lower for w in ["full stack", "fullstack", "dev", "developer", "software", "engineering"]):
+                deduced_niche = "Full-Stack Development & Custom Systems Engineering"
+            elif any(w in v_lower for w in ["solar", "roof", "roofing", "energy", "clean"]):
+                deduced_niche = "Commercial & Residential Solar Energy Systems"
+            elif any(w in v_lower for w in ["law", "legal", "attorney", "lawyer", "bar"]):
+                deduced_niche = "Legal Practice Client Acquisition & Intake"
+            elif any(w in v_lower for w in ["dental", "clinic", "health", "doctor", "medical"]):
+                deduced_niche = "Healthcare & Private Dental Practices"
+            elif any(w in v_lower for w in ["ecom", "ecommerce", "shopify", "dtc", "store"]):
+                deduced_niche = "High-Growth DTC & E-Commerce Brands"
+
+            deduced_pricing = "$2,500 Pilot Sprint + $4,500/mo Retainer"
+            if "retainer" in v_lower and ("pilot" not in v_lower and "sprint" not in v_lower):
+                deduced_pricing = "Monthly Retainer ($4,500/mo / ₹75,000/mo)"
+            elif "equity" in v_lower:
+                deduced_pricing = "Pure Equity & Rev-Share"
+
             clarifications = [
                 ClarificationQuestion(
                     id="target_niche",
                     question="Which industry niche should we target for immediate high-ticket client acquisition?",
                     why_needed="Focuses cold outreach copy on exact technical pain points and engineering bottlenecks.",
-                    options=["Seed & Series A AI/SaaS Startups", "High-Growth DTC & E-Commerce Meta Ads Brands", "Healthcare & MedTech Platforms", "Local Businesses Needing AI Automation"],
-                    default_selection="Seed & Series A AI/SaaS Startups"
+                    options=[deduced_niche, "Seed & Series A AI/SaaS Startups", "High-Growth DTC & E-Commerce Brands", "Healthcare & MedTech Platforms", "Local Businesses Needing AI Automation"],
+                    default_selection=deduced_niche
                 ),
                 ClarificationQuestion(
                     id="pricing_model",
                     question="What pricing and offer structure should we scaffold for your first 5 clients?",
                     why_needed="Ensures immediate cashflow while de-risking the engagement for prospective founders.",
-                    options=["$2,500 Pilot Sprint + $4,500/mo Retainer", "₹25,000 Pilot + ₹50,000/mo Retainer", "Pure Equity & Rev-Share", "Hourly Billing ($150/hr)"],
-                    default_selection="$2,500 Pilot Sprint + $4,500/mo Retainer"
+                    options=[deduced_pricing, "$2,500 Pilot Sprint + $4,500/mo Retainer", "₹25,000 Pilot + ₹50,000/mo Retainer", "Hourly Billing ($150/hr)"],
+                    default_selection=deduced_pricing
                 ),
                 ClarificationQuestion(
                     id="closing_strategy",
@@ -555,8 +589,8 @@ class MetaOrchestrator:
                 )
             ]
             recommended_defaults = {
-                "target_niche": "Seed & Series A AI/SaaS Startups",
-                "pricing_model": "$2,500 Pilot Sprint + $4,500/mo Retainer",
+                "target_niche": deduced_niche,
+                "pricing_model": deduced_pricing,
                 "closing_strategy": "Hybrid: Close low-friction pilots over direct message/email; schedule 15-min discovery call with Master Ansh for retainers",
                 "payment_details": "Master's UPI ID (anshtiwarisocial@gmail.com / UPI ID) & 50% upfront deposit",
                 "scheduling_link": "Master's Calendly / Cal.com link (e.g. calendly.com/anshtiwari)",
@@ -767,8 +801,22 @@ class MetaOrchestrator:
                 '  ]\n'
                 "}"
             )
+            hermes_context = ""
+            try:
+                from core.hermes_powerup import hermes_skills, hermes_memory
+                matched = hermes_skills.list_skills(filter_query=session.vision)
+                if matched:
+                    top_skills = [f"- {s['name']}: {s['description']}" for s in matched[:4]]
+                    hermes_context = "\nRELEVANT HERMES AGENT SKILLS:\n" + "\n".join(top_skills) + "\n"
+                profile = hermes_memory.get_user_profile()
+                if profile:
+                    hermes_context += f"CREATOR DIRECTIVES: {json.dumps(profile.get('directives', []))}\n"
+            except Exception:
+                pass
+
             user_msg = (
                 f"User Vision: {session.vision}\n"
+                f"{hermes_context}"
                 f"Clarifications Approved: {answers_str}\n"
                 f"Knowledge Base Intelligence: {kb_str}\n"
                 "Decompose this into executable task nodes and synthesize the specialized sub-agents now."
@@ -1458,6 +1506,15 @@ class MetaOrchestrator:
                 folder=folder_category,
                 artifacts=flist_names
             )
+            try:
+                from core.hermes_powerup import hermes_memory
+                hermes_memory.record_episode(
+                    goal=session.vision,
+                    outcome=f"Successfully fulfilled lifecycle with {len(flist_names)} deliverables",
+                    key_deliverables=flist_names
+                )
+            except Exception:
+                pass
             
             # Auto-export to Downloads with clean human-readable folder naming
             if any(w in session.vision.lower() for w in ["download", "downloads", "export to downloads", "save in downloads"]):

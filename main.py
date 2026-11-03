@@ -300,6 +300,89 @@ async def delete_history_session(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found in history")
     return {"success": True, "session_id": session_id}
 
+# ==========================================
+# BUILDS & WORKSPACES OPERATING HUB
+# ==========================================
+from core.build_manager import build_manager
+
+@app.get("/api/builds")
+async def list_jarvis_builds():
+    """Returns all active, indexed builds and constructed systems across workspaces."""
+    builds = build_manager.list_builds()
+    return {"success": True, "count": len(builds), "builds": [b.to_dict() for b in builds]}
+
+@app.get("/api/builds/{workspace_id:path}")
+async def get_jarvis_build_info(workspace_id: str):
+    """Returns detailed information and file breakdown for a specific build."""
+    b = build_manager.get_build(workspace_id)
+    if not b:
+        raise HTTPException(status_code=404, detail=f"Build '{workspace_id}' not found.")
+    return {"success": True, "build": b.to_dict()}
+
+@app.post("/api/builds/{workspace_id:path}/run")
+async def run_jarvis_build(workspace_id: str, req: dict = Body(default_factory=dict)):
+    """Executes a build in its sandboxed directory."""
+    entrypoint = req.get("entrypoint")
+    args = req.get("args")
+    timeout = int(req.get("timeout_sec", 60))
+    res = await asyncio.to_thread(build_manager.run_build, workspace_id, entrypoint, args, timeout)
+    return res
+
+@app.post("/api/builds/{workspace_id:path}/test")
+async def test_jarvis_build(workspace_id: str):
+    """Runs pytest unit tests for a specific build."""
+    res = await asyncio.to_thread(build_manager.test_build, workspace_id)
+    return res
+
+@app.post("/api/builds/{workspace_id:path}/open")
+async def open_jarvis_build_folder(workspace_id: str):
+    """Opens the workspace directory in Windows File Explorer on the desktop."""
+    res = await asyncio.to_thread(build_manager.open_in_explorer, workspace_id)
+    return res
+
+@app.post("/api/builds/clean")
+async def clean_workspaces_endpoint(req: dict = Body(default_factory=dict)):
+    """Safely prunes empty ghost directories and deduplicates test runs."""
+    dry_run = bool(req.get("dry_run", False))
+    res = await asyncio.to_thread(build_manager.clean_workspaces, True, True, dry_run)
+    return res
+
+# ==========================================
+# Account Fleet & Cold Outreach Delivery Hub
+# ==========================================
+from core.account_fleet import account_fleet
+
+@app.get("/api/fleet/summary")
+async def get_fleet_summary(platform: str = "gmail"):
+    """Returns real-time fleet health, total accounts, quota limits, and capacity."""
+    return account_fleet.get_fleet_summary(platform=platform)
+
+@app.post("/api/fleet/scale")
+async def scale_fleet_topology_endpoint(req: dict = Body(default_factory=dict)):
+    """Scales fleet to 20 or up to 200 accounts with safe daily quota limits."""
+    count = int(req.get("target_count", 20))
+    is_ws = bool(req.get("is_workspace", False))
+    return account_fleet.scale_fleet_topology(target_account_count=count, is_workspace=is_ws)
+
+@app.post("/api/fleet/verify")
+async def verify_email_deliverability(req: dict = Body(default_factory=dict)):
+    """Verifies physical email sendability via RFC syntax, disposable checks, and live DNS MX resolution."""
+    email = req.get("email", "")
+    if email:
+        return account_fleet.validate_email_sendability(email)
+    leads = req.get("leads", [])
+    return account_fleet.filter_sendable_prospects(leads)
+
+@app.get("/api/fleet/sequence")
+async def get_outreach_sequence(niche: str = "Full-Stack Dev & AI Systems"):
+    """Returns the 8-touch human-engineered email follow-up sequence."""
+    return {"touches": account_fleet.generate_8_touch_sequence(company_niche=niche)}
+
+@app.get("/api/fleet/notifications")
+async def get_fleet_notifications():
+    """Returns executive briefings of high-intent lead replies and Calendly meeting bookings."""
+    return {"notifications": account_fleet.get_notifications()}
+
 @app.get("/api/workflows")
 async def get_saved_workflows():
     """Returns saved workflow templates."""

@@ -105,3 +105,21 @@ test-results/
 *.tmp
 *.temp
 
+# External Submodule Repositories (Self-contained in Core Engines for Judge Evaluation)
+agent_reach/
+crawl4ai_repo/
+hermes/
+rea/
+scratch/
+
+# Ephemeral Runtime Workspace Files (Generated during active runs)
+workspaces/voice_call_campaigns.json
+workspaces/hermes_tiered_memory.json
+workspaces/jarvis_solutions*.md
+workspaces/solution_auth_osint.md
+workspaces/master_knowledge_base.json
+workspaces/history.json
+workspaces/workflows.json
+workspaces/scheduled_jobs.json
+
+

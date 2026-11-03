@@ -50,7 +50,22 @@ def robust_json_loads(raw: str | None) -> dict:
         last_brace = clean.rfind('}')
         if first_brace != -1 and last_brace > first_brace:
             clean = clean[first_brace:last_brace + 1]
-    return json.loads(clean)
+    try:
+        return json.loads(clean)
+    except Exception:
+        try:
+            import re
+            cleaned_trailing = re.sub(r',\s*([\]\}])', r'\1', clean)
+            return json.loads(cleaned_trailing)
+        except Exception:
+            try:
+                import ast
+                res = ast.literal_eval(clean)
+                if isinstance(res, dict):
+                    return res
+            except Exception:
+                pass
+        return {}
 
 class EvaluatorGatekeeper:
     """Rigorous gatekeeper ensuring all deliverables meet production criteria before mission completion."""
@@ -158,6 +173,21 @@ class EvaluatorGatekeeper:
                     "passed": valid_count > 0 or len(emails) == 0,
                     "details": f"Verified {valid_count} RFC-5322 compliant prospect email(s)."
                 })
+
+        # Check 6: CSV Proof Column Verification (when requested in vision)
+        vision_str = session.vision if session else ""
+        if any(w in vision_str.lower() for w in ["proof", "proof column", "proofs", "evidence"]):
+            csv_files = [f for f in files if f.endswith(".csv")]
+            for cf in csv_files:
+                cf_content = self.mcp.tool_file_read(cf)
+                if cf_content.get("success"):
+                    first_line = cf_content["content"].splitlines()[0] if cf_content["content"].splitlines() else ""
+                    has_proof = any(p in first_line.lower() for p in ["proof", "need", "evidence", "signal", "reason", "detail"])
+                    checks.append({
+                        "check": f"CSV Proof Column Verification ({cf})",
+                        "passed": has_proof,
+                        "details": "Verified proof-of-need column is present in prospect dataset." if has_proof else "Proof-of-need column missing in CSV header."
+                    })
 
         # Step 3: Dynamic LLM Evaluation & Human-in-the-Loop Hand-off Determination
         vision = session.vision if session else "Autonomous Multi-Agent Mission"

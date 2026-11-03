@@ -100,7 +100,7 @@ class Settings:
         cls,
         messages: list[dict[str, Any]],
         temperature: float = 0.7,
-        max_tokens: int = 1000,
+        max_tokens: int = 3000,
         response_format: dict[str, str] | None = None
     ) -> Any:
         """
@@ -113,11 +113,12 @@ class Settings:
         last_err: Exception | None = None
         for model in cls.get_fallback_models():
             try:
+                actual_tokens = max(max_tokens, 2500) if any(k in str(model).lower() for k in ["120b", "reason", "r1", "oss"]) else max_tokens
                 kwargs: dict[str, Any] = {
                     "model": model,
                     "messages": messages,
                     "temperature": temperature,
-                    "max_tokens": max_tokens
+                    "max_tokens": actual_tokens
                 }
                 if response_format:
                     kwargs["response_format"] = response_format
@@ -125,7 +126,19 @@ class Settings:
             except Exception as e:
                 err_str = str(e).lower()
                 last_err = e
-                if any(x in err_str for x in ["429", "rate_limit", "quota", "tokens per day", "decommissioned", "does not exist", "404"]):
+
+                # If JSON object mode validation failed on reasoning model (e.g. Groq 400 'Failed to validate JSON'),
+                # seamlessly retry without response_format parameter so the model can output JSON naturally
+                if response_format and ("failed to validate json" in err_str or "response_format" in err_str or ("400" in err_str and "json" in err_str)):
+                    try:
+                        kwargs_no_rf = dict(kwargs)
+                        kwargs_no_rf.pop("response_format", None)
+                        return client.chat.completions.create(**kwargs_no_rf)
+                    except Exception as e2:
+                        err_str = str(e2).lower()
+                        last_err = e2
+
+                if any(x in err_str for x in ["429", "rate_limit", "quota", "tokens per day", "decommissioned", "does not exist", "404", "not_found", "model_not_found"]):
                     continue
                 raise e
         if last_err:

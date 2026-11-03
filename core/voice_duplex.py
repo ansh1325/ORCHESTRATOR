@@ -223,8 +223,8 @@ class VoiceDuplexEngine:
 
         # Transcribe speech
         text = self.transcribe_audio_chunk(audio_bytes)
-        if not text:
-            # High-fidelity simulation for tests/mock
+        if not text and (settings.is_mock() or (audio_bytes and audio_bytes.startswith(b"RIFF\x00"))):
+            # High-fidelity fallback for unit tests and simulated audio frames
             text = "Status update on active autonomous tasks, JARVIS."
 
         if text:

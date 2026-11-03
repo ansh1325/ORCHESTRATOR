@@ -376,49 +376,76 @@ class VoiceCallAgentEngine:
         prospect_name = lead.name or "Alex"
         company_name = lead.company or f"{lead.niche.title()} Innovations"
 
-        # Determine prospect demeanor based on attempt count
-        # Attempt 1-2: 60% busy/skeptical; Attempt 3-5: 75% receptive to brief chat
         transcript: list[dict[str, str]] = []
-
-        # Turn 1: Opener
-        ai_turn_1 = f"Hey {prospect_name}, quick 30 seconds—I know I caught you out of the blue! This is Jarvis calling from Ansh Tiwari's engineering lab. Did I catch you at an okay time?"
-        transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_1})
-
-        # Turn 2: Prospect objection or inquiry
-        prospect_responses = [
-            ("I'm in the middle of something, what is this regarding?", "busy"),
-            ("Who is this? How did you get my number?", "skeptical"),
-            ("Yeah, I have a quick minute. What do you have?", "open"),
-            ("Can you just send an email?", "email_gate")
-        ]
-        chosen_resp, mood = prospect_responses[min(lead.attempts - 1, len(prospect_responses) - 1) % len(prospect_responses)]
-        transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": chosen_resp})
-
-        # Turn 3: AI Value Pitch & Pain Point Address
-        ai_turn_2 = (
-            f"Totally understand, {prospect_name}. Reason for my call: we saw {company_name} is scaling operations in {lead.niche}, "
-            f"and our engineering team just built a custom AI pipeline that eliminates manual data entry in 48 hours for a flat $2,500. "
-            f"We already generated a visual proof of concept for your team."
-        )
-        transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_2})
-
-        # Turn 4: Objection Handling & Booking Close
-        prospect_turn_2 = "Honestly sounds interesting, but we're pretty slammed right now. How much does it cost and how does it work?"
-        transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": prospect_turn_2})
-
-        ai_turn_3 = (
-            f"It's a flat $2,500 one-time delivery on GitHub and Vercel—zero monthly retainer fees. "
-            f"How about 10 minutes this Thursday at 2:00 PM EST with our Chief Architect Ansh to see the live demo?"
-        )
-        transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_3})
-
-        # Turn 5: Close & Agreement
-        prospect_turn_3 = "Sure, Thursday at 2:00 PM works. Send the Google Meet invite to my email."
-        transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": prospect_turn_3})
-
         booking_slot = "Thursday 2:00 PM EST"
-        ai_turn_4 = f"Done! The invite is in your inbox via {persona.calendly_link}. Master Ansh is looking forward to walking you through it. Have a great day!"
-        transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_4})
+
+        # Try dynamic LLM-driven conversational simulation
+        from core.config import settings
+        llm = settings.get_llm_client()
+        if llm and not settings.is_mock():
+            try:
+                system_prompt = (
+                    f"You are simulating a realistic, multi-turn sales phone conversation for JARVIS.\n"
+                    f"{persona.synthesize_system_prompt(lead.niche, prospect_name, company_name)}\n"
+                    f"Rules:\n"
+                    f"1. Generate a realistic 4 to 6-turn phone call between 'JARVIS (Voice Agent)' and '{prospect_name} ({company_name})'.\n"
+                    f"2. The prospect raises realistic objections about {lead.niche} operations and pricing.\n"
+                    f"3. JARVIS answers concisely, handles objections, and closes for a 15-minute slot on {persona.calendly_link}.\n"
+                    f"Output strictly JSON: {{\"booking_slot\": \"Thursday 2:00 PM EST\", \"transcript\": [{{\"speaker\": \"...\", \"text\": \"...\"}}, ...]}}"
+                )
+                resp = await asyncio.to_thread(
+                    settings.create_chat_completion,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Prospect: {prospect_name} at {company_name} in {lead.niche}. Attempt #{lead.attempts}."}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.3
+                )
+                data = json.loads(resp.choices[0].message.content or "{}")
+                raw_transcript = data.get("transcript")
+                if isinstance(raw_transcript, list) and len(raw_transcript) >= 3:
+                    transcript = raw_transcript
+                    booking_slot = data.get("booking_slot") or booking_slot
+            except Exception as e:
+                logger.debug(f"LLM voice call simulation fallback: {e}")
+
+        # Deterministic simulation fallback if offline or mock
+        if not transcript:
+            ai_turn_1 = f"Hey {prospect_name}, quick 30 seconds—I know I caught you out of the blue! This is Jarvis calling from Ansh Tiwari's engineering lab. Did I catch you at an okay time?"
+            transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_1})
+
+            prospect_responses = [
+                ("I'm in the middle of something, what is this regarding?", "busy"),
+                ("Who is this? How did you get my number?", "skeptical"),
+                ("Yeah, I have a quick minute. What do you have?", "open"),
+                ("Can you just send an email?", "email_gate")
+            ]
+            chosen_resp, mood = prospect_responses[min(lead.attempts - 1, len(prospect_responses) - 1) % len(prospect_responses)]
+            transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": chosen_resp})
+
+            ai_turn_2 = (
+                f"Totally understand, {prospect_name}. Reason for my call: we saw {company_name} is scaling operations in {lead.niche}, "
+                f"and our engineering team just built a custom AI pipeline that eliminates manual data entry in 48 hours for a flat $2,500. "
+                f"We already generated a visual proof of concept for your team."
+            )
+            transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_2})
+
+            prospect_turn_2 = "Honestly sounds interesting, but we're pretty slammed right now. How much does it cost and how does it work?"
+            transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": prospect_turn_2})
+
+            ai_turn_3 = (
+                f"It's a flat $2,500 one-time delivery on GitHub and Vercel—zero monthly retainer fees. "
+                f"How about 10 minutes this Thursday at 2:00 PM EST with our Chief Architect Ansh to see the live demo?"
+            )
+            transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_3})
+
+            prospect_turn_3 = "Sure, Thursday at 2:00 PM works. Send the Google Meet invite to my email."
+            transcript.append({"speaker": f"{prospect_name} ({company_name})", "text": prospect_turn_3})
+
+            booking_slot = "Thursday 2:00 PM EST"
+            ai_turn_4 = f"Done! The invite is in your inbox via {persona.calendly_link}. Master Ansh is looking forward to walking you through it. Have a great day!"
+            transcript.append({"speaker": "JARVIS (Voice Agent)", "text": ai_turn_4})
 
         lead.status = "BOOKED"
         lead.booking_slot = booking_slot
@@ -487,27 +514,69 @@ class VoiceCallAgentEngine:
                     max_attempts=max_attempts_per_lead
                 ))
         else:
-            # Autonomously synthesize targeted lead prospects across the niche
-            sample_companies = [
-                ("Apex Dental Group", "Dr. David Miller", "+1555019201"),
-                ("Summit Logistics Inc", "Sarah Jenkins", "+1555019202"),
-                ("BlueWater Solar", "Marcus Vance", "+1555019203"),
-                ("Premier Health Clinic", "Dr. Elena Rostova", "+1555019204"),
-                ("Vanguard Asset Management", "Richard Sterling", "+1555019205"),
-                ("NextGen E-Commerce Labs", "Kenji Sato", "+1555019206"),
-                ("Titan Roofing & Construction", "Jake Callahan", "+1555019207"),
-                ("OmniFlow SaaS Solutions", "Priya Nair", "+1555019208")
-            ]
-            for idx in range(min(total_leads_count, 20)):
-                comp_idx = idx % len(sample_companies)
-                comp_info = sample_companies[comp_idx]
-                leads.append(VoiceCallLead(
-                    phone=comp_info[2],
-                    name=comp_info[1],
-                    company=comp_info[0],
-                    niche=niche,
-                    max_attempts=max_attempts_per_lead
-                ))
+            # 1. Discover verified leads from disk if present
+            real_leads_file = self.workspace_dir / "verified_leads.json"
+            fleet_file = self.workspace_dir / "fleet_leads.json"
+            loaded_leads = []
+            for fpath in (real_leads_file, fleet_file):
+                if fpath.exists():
+                    try:
+                        with open(fpath, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            if isinstance(data, list) and data:
+                                loaded_leads = data
+                                break
+                    except Exception:
+                        pass
+            if loaded_leads:
+                for item in loaded_leads[:min(total_leads_count, 50)]:
+                    leads.append(VoiceCallLead(
+                        phone=item.get("phone") or item.get("contact_phone") or f"+155501{len(leads):04d}",
+                        name=item.get("name") or item.get("contact_name") or "Decision Maker",
+                        company=item.get("company") or item.get("business_name") or f"{niche.title()} Inc",
+                        niche=niche,
+                        max_attempts=max_attempts_per_lead
+                    ))
+
+            # 2. Dynamic LLM synthesis tailored strictly to the target niche (zero hardcoded companies)
+            if not leads:
+                from core.config import settings
+                llm = settings.get_llm_client()
+                if llm and not settings.is_mock():
+                    try:
+                        prompt = (
+                            f"Generate {min(total_leads_count, 10)} realistic B2B prospects for cold calling in the '{niche}' industry.\n"
+                            f"Output JSON: {{\"prospects\": [{{\"company\": \"...\", \"name\": \"...\", \"phone\": \"+1...\"}}, ...]}}"
+                        )
+                        resp = await asyncio.to_thread(
+                            settings.create_chat_completion,
+                            messages=[{"role": "user", "content": prompt}],
+                            response_format={"type": "json_object"},
+                            temperature=0.3
+                        )
+                        data = json.loads(resp.choices[0].message.content or "{}")
+                        prospects = data.get("prospects", [])
+                        for item in prospects:
+                            leads.append(VoiceCallLead(
+                                phone=item.get("phone") or f"+155501{len(leads):04d}",
+                                name=item.get("name") or "Founder",
+                                company=item.get("company") or f"{niche.title()} Innovations",
+                                niche=niche,
+                                max_attempts=max_attempts_per_lead
+                            ))
+                    except Exception as e:
+                        logger.debug(f"LLM lead synthesis fallback: {e}")
+
+            # 3. Dynamic procedural generation tailored specifically to the requested niche
+            if not leads:
+                for idx in range(min(total_leads_count, 10)):
+                    leads.append(VoiceCallLead(
+                        phone=f"+155501{idx+1:04d}",
+                        name=f"Partner {idx+1}",
+                        company=f"{niche.title()} Group #{idx+1}",
+                        niche=niche,
+                        max_attempts=max_attempts_per_lead
+                    ))
 
         # Execute campaign dials across lead batch
         total_dials = 0

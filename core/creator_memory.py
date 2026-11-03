@@ -277,8 +277,8 @@ class CreatorMemory:
     def chat_response(
         self,
         user_message: str,
-        is_mock: bool = True,
-        llm_client=None,
+        is_mock: Optional[bool] = None,
+        llm_client: Any = None,
         conversation_turns: Optional[list[dict[str, str]]] = None
     ) -> dict[str, Any]:
         """
@@ -286,6 +286,11 @@ class CreatorMemory:
         Maintains conversational history, understands context across turns, and handles
         strategic pivots (e.g. Browser vs SMTP, credential injection, account rotation).
         """
+        from core.config import settings
+        if is_mock is None:
+            is_mock = settings.is_mock()
+        if llm_client is None:
+            llm_client = settings.get_llm_client()
         cleaned = user_message.lower().strip()
 
         # Update sliding conversational memory

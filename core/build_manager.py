@@ -491,8 +491,12 @@ class BuildManager:
                     )
                     out = (resp.choices[0].message.content or "").strip()
                     if out and "NO_CHANGE_NEEDED" not in out:
-                        clean_code = re.sub(r"^```(?:python)?\s*", "", out)
-                        clean_code = re.sub(r"```$", "", clean_code).strip()
+                        code_match = re.search(r"```(?:python)?\s*\n(.*?)\n```", out, re.DOTALL)
+                        if code_match:
+                            clean_code = code_match.group(1).strip()
+                        else:
+                            clean_code = re.sub(r"^```(?:python)?\s*", "", out)
+                            clean_code = re.sub(r"```$", "", clean_code).strip()
                         f.write_text(clean_code, encoding="utf-8")
                         patched_files.append(f.name)
                 except Exception as e:

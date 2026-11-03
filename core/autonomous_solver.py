@@ -222,15 +222,15 @@ class StrategicOutreachArchitect:
                 )
                 parsed = json.loads(resp.choices[0].message.content or "{}")
                 raw_touches = parsed.get("touches", [])
-                if len(raw_touches) == 4:
+                if isinstance(raw_touches, list) and len(raw_touches) >= 1:
                     cadence_spec = []
-                    for t in raw_touches:
-                        subj = str(t.get("subject", "quick note"))[:29]
+                    for idx, t in enumerate(raw_touches[:4], start=1):
+                        subj = str(t.get("subject", f"quick note {idx}"))[:29]
                         body = str(t.get("body", ""))
                         words = len(body.split())
                         cadence_spec.append({
-                            "touch": t.get("touch", len(cadence_spec) + 1),
-                            "timing": t.get("timing", f"Touch {len(cadence_spec) + 1}"),
+                            "touch": t.get("touch", idx),
+                            "timing": t.get("timing", f"Touch {idx}"),
                             "subject": subj,
                             "body_word_count": words,
                             "body": body

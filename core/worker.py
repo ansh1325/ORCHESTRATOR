@@ -65,8 +65,12 @@ def robust_json_loads(raw: str | None) -> dict:
         return {}
 
 def clean_code_content(path_str: str, content_str: str) -> str:
-    """Strips markdown code fences (```lang ... ```) from synthesized source code."""
+    """Strips markdown code fences (```lang ... ```) and conversational wrapper prose from synthesized source code."""
     clean = str(content_str).strip()
+    # If output contains an embedded fenced code block, extract code cleanly
+    match = re.search(r"```[a-zA-Z0-9_-]*\s*\n(.*?)\n```", clean, re.DOTALL)
+    if match:
+        return match.group(1).strip()
     if clean.startswith("```"):
         first_nl = clean.find("\n")
         if first_nl != -1 and clean.endswith("```"):
@@ -77,6 +81,33 @@ def clean_code_content(path_str: str, content_str: str) -> str:
 
 
 def _deduce_campaign_context(combined_text: str) -> dict:
+    from core.config import settings
+    llm = settings.get_llm_client()
+    if llm and not settings.is_mock():
+        try:
+            resp = settings.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": "You are a B2B Campaign Strategist. Analyze the business/engineering directive and output JSON with keys: service_title, target_niche, target_persona, value_hook, pain_point, subject_hook (under 28 chars), communities (list of 3 objects with platform, community, members, niche, content_rule, target_url), pricing_pilot, pricing_retainer."},
+                    {"role": "user", "content": f"Directive: {combined_text}"}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2
+            )
+            parsed = json.loads(resp.choices[0].message.content or "{}")
+            if parsed.get("service_title") and parsed.get("target_niche"):
+                return {
+                    "service_title": str(parsed["service_title"]),
+                    "target_niche": str(parsed["target_niche"]),
+                    "target_persona": str(parsed.get("target_persona", "Decision Maker")),
+                    "value_hook": str(parsed.get("value_hook", "eliminating operational bottlenecks")),
+                    "pain_point": str(parsed.get("pain_point", "manual friction and high costs")),
+                    "subject_hook": str(parsed.get("subject_hook", "operational fix"))[:28],
+                    "communities": parsed.get("communities", []),
+                    "pricing_pilot": str(parsed.get("pricing_pilot", "$2,500 7-Day Pilot Sprint")),
+                    "pricing_retainer": str(parsed.get("pricing_retainer", "$4,500/mo Retainer"))
+                }
+        except Exception:
+            pass
     low = (combined_text or "").lower()
     if any(k in low for k in ["solar", "roofing", "clean energy", "hvac", "contractor"]):
         service_title = "Commercial & Residential Solar Energy Systems"
@@ -334,8 +365,8 @@ class DynamicWorkerEngine:
         if isinstance(raw_files, dict):
             for fpath, fcontent in raw_files.items():
                 if isinstance(fcontent, dict):
-                    fpath = fcontent.get("path") or fcontent.get("filename") or fpath
-                    fcontent = fcontent.get("content") or fcontent.get("code") or ""
+                    fpath = fcontent.get("path") or fcontent.get("filename") or fcontent.get("file") or fcontent.get("name") or fpath
+                    fcontent = fcontent.get("content") or fcontent.get("code") or fcontent.get("source") or fcontent.get("body") or fcontent.get("text") or ""
                 if fpath and fcontent:
                     clean_content = clean_code_content(str(fpath), str(fcontent))
                     self.mcp.tool_file_write(str(fpath), clean_content)
@@ -344,13 +375,22 @@ class DynamicWorkerEngine:
         elif isinstance(raw_files, list):
             for file_info in raw_files:
                 if isinstance(file_info, dict):
-                    fpath = file_info.get("path") or file_info.get("filename") or file_info.get("file")
-                    fcontent = file_info.get("content") or file_info.get("code") or file_info.get("source")
+                    fpath = file_info.get("path") or file_info.get("filename") or file_info.get("file") or file_info.get("name") or file_info.get("file_name") or file_info.get("file_path")
+                    fcontent = file_info.get("content") or file_info.get("code") or file_info.get("source") or file_info.get("body") or file_info.get("text")
                     if fpath and fcontent:
                         clean_content = clean_code_content(str(fpath), str(fcontent))
                         self.mcp.tool_file_write(str(fpath), clean_content)
                         artifacts.append(str(fpath))
                         task.execution_logs.append(f"Synthesized '{fpath}' ({len(clean_content)} bytes).")
+
+        # Fallback: Check if data dictionary has code files at the top level
+        if not artifacts and isinstance(data, dict):
+            for k, v in data.items():
+                if k not in ("summary", "status", "files", "artifacts", "deliverables", "error") and any(str(k).endswith(ext) for ext in [".py", ".js", ".ts", ".html", ".css", ".json", ".md", ".sh"]):
+                    clean_content = clean_code_content(str(k), str(v))
+                    self.mcp.tool_file_write(str(k), clean_content)
+                    artifacts.append(str(k))
+                    task.execution_logs.append(f"Synthesized '{k}' ({len(clean_content)} bytes).")
                 
         return artifacts
 

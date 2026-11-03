@@ -782,6 +782,7 @@ class MetaOrchestrator:
                 f"You MUST generate at least 3 discrete, progressive task nodes (e.g. Architecture/Design, Implementation/Core Logic, and Sandboxed Pytest Verification).\n"
                 f"There is NO arbitrary limit to how many agents you can spawn: synthesize as many specialized worker sub-agents as the architecture and domain demand.\n"
                 f"For EACH task, synthesize a dedicated sub-agent with its specific role, system directives, and assigned tools.\n"
+                f"If the mission is an email, communication, or sales outreach directive, decompose it into audience/domain research, message drafting tailored to the user's recipient & topic, email syntax verification, and automated browser/SMTP runners.\n"
                 f"Return JSON format:\n"
                 "{\n"
                 '  "title": "Clear Mission Title",\n'
@@ -932,7 +933,8 @@ class MetaOrchestrator:
             session.dag_plan = plan
             return plan
 
-        if not is_email_mission and self.llm_client and not settings.is_mock():
+        # Autonomous Dynamic DAG Compilation for all vision domains
+        if self.llm_client and not settings.is_mock():
             dynamic_plan = self._llm_compile_dag(session)
             if dynamic_plan:
                 session.dag_plan = dynamic_plan

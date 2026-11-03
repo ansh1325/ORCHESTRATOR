@@ -78,10 +78,14 @@ class ExecutiveBriefingEngine:
                 pass
 
         total_leads = 0
-        if leads_csv.exists():
+        # Aggregate across all generated campaign lead files in workspaces
+        csv_candidates = list(settings.WORKSPACE_DIR.glob("*lead*.csv")) + list(settings.WORKSPACE_DIR.glob("*leads*.csv"))
+        if leads_csv.exists() and leads_csv not in csv_candidates:
+            csv_candidates.append(leads_csv)
+        for c in set(csv_candidates):
             try:
-                with open(leads_csv, "r", encoding="utf-8") as f:
-                    total_leads = max(0, sum(1 for _ in f) - 1)
+                with open(c, "r", encoding="utf-8") as f:
+                    total_leads += max(0, sum(1 for _ in f) - 1)
             except Exception:
                 pass
 

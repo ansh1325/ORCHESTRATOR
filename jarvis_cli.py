@@ -2667,25 +2667,47 @@ class JarvisCLI:
         print()
 
     def export_session(self, session_id: str, custom_dest: Optional[str] = None):
-        session_dir = Path("workspaces") / session_id
+        from core.config import settings
+        ws_root = settings.WORKSPACE_DIR
+        clean_sid = session_id.strip("<>\'\"").replace("\\", "/")
+        session_dir = ws_root / clean_sid
         if not session_dir.exists():
-            print(f"{C.RED}Session '{session_id}' not found.{C.RESET}")
-            return
+            cand1 = ws_root / "constructed_systems" / clean_sid
+            cand2 = ws_root / clean_sid.split("/")[-1]
+            cand3 = ws_root / "constructed_systems" / clean_sid.split("/")[-1]
+            if cand1.exists():
+                session_dir = cand1
+            elif cand2.exists():
+                session_dir = cand2
+            elif cand3.exists():
+                session_dir = cand3
+            else:
+                all_dirs = [p for p in ws_root.rglob("*") if p.is_dir() and not p.name.startswith(".")]
+                matched = [d for d in all_dirs if clean_sid.lower() in d.name.lower()]
+                if matched:
+                    session_dir = matched[0]
+                else:
+                    print(f"{C.RED}Workspace '{session_id}' not found in {ws_root}.{C.RESET}")
+                    return
 
-        dest = Path(custom_dest) if custom_dest else (Path.home() / "Downloads" / f"jarvis_export_{session_id}")
+        dest = Path(custom_dest) if custom_dest else (Path.home() / "Downloads" / f"jarvis_export_{session_dir.name}")
         dest.mkdir(parents=True, exist_ok=True)
 
         count = 0
         for f in session_dir.glob("**/*"):
-            if f.is_file() and not f.name.endswith(".pyc"):
+            if f.is_file() and not f.name.endswith(".pyc") and "__pycache__" not in str(f):
                 rel = f.relative_to(session_dir)
                 target = dest / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(f.read_bytes())
                 count += 1
 
-        print(f"\n{C.GREEN}✓ Exported {count} deliverable files to:{C.RESET} {dest.resolve()}\n")
-        self.speak(f"Exported {count} deliverables to your destination.")
+        print(f"\n{C.GREEN}{C.BOLD}✓ Workspace Assets Exported to Host:{C.RESET}")
+        print(f"  • Source Workspace:  {C.CYAN}{session_dir.name}{C.RESET}")
+        print(f"  • Host Destination:  {C.YELLOW}{dest.resolve()}{C.RESET}")
+        print(f"  • Files Copied:      {C.BOLD}{count} artifacts{C.RESET}")
+        print(f"  • Containment Guard: Assets remain permanently inside {session_dir.resolve()} until explicitly exported.\n")
+        self.speak(f"Exported {count} workspace deliverables to {dest.name}.")
 
     async def handle_builds_command(self, line: str) -> bool:
         """
@@ -3212,11 +3234,8 @@ class JarvisCLI:
                 print(f"{C.YELLOW}No active session to export. Usage: export <session_id> [destination_path]{C.RESET}")
             return True
 
-        if low.startswith("export "):
-            try:
-                parts = shlex.split(line)
-            except Exception:
-                parts = line.split()
+        if low.startswith("export ") or low.startswith("locate ") or low.startswith("relocate ") or low.startswith("copy assets "):
+            parts = safe_split_args(line)
             if len(parts) > 1:
                 sid = parts[1]
                 dest = parts[2] if len(parts) > 2 else None
@@ -3438,8 +3457,10 @@ class JarvisCLI:
             # Check if CSV export and proof-of-need columns were requested
             if any(w in f"{goal} {original_line}".lower() for w in ["csv", "save all that", "save to", "proof", "proof collumn"]):
                 from core.lead_verifier import RealLeadVerifier
-                csv_path, exported_count = RealLeadVerifier.export_verified_leads_to_csv("leads.csv", count=cnt)
-                full_stack_csv = Path("workspaces") / "full_stack_dev_1500_leads.csv"
+                active_ws = (Path("workspaces") / self.active_session_id) if self.active_session_id else (Path("workspaces") / "outreach_system")
+                active_ws.mkdir(parents=True, exist_ok=True)
+                csv_path, exported_count = RealLeadVerifier.export_verified_leads_to_csv("leads.csv", count=cnt, workspace_dir=active_ws)
+                full_stack_csv = active_ws / "full_stack_dev_1500_leads.csv"
                 import shutil
                 shutil.copy2(csv_path, full_stack_csv)
                 

@@ -655,14 +655,19 @@ class RealLeadVerifier:
     def export_verified_leads_to_csv(
         cls,
         dest_filename: str | Path = "full_stack_dev_1500_leads.csv",
-        count: int = 1500
+        count: int = 1500,
+        workspace_dir: Optional[Path] = None
     ) -> Tuple[Path, int]:
-        """Generates and writes 100% verified leads to workspaces CSV."""
-        WORKSPACES_DIR.mkdir(parents=True, exist_ok=True)
-        if isinstance(dest_filename, Path) and dest_filename.is_absolute():
-            csv_path = dest_filename
+        """Generates and writes verified leads strictly inside the target workspace."""
+        base_dir = Path(workspace_dir) if workspace_dir else WORKSPACES_DIR
+        base_dir.mkdir(parents=True, exist_ok=True)
+        if isinstance(dest_filename, Path):
+            csv_path = dest_filename if dest_filename.is_absolute() else base_dir / dest_filename
         else:
-            csv_path = WORKSPACES_DIR / dest_filename
+            p_obj = Path(dest_filename)
+            csv_path = p_obj if p_obj.is_absolute() else base_dir / dest_filename
+
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
         leads = cls.generate_verified_leads(count=count)
 
         fieldnames = ["Name", "Email", "Company", "Role", "Status", "Verified", "ProofOfNeed", "ObservedSignal", "ReachoutSource", "Website", "DNS_IP"]
@@ -672,12 +677,18 @@ class RealLeadVerifier:
             for lead in leads:
                 writer.writerow(lead.to_dict())
 
-        # Also sync to default leads.csv
-        default_leads = WORKSPACES_DIR / "leads.csv"
-        import shutil
-        shutil.copy2(csv_path, default_leads)
+        # Keep all assets contained strictly within the target workspace
+        if workspace_dir and csv_path.name != "leads.csv":
+            local_leads = csv_path.parent / "leads.csv"
+            import shutil
+            shutil.copy2(csv_path, local_leads)
+        elif not workspace_dir:
+            default_leads = WORKSPACES_DIR / "leads.csv"
+            if csv_path != default_leads:
+                import shutil
+                shutil.copy2(csv_path, default_leads)
 
-        logger.info(f"Exported {len(leads)} verified leads with live DNS to {csv_path}")
+        logger.info(f"Exported {len(leads)} verified leads with live DNS strictly to {csv_path}")
         return csv_path, len(leads)
 
 

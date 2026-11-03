@@ -170,3 +170,4 @@ class ExecutiveBriefingEngine:
 
 
 executive_briefing = ExecutiveBriefingEngine()
+

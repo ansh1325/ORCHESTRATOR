@@ -78,3 +78,4 @@ def greet_creator(name: str = "Master Ansh") -> str:
     }
     rpc_res = mcp.handle_jsonrpc(rpc_req)
     assert rpc_res["result"] == "Salutations, Chief Architect!"
+

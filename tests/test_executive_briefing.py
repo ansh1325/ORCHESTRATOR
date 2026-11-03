@@ -37,3 +37,4 @@ def test_deliver_briefing_without_crash():
     res = ExecutiveBriefingEngine.deliver_briefing(speak_aloud=False)
     assert "spoken_text" in res
     assert len(res["spoken_text"]) > 0
+

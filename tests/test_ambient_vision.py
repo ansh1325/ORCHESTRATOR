@@ -44,3 +44,4 @@ def test_ambient_frame_capture_and_stream_lifecycle(tmp_path):
     assert engine.get_status()["active"] is True
     assert engine.stop_streaming() is True
     assert engine.get_status()["active"] is False
+

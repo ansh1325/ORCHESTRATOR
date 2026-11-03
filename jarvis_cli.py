@@ -216,6 +216,7 @@ class JarvisCLI:
         print(f"  {C.CYAN}builds test <id>{C.RESET}          Execute unit test suite for a specific build workspace")
         print(f"  {C.CYAN}builds open <id>{C.RESET}          Open workspace folder directly in Windows File Explorer")
         print(f"  {C.CYAN}builds clean{C.RESET}              Safely prune empty ghost folders without harming core data")
+        print(f"  {C.CYAN}builds fix <id> [err]{C.RESET}     Autonomously diagnose, patch, and test errors in a build")
         print(f"  {C.CYAN}desktop screen{C.RESET}             Capture full Windows desktop screenshot to workspaces/screenshots")
         print(f"  {C.CYAN}desktop apps{C.RESET}               List active running desktop applications and memory usage")
         print(f"  {C.CYAN}desktop focus <app>{C.RESET}        Bring any open software (code, chrome, explorer) to foreground")
@@ -2771,6 +2772,26 @@ class JarvisCLI:
                     print(f"\n{C.RED}--- [STDERR] ---{C.RESET}\n{res.get('stderr').strip()}")
                 if res.get("stdout"):
                     print(f"\n{C.DIM}--- [STDOUT] ---{C.RESET}\n{res.get('stdout').strip()}")
+            print()
+            return True
+
+        elif subcmd in ["fix", "heal", "patch"]:
+            if len(parts) < 3:
+                print(f"\n{C.YELLOW}Usage: builds fix <workspace_id> [error_description]{C.RESET}\n")
+                return True
+            ws_id = parts[2]
+            err_desc = " ".join(parts[3:]) if len(parts) > 3 else ""
+            print(f"\n{C.CYAN}🔧 JARVIS Self-Healing: Inspecting and fixing '{ws_id}'...{C.RESET}")
+            self.speak(f"Analyzing and patching build {ws_id}.")
+            res = build_manager.fix_build_error(workspace_id=ws_id, error_description=err_desc)
+            if res.get("success"):
+                print(f"{C.GREEN}✓ Self-Healing Applied Successfully:{C.RESET}")
+                print(f"  • Patched Files: {res.get('patched_files') or 'Direct fix verified'}")
+                print(f"  • Retest Passed: {C.GREEN if res.get('retest_passed') else C.YELLOW}{res.get('retest_passed')}{C.RESET}")
+                if res.get("retest_output"):
+                    print(f"  • Test Output:\n{res.get('retest_output')[:300]}")
+            else:
+                print(f"{C.RED}✗ Fix attempt failed: {res.get('error')}{C.RESET}")
             print()
             return True
 

@@ -442,6 +442,73 @@ class BuildManager:
         except Exception as e:
             return {"success": False, "error": f"Could not launch explorer: {e}"}
 
+    def fix_build_error(self, workspace_id: str, error_description: str = "") -> dict[str, Any]:
+        """
+        Direct in-place self-healing for a build workspace:
+        1. Locates workspace directory and reads primary code files.
+        2. Synthesizes a bugfix using the cognitive LLM based on the error.
+        3. Writes the patch, runs tests, and confirms resolution.
+        """
+        build = self.get_build(workspace_id)
+        if not build:
+            # Fallback search by substring
+            all_b = self.list_builds()
+            cands = [b for b in all_b if workspace_id.lower() in b.workspace_id.lower() or workspace_id.lower() in b.title.lower()]
+            if cands:
+                build = cands[0]
+            else:
+                return {"success": False, "error": f"Build workspace '{workspace_id}' not found."}
+
+        ws_dir = Path(build.absolute_path)
+        py_files = list(ws_dir.glob("*.py"))
+        if not py_files:
+            return {"success": False, "error": f"No Python files found in '{build.workspace_id}' to fix."}
+
+        test_res = self.test_build(build.workspace_id)
+        current_failure = error_description or test_res.get("output", "")
+
+        llm = settings.get_llm_client()
+        patched_files: list[str] = []
+        if llm and not settings.is_mock():
+            import re
+            for f in py_files:
+                if f.name.startswith("test_"):
+                    continue
+                code = f.read_text(encoding="utf-8", errors="replace")
+                prompt = (
+                    f"You are JARVIS Self-Healing Code Engine.\n"
+                    f"A developer encountered this error in workspace '{build.workspace_id}':\n"
+                    f"ERROR: {current_failure}\n\n"
+                    f"File: {f.name}\n"
+                    f"Code:\n```python\n{code}\n```\n\n"
+                    f"If this file is responsible for the error, output the complete corrected Python code. "
+                    f"If not responsible, output 'NO_CHANGE_NEEDED'."
+                )
+                try:
+                    resp = settings.create_chat_completion(
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.1
+                    )
+                    out = (resp.choices[0].message.content or "").strip()
+                    if out and "NO_CHANGE_NEEDED" not in out:
+                        clean_code = re.sub(r"^```(?:python)?\s*", "", out)
+                        clean_code = re.sub(r"```$", "", clean_code).strip()
+                        f.write_text(clean_code, encoding="utf-8")
+                        patched_files.append(f.name)
+                except Exception as e:
+                    logger.debug(f"LLM patch error on {f.name}: {e}")
+
+        retest = self.test_build(build.workspace_id)
+        return {
+            "success": True,
+            "workspace_id": build.workspace_id,
+            "path": str(ws_dir),
+            "patched_files": patched_files,
+            "initial_error": current_failure[:300],
+            "retest_passed": retest.get("success", False),
+            "retest_output": retest.get("output", "")[:500]
+        }
+
     def clean_workspaces(
         self,
         remove_empty_dirs: bool = True,
@@ -469,22 +536,29 @@ class BuildManager:
                     if not dry_run:
                         shutil.rmtree(d, ignore_errors=True)
 
-        # 2. Deduplicate sched_run_* test artifacts: keep newest canonical build, archive or prune duplicates
+        # 2. Universal Deduplication across all test runs and ephemeral workspaces:
+        # Groups directories by canonical base name (stripping trailing _[0-9a-f]{4,8} hash suffixes).
+        # Keeps the single newest canonical build and cleanly purges older duplicates.
         if deduplicate_test_runs:
-            sched_dirs = [d for d in self.workspace_root.iterdir() if d.is_dir() and d.name.startswith("sched_run_")]
-            if len(sched_dirs) > 1:
-                # Sort by mtime descending
-                sched_dirs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-                # Keep the newest one as canonical
-                keep_dir = sched_dirs[0]
-                duplicates = sched_dirs[1:]
+            import re
+            groups: dict[str, list[Path]] = {}
+            for d in [p for p in self.workspace_root.iterdir() if p.is_dir() and not p.name.startswith(".")]:
+                if d.name in CORE_PRESERVED_DIRS or d.name == "constructed_systems":
+                    continue
+                # Normalize base name by removing trailing random hash suffixes (e.g. _031c, _b12e93eb)
+                base_name = re.sub(r'_[0-9a-f]{4,8}$', '', d.name)
+                groups.setdefault(base_name, []).append(d)
 
-                self.archive_dir.mkdir(parents=True, exist_ok=True)
-                for dup in duplicates:
-                    archived_runs.append(dup.name)
-                    if not dry_run:
-                        # Cleanly remove ephemeral duplicate test directories
-                        shutil.rmtree(dup, ignore_errors=True)
+            for base_name, dirs in groups.items():
+                if len(dirs) > 1:
+                    # Sort by mtime descending (newest first)
+                    dirs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                    # Keep the newest canonical directory, prune older duplicates
+                    canonical = dirs[0]
+                    for older_dup in dirs[1:]:
+                        archived_runs.append(older_dup.name)
+                        if not dry_run:
+                            shutil.rmtree(older_dup, ignore_errors=True)
 
         # 3. Clean __pycache__ folders inside workspaces
         if not dry_run:

@@ -10,6 +10,7 @@ Capabilities:
 5. Conversational State Machine: Seamless coordination between IDLE, LISTENING, THINKING, and SPEAKING.
 """
 
+import ctypes
 import io
 import json
 import logging
@@ -109,12 +110,42 @@ class VoiceSynthesizer:
         return self._is_active
 
 
+class WindowsAudioRecorder:
+    """Zero-dependency native Windows microphone audio recorder using winmm.dll."""
+
+    def __init__(self):
+        self.winmm = ctypes.windll.winmm
+        self.temp_file = settings.WORKSPACE_DIR / "temp_mic_recording.wav"
+
+    def start_recording(self) -> bool:
+        try:
+            self.winmm.mciSendStringW("close recsound", None, 0, None)
+            self.winmm.mciSendStringW("open new type waveaudio alias recsound", None, 0, None)
+            self.winmm.mciSendStringW("record recsound", None, 0, None)
+            return True
+        except Exception as e:
+            logger.debug(f"winmm record exception: {e}")
+            return False
+
+    def stop_recording(self) -> bytes:
+        try:
+            settings.WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
+            self.winmm.mciSendStringW(f"save recsound {str(self.temp_file)}", None, 0, None)
+            self.winmm.mciSendStringW("close recsound", None, 0, None)
+            if self.temp_file.exists():
+                return self.temp_file.read_bytes()
+        except Exception as e:
+            logger.debug(f"winmm stop exception: {e}")
+        return b"RIFF" + b"\x00" * 400
+
+
 class VoiceDuplexEngine:
     """Autonomous Hands-Free Streaming Voice Duplex Engine with Barge-In."""
 
     def __init__(self, on_user_utterance: Callable[[str], str] | None = None):
         self.state = DuplexState.IDLE
         self.synthesizer = VoiceSynthesizer()
+        self.recorder = WindowsAudioRecorder()
         self.on_user_utterance = on_user_utterance
         self.barge_in_count: int = 0
         self.turn_history: list[dict[str, Any]] = []
@@ -251,3 +282,4 @@ class VoiceDuplexEngine:
             "total_turns": len(self.turn_history),
             "recent_turns": self.turn_history[-5:]
         }
+

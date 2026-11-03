@@ -20,6 +20,58 @@ from typing import Any
 import psutil
 
 from core.config import settings
+import ctypes
+from ctypes import wintypes
+
+MOD_ALT = 0x0001
+MOD_CONTROL = 0x0002
+MOD_SHIFT = 0x0004
+MOD_WIN = 0x0008
+WM_HOTKEY = 0x0312
+
+class GlobalHotkeyManager:
+    """Registers and handles system-wide Windows hotkeys (e.g. Ctrl + Alt + J)."""
+
+    def __init__(self, callback: Any = None):
+        self.callback = callback
+        self._running = False
+        self._thread: threading.Thread | None = None
+        self.hotkey_id = 1
+
+    def start_hotkey_listener(self) -> bool:
+        if self._running:
+            return True
+        self._running = True
+
+        def _listener():
+            u = ctypes.windll.user32
+            VK_J = 0x4A  # Virtual key code for 'J'
+            res = u.RegisterHotKey(None, self.hotkey_id, MOD_CONTROL | MOD_ALT, VK_J)
+            if not res:
+                logger.debug("Failed to register global hotkey Ctrl+Alt+J (may already be bound).")
+                return
+
+            logger.info("Global system hotkey [Ctrl + Alt + J] armed across Windows.")
+            msg = wintypes.MSG()
+            try:
+                while self._running:
+                    if u.PeekMessageW(ctypes.byref(msg), None, 0, 0, 1):
+                        if msg.message == WM_HOTKEY and msg.wParam == self.hotkey_id:
+                            logger.info("Global hotkey [Ctrl + Alt + J] pressed by Master Ansh!")
+                            if self.callback:
+                                self.callback()
+                    time.sleep(0.05)
+            finally:
+                u.UnregisterHotKey(None, self.hotkey_id)
+
+        self._thread = threading.Thread(target=_listener, daemon=True, name="JarvisGlobalHotkeyThread")
+        self._thread.start()
+        return True
+
+    def stop_hotkey_listener(self) -> bool:
+        self._running = False
+        return True
+
 
 logger = logging.getLogger("Jarvis.Daemon")
 
@@ -31,10 +83,20 @@ class JarvisDaemon:
 
     def __init__(self, check_interval_seconds: float = 15.0):
         self.interval = check_interval_seconds
+        self.hotkey_manager = GlobalHotkeyManager(callback=self._on_hotkey_triggered)
         self._running = False
         self._thread: threading.Thread | None = None
         self.alert_history: list[dict[str, Any]] = []
         self._ensure_alerts_file()
+
+    def _on_hotkey_triggered(self):
+        """Called when Master Ansh presses Ctrl + Alt + J anywhere on Windows."""
+        logger.info("JARVIS Hotkey Summoned by Master Ansh.")
+        try:
+            from core.voice_duplex import VoiceSynthesizer
+            VoiceSynthesizer().speak_async("JARVIS online, Master Ansh. How can I assist you?")
+        except Exception:
+            pass
 
     def _ensure_alerts_file(self):
         settings.WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
@@ -163,3 +225,4 @@ class JarvisDaemon:
             "ports": self.inspect_port_safety(),
             "recent_alerts": self.alert_history[-5:]
         }
+

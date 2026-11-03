@@ -55,3 +55,4 @@ def test_voice_duplex_session_lifecycle():
     # Stop session
     duplex.stop_duplex_session()
     assert duplex.state == DuplexState.IDLE
+

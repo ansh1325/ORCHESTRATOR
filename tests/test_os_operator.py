@@ -79,3 +79,4 @@ def test_mcp_desktop_tools_integration(tmp_path):
     res = mcp.tool_desktop_list_apps()
     assert res["success"] is True
     assert "apps" in res
+

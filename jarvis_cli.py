@@ -216,6 +216,13 @@ class JarvisCLI:
         print(f"  {C.CYAN}builds test <id>{C.RESET}          Execute unit test suite for a specific build workspace")
         print(f"  {C.CYAN}builds open <id>{C.RESET}          Open workspace folder directly in Windows File Explorer")
         print(f"  {C.CYAN}builds clean{C.RESET}              Safely prune empty ghost folders without harming core data")
+        print(f"  {C.CYAN}desktop screen{C.RESET}             Capture full Windows desktop screenshot to workspaces/screenshots")
+        print(f"  {C.CYAN}desktop apps{C.RESET}               List active running desktop applications and memory usage")
+        print(f"  {C.CYAN}desktop focus <app>{C.RESET}        Bring any open software (code, chrome, explorer) to foreground")
+        print(f"  {C.CYAN}desktop click <x> <y>{C.RESET}      Click at desktop coordinates using native hardware mouse events")
+        print(f"  {C.CYAN}duplex [start|stop|status]{C.RESET} Streaming ambient voice duplex session with acoustic barge-in")
+        print(f"  {C.CYAN}daemon [status|health]{C.RESET}     Inspect CPU/RAM telemetry, port safety, and hardware alerts")
+
         print(f"  {C.CYAN}workflows{C.RESET}                View saved recurring workflows")
         print(f"  {C.CYAN}schedules{C.RESET}                View active background cron schedules")
         print(f"  {C.CYAN}voice [on|off]{C.RESET}           Toggle Windows native spoken voice synthesis")
@@ -2865,6 +2872,74 @@ class JarvisCLI:
             or low.startswith(("builds ", "build ", "workspaces ", "workspace ", "run build ", "test build ", "open build ", "open workspace ", "clean workspace", "clean workspaces", "cleanup workspace", "cleanup workspaces", "clean up the workspace folder"))
         ):
             return await self.handle_builds_command(line)
+
+        # Universal Desktop OS Operator Commands
+        if low.startswith("desktop "):
+            parts = line.split(maxsplit=2)
+            sub = parts[1].lower() if len(parts) > 1 else "screen"
+            from core.os_operator import OSOperator
+            if sub in ("screen", "screenshot", "capture"):
+                p = OSOperator.capture_desktop_screen("desktop_live.png")
+                print(f"\n{C.GREEN}✓ Full desktop screenshot captured:{C.RESET} {p}")
+                print(f"  • Resolution: {OSOperator.get_screen_resolution()}")
+                self.speak("Desktop screenshot captured.")
+            elif sub in ("apps", "list"):
+                apps = OSOperator.list_running_applications()
+                print(f"\n{C.CYAN}{C.BOLD}🖥️ [Active Desktop Applications] ({len(apps)} found):{C.RESET}")
+                for a in apps[:15]:
+                    print(f"  • {C.YELLOW}{a['name']}{C.RESET} (PID: {a['pid']}, RAM: {a['memory_mb']} MB)")
+            elif sub == "focus" and len(parts) > 2:
+                app_target = parts[2].strip()
+                res = OSOperator.focus_application(app_target)
+                if res:
+                    print(f"\n{C.GREEN}✓ Switched foreground focus to:{C.RESET} {app_target}")
+                else:
+                    print(f"\n{C.YELLOW}Unable to focus:{C.RESET} {app_target}")
+            elif sub == "click" and len(parts) > 2:
+                coords = parts[2].split()
+                if len(coords) >= 2:
+                    cx, cy = int(coords[0]), int(coords[1])
+                    OSOperator.click(x=cx, y=cy)
+                    print(f"\n{C.GREEN}✓ Clicked at coordinates:{C.RESET} ({cx}, {cy})")
+            return True
+
+        # Streaming Voice Duplex Control Commands
+        if low.startswith("duplex"):
+            parts = line.split()
+            sub = parts[1].lower() if len(parts) > 1 else "status"
+            if not hasattr(self, "_duplex_engine"):
+                from core.voice_duplex import VoiceDuplexEngine
+                self._duplex_engine = VoiceDuplexEngine(on_user_utterance=lambda t: f"Understood, Master Ansh: {t}")
+            if sub == "start":
+                self._duplex_engine.start_duplex_session()
+                print(f"\n{C.GREEN}✓ Streaming Voice Duplex session started with Acoustic Barge-In active.{C.RESET}\n")
+            elif sub == "stop":
+                self._duplex_engine.stop_duplex_session()
+                print(f"\n{C.YELLOW}Voice duplex session stopped.{C.RESET}\n")
+            else:
+                telem = self._duplex_engine.get_telemetry()
+                print(f"\n{C.CYAN}{C.BOLD}🎙️ [Voice Duplex Status]:{C.RESET}")
+                print(f"  • State: {C.GREEN}{telem['state']}{C.RESET} | Active: {telem['active']}")
+                print(f"  • Barge-in Events Interrupted: {telem['barge_in_events']}")
+                print(f"  • Total Turns: {telem['total_turns']}")
+            return True
+
+        # Proactive Ambient System Daemon Commands
+        if low.startswith("daemon"):
+            from core.jarvis_daemon import JarvisDaemon
+            parts = line.split()
+            sub = parts[1].lower() if len(parts) > 1 else "status"
+            telem = JarvisDaemon.check_hardware_telemetry()
+            ports = JarvisDaemon.inspect_port_safety()
+            print(f"\n{C.CYAN}{C.BOLD}🛡️ [JARVIS System Sentinel Telemetry]:{C.RESET}")
+            print(f"  • Health Status: {C.GREEN if telem['status'] == 'HEALTHY' else C.RED}{telem['status']}{C.RESET}")
+            print(f"  • CPU Usage: {telem['cpu_percent']}% | RAM Usage: {telem['memory_percent']}% ({telem['memory_available_gb']} GB Free)")
+            print(f"  • Disk Space Free: {telem['disk_free_gb']} GB")
+            print(f"  • Monitored Dev Ports:")
+            for p in ports:
+                col = C.GREEN if p["available"] else C.YELLOW
+                print(f"    - Port {p['port']}: {col}{p['status']}{C.RESET}")
+            return True
 
         # Utility Subcommands
         if low.startswith("audit ") or low.startswith("inspect folder "):

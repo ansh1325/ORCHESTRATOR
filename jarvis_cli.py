@@ -2279,6 +2279,7 @@ class JarvisCLI:
             print(f"  {C.CYAN}call campaign <niche> [count]{C.RESET}    Launch high-velocity cold calling campaign (e.g. 300 leads)")
             print(f"  {C.CYAN}call dispatch <phone> <name> [co]{C.RESET} Dispatch individual outbound voice call to a decision maker")
             print(f"  {C.CYAN}call simulate <niche>{C.RESET}             Simulate conversational sales call with objection handling")
+            print(f"  {C.CYAN}call interactive [niche]{C.RESET}          Live terminal voice roleplay (test JARVIS with unpredictable objections)")
             print(f"  {C.CYAN}call doctor{C.RESET}                       Inspect telephony provider status and booked discovery calls")
             print(f"  {C.CYAN}call list{C.RESET}                         View past voice call campaigns and meeting schedules\n")
             return

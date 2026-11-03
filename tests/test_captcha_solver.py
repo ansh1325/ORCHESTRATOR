@@ -129,3 +129,4 @@ def test_browser_controller_delegates_to_captcha_solver():
     res = BrowserController.defeat_or_detect_captcha(mock_page)
     assert res.get("detected") is True
     assert res.get("solved_autonomously") is True
+

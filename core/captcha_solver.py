@@ -338,3 +338,4 @@ class CaptchaSolver:
             pass
 
         return {"detected": False, "type": "none", "solved_autonomously": False, "method": "none"}
+

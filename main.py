@@ -66,9 +66,29 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# Next.js export directory
+FRONTEND_OUT = Path(__file__).resolve().parent / "frontend" / "out"
+NEXT_STATIC = FRONTEND_OUT / "_next"
+NEXT_STATIC.mkdir(parents=True, exist_ok=True)
+app.mount("/_next", StaticFiles(directory=str(NEXT_STATIC)), name="next_assets")
+
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
     """Serves the central dark-mode dashboard with zero-cache headers."""
+    # Priority 1: Modern Next.js Command Center Export
+    next_index = FRONTEND_OUT / "index.html"
+    if next_index.exists():
+        with open(next_index, "r", encoding="utf-8") as f:
+            content = f.read()
+        return HTMLResponse(
+            content=content,
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+    # Priority 2: Static HTML
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         return HTMLResponse("<h1>LlamaOrchestrator Dashboard Initializing...</h1>")
@@ -299,6 +319,157 @@ async def delete_history_session(session_id: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="Session not found in history")
     return {"success": True, "session_id": session_id}
+
+# ==========================================
+# AGENT TELEMETRY & MULTI-AGENT SWARM METRICS
+# ==========================================
+@app.get("/api/agents/telemetry")
+async def get_agents_telemetry():
+    """Returns telemetry on synthesized autonomous sub-agents across sessions."""
+    from core.workflow_manager import workflow_manager
+    history = workflow_manager.list_history()
+    latest_session_id = history[0].get("session_id") if history else None
+    latest_sess = orchestrator.sessions.get(latest_session_id) if latest_session_id else None
+    
+    agents = []
+    if latest_sess and latest_sess.agents_spawned:
+        agents = latest_sess.agents_spawned
+    elif history and history[0].get("agent_types"):
+        agents = [{"id": f"agent_{i+1}", "title": role, "agent_type": role} for i, role in enumerate(history[0]["agent_types"])]
+        
+    total_cumulative = sum(h.get("agents_created", 0) for h in history)
+    unique_roles = list(dict.fromkeys(a.get("agent_type", "") for a in agents if a.get("agent_type")))
+
+    return {
+        "status": "online",
+        "latest_mission": history[0].get("title", "Standing by") if history else "Standing by",
+        "latest_session_id": latest_session_id,
+        "agents_created": len(agents) or (history[0].get("agents_created", 0) if history else 0),
+        "unique_roles": unique_roles,
+        "agents": agents,
+        "total_cumulative_agents": total_cumulative or len(agents)
+    }
+
+# ==========================================
+# VOICE TELEPHONY & INTERACTIVE ROLEPLAY HUB
+# ==========================================
+@app.get("/api/voice/telemetry")
+async def get_voice_telemetry():
+    from core.voice_call_agent import voice_call_engine
+    doc = voice_call_engine.doctor()
+    camps = voice_call_engine.list_campaigns()
+    return {"health": doc, "campaigns": camps}
+
+@app.post("/api/voice/roleplay")
+async def voice_roleplay_turn(req: dict = Body(...)):
+    """Executes a single conversational roleplay turn with Voss Tactical Empathy."""
+    from core.voice_call_agent import voice_call_engine, VoiceCallLead, VoiceAgentPersona
+    utterance = req.get("utterance", "").strip()
+    history = req.get("history", [])
+    niche = req.get("niche", "Autonomous Drone Delivery")
+    lead_name = req.get("name", "Dr. Marcus Vance")
+    lead_company = req.get("company", "Apex Healthcare")
+    
+    lead = VoiceCallLead(
+        phone="+15550199201",
+        name=lead_name,
+        company=lead_company,
+        niche=niche
+    )
+    persona = VoiceAgentPersona(
+        agent_name="JARVIS",
+        creator_name="Ansh Tiwari",
+        calendly_link="https://calendly.com/anshtiwari"
+    )
+    reply = await voice_call_engine.generate_cognitive_call_reply(
+        lead=lead,
+        prospect_utterance=utterance,
+        conversation_history=history,
+        persona=persona
+    )
+    is_booked = any(w in reply.lower() for w in ["will see you thursday", "invite is on its way", "invite and prototype link are in your inbox", "booked"])
+    return {
+        "reply": reply,
+        "is_booked": is_booked,
+        "booking_slot": "Thursday 2:00 PM EST" if is_booked else None,
+        "calendar_url": "https://calendly.com/anshtiwari"
+    }
+
+@app.post("/api/voice/campaign")
+async def launch_voice_campaign(req: dict = Body(...)):
+    from core.voice_call_agent import voice_call_engine
+    niche = req.get("niche", "AI Automation & Custom Software")
+    count = int(req.get("count", 10))
+    price = int(req.get("price", 2500))
+    res = await voice_call_engine.execute_cold_call_campaign(
+        niche=niche,
+        total_leads_count=count,
+        offer_price=price,
+        target_revenue=count * price // 2
+    )
+    return res
+
+# ==========================================
+# REA // REVERSE ENGINEERING ENGINE HUB
+# ==========================================
+@app.post("/api/rea/audit")
+async def rea_audit_binary(req: dict = Body(...)):
+    from core.rea_powerup import rea_engine
+    target = req.get("target_path", "sample.exe")
+    return rea_engine.audit_binary_security(target)
+
+@app.post("/api/rea/inspect")
+async def rea_inspect_binary(req: dict = Body(...)):
+    from core.rea_powerup import rea_engine
+    target = req.get("target_path", "sample.exe")
+    return rea_engine.inspect_binary(target)
+
+@app.post("/api/rea/secrets")
+async def rea_scan_secrets(req: dict = Body(...)):
+    from core.rea_powerup import rea_engine
+    target = req.get("target_path", "sample.exe")
+    return rea_engine.scan_secrets_and_keys(target)
+
+# ==========================================
+# HERMES // COGNITIVE SUPERCHARGER HUB
+# ==========================================
+@app.get("/api/hermes/skills")
+async def list_hermes_skills(query: str | None = None):
+    from core.hermes_powerup import hermes_skills
+    skills = hermes_skills.list_skills(query)
+    return {"total": len(skills), "skills": skills}
+
+@app.get("/api/hermes/memory")
+async def get_hermes_memory():
+    from core.hermes_powerup import hermes_memory
+    prof = hermes_memory.get_user_profile()
+    return {"profile": prof}
+
+@app.post("/api/hermes/learn")
+async def create_hermes_skill(req: dict = Body(...)):
+    from core.hermes_powerup import hermes_skills
+    name = req.get("name", "custom_skill")
+    desc = req.get("description", "Learned autonomous skill")
+    instr = req.get("instructions", "Execution protocol")
+    path = hermes_skills.create_skill(name, desc, instr)
+    return {"success": True, "name": name, "path": str(path)}
+
+# ==========================================
+# RUNTIME TOOL SYNTHESIZER HUB
+# ==========================================
+@app.get("/api/tools/list")
+async def list_synthesized_tools():
+    from core.tool_synthesizer import tool_synthesizer
+    manifest = tool_synthesizer.list_tools()
+    return {"tools": manifest}
+
+@app.post("/api/tools/synthesize")
+async def synthesize_dynamic_tool(req: dict = Body(...)):
+    from core.tool_synthesizer import tool_synthesizer
+    name = req.get("name", "custom_tool")
+    goal = req.get("goal", "Measure latency and log telemetry")
+    res = tool_synthesizer.synthesize_tool_autonomously(name, goal)
+    return res
 
 # ==========================================
 # BUILDS & WORKSPACES OPERATING HUB
@@ -654,4 +825,12 @@ async def browser_use_agent_task(req: dict = Body(...)):
 
 if __name__ == "__main__":
     import uvicorn
+    host_addr = settings.HOST if settings.HOST != "0.0.0.0" else "127.0.0.1"
+    print("\n" + "=" * 75)
+    print("   JARVIS // COGNITIVE MULTI-AGENT OS — WEB DASHBOARD")
+    print("   Chief Systems Architect: Ansh Tiwari")
+    print("=" * 75)
+    print(f"  • Local Web Interface:  http://localhost:{settings.PORT}")
+    print(f"  • Loopback Direct URL:   http://{host_addr}:{settings.PORT}")
+    print("=" * 75 + "\n", flush=True)
     uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=False)

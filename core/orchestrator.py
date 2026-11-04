@@ -934,8 +934,8 @@ class MetaOrchestrator:
             session.dag_plan = plan
             return plan
 
-        # Autonomous Dynamic DAG Compilation for all vision domains
-        if self.llm_client and not settings.is_mock():
+        # Autonomous Dynamic DAG Compilation for all vision domains (excluding deterministic email mission guarantees)
+        if self.llm_client and not settings.is_mock() and not is_email_mission:
             dynamic_plan = self._llm_compile_dag(session)
             if dynamic_plan:
                 session.dag_plan = dynamic_plan

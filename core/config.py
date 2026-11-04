@@ -40,7 +40,7 @@ class Settings:
     FORCE_MOCK: bool = _raw_mock in ("true", "1", "yes")
     
     # Server configuration
-    HOST: str = os.getenv("HOST", "0.0.0.0")
+    HOST: str = os.getenv("HOST", "127.0.0.1")
     PORT: int = int(os.getenv("PORT", "8000"))
 
     @classmethod

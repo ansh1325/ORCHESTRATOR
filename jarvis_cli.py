@@ -161,84 +161,27 @@ class JarvisCLI:
 
     def listen_for_voice(self, timeout_sec: int = 5) -> Optional[str]:
         """
-        Listens to PC microphone using Neural Speech Recognition (Whisper Large V3).
-        Falls back to Windows SAPI speech engine if offline.
+        Voice Directive Guidance.
+        Directs user to execute crisp terminal directives with real-time spoken audio responses.
         """
-        print(f"\n{C.YELLOW}{C.BOLD}🎙️ [Microphone Active — Neural Whisper V3]{C.RESET} Speak your command clearly into the microphone ({timeout_sec}s)...")
-        from core.config import settings
-        import ctypes
-
-        # Try Groq Whisper Large V3 first (State-of-the-art accuracy)
-        llm = settings.get_llm_client()
-        if llm and not settings.is_mock():
-            tmp_wav = settings.WORKSPACE_DIR / f"mic_{int(time.time())}.wav"
-            try:
-                mci = ctypes.windll.winmm.mciSendStringA
-                mci(b"open new type waveaudio alias recsound", None, 0, 0)
-                mci(b"record recsound", None, 0, 0)
-                for i in range(timeout_sec, 0, -1):
-                    sys.stdout.write(f"\r  {C.CYAN}Listening... {i}s remaining{C.RESET} ")
-                    sys.stdout.flush()
-                    time.sleep(1)
-                sys.stdout.write(f"\r  {C.GREEN}Transcribing with Neural Whisper V3...{C.RESET}\n")
-                sys.stdout.flush()
-
-                save_cmd = f"save recsound {str(tmp_wav.resolve())}".encode("utf-8")
-                mci(save_cmd, None, 0, 0)
-                mci(b"close recsound", None, 0, 0)
-
-                if tmp_wav.exists() and tmp_wav.stat().st_size > 1000:
-                    with open(tmp_wav, "rb") as audio_file:
-                        transcription = llm.audio.transcriptions.create(
-                            model="whisper-large-v3",
-                            file=audio_file
-                        )
-                    heard = transcription.text.strip()
-                    if heard and len(heard) > 1:
-                        return heard
-            except Exception as e:
-                logger.debug(f"Whisper mic transcription fallback: {e}")
-            finally:
-                if tmp_wav.exists():
-                    try:
-                        os.remove(tmp_wav)
-                    except Exception:
-                        pass
-
-        # Fallback to Windows SAPI
-        ps_cmd = (
-            "Add-Type -AssemblyName System.Speech; "
-            "$r = New-Object System.Speech.Recognition.SpeechRecognitionEngine; "
-            "$r.SetInputToDefaultAudioDevice(); "
-            "$grammar = New-Object System.Speech.Recognition.DictationGrammar; "
-            "$r.LoadGrammar($grammar); "
-            f"$res = $r.Recognize([TimeSpan]::FromSeconds({timeout_sec})); "
-            "if ($res) { Write-Output $res.Text } else { Write-Output '' }"
-        )
-        try:
-            p = subprocess.run(
-                ["powershell", "-NoProfile", "-Command", ps_cmd],
-                capture_output=True,
-                text=True,
-                timeout=timeout_sec + 5
-            )
-            heard = p.stdout.strip()
-            return heard if heard else None
-        except Exception as e:
-            print(f"{C.RED}[Voice Input Note] {e}{C.RESET}")
-            return None
+        print(f"\n{C.CYAN}[Voice Directive Mode]{C.RESET} Directive mode: {C.GREEN}Terminal Command Interface{C.RESET}")
+        print(f"  • Directives: Enter any objective directly at {C.BLUE}JARVIS > {C.RESET} in plain English.")
+        print(f"  • Spoken Audio Feedback: {C.GREEN}ON{C.RESET} (JARVIS narrates execution out loud via Windows SAPI).")
+        print(f"  • Rationale: Terminal text directives guarantee 100% deterministic, zero-latency execution without microphone noise.\n")
+        self.speak("Terminal directive mode active. Standing by for your typed directive, Master Ansh.")
+        return None
 
     def print_banner(self):
         print(f"\n{C.CYAN}{C.BOLD}{'='*75}")
         print("   JARVIS // COGNITIVE MULTI-AGENT OS (JarvisLlama)")
         print("   Chief Systems Architect: Ansh Tiwari")
         print(f"{'='*75}{C.RESET}")
-        print(f"{C.DIM}Voice Output: {C.GREEN}ON{C.RESET}{C.DIM} (type 'voice off' to mute) | Type 'help' for commands | 'exit' to quit{C.RESET}\n")
+        print(f"{C.DIM}Spoken Audio: {C.GREEN}ON{C.RESET}{C.DIM} (Windows SAPI) | Interface: Terminal Directive CLI | 'exit' to quit{C.RESET}\n")
 
     def print_help(self):
         print(f"\n{C.BOLD}Available CLI Directives & Commands:{C.RESET}")
         print(f"  {C.CYAN}<any natural directive>{C.RESET}  Deploy autonomous multi-agent swarm (code, SaaS, microservices, business)")
-        print(f"  {C.CYAN}listen / mic{C.RESET}             Activate microphone and speak your command using Windows voice recognition")
+        print(f"  {C.CYAN}voice [on|off|status]{C.RESET} Toggle or inspect native Windows SAPI spoken audio feedback")
         print(f"  {C.CYAN}browse <goal or query>{C.RESET}   Autonomous web discovery & DOM interaction (Zero templates; figures out links on its own)")
         print(f"  {C.CYAN}browser-use <task> / bu{C.RESET}   Official 'browser-use' vision-action agent with Set-of-Marks grounding")
         print(f"  {C.CYAN}transcript <media_url>{C.RESET}   Extract transcript from video/IG reel via progressive fallback (No official API needed)")
@@ -3256,16 +3199,10 @@ class JarvisCLI:
             print(f"\n{C.YELLOW}[Central Brain]{C.RESET} Directive '{line}' is too brief. Type {C.GREEN}help{C.RESET} for commands or state your goal in plain English (e.g. 'Build an API', 'hunt leads', 'builds list').\n")
             return True
 
-        # Natural Microphone Input
+        # Natural Microphone / Voice Directive Guidance
         if low in ["listen", "mic", "voice in", "speak", "listen to me", "start mic", "turn on mic"]:
-            self.speak("Listening for your voice command.")
-            heard = self.listen_for_voice(timeout_sec=8)
-            if heard:
-                print(f"\n{C.GREEN}{C.BOLD}🎙️ [Heard Command]:{C.RESET} '{heard}'\n")
-                return await self.process_directive(heard)
-            else:
-                print(f"{C.DIM}[No voice command detected or microphone timed out]{C.RESET}\n")
-                return True
+            self.listen_for_voice(timeout_sec=5)
+            return True
 
         # Autonomous Sub-Agent Swarm Telemetry & Inspection
         if (

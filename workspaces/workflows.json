@@ -64,5 +64,14 @@
     "folder": "Automated",
     "is_promoted": true,
     "execution_count": 2
+  },
+  {
+    "id": "wf_auto_247453",
+    "title": "Recurring: hey jarvis the hackathon judges want to",
+    "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
+    "prompt": "hey jarvis the hackathon judges want to know about you. Introduce yourself, what you are, and what outcomes you provide",
+    "folder": "Automated",
+    "is_promoted": true,
+    "execution_count": 2
   }
 ]

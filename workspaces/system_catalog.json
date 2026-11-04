@@ -59,6 +59,42 @@
       "capabilities": [
         "Generate 1500 full stack dev leads with name, titl"
       ]
+    },
+    {
+      "system_id": "sys_cryptoarbitrageengine_4822",
+      "name": "CryptoArbitrageEngine",
+      "purpose": "High-frequency crypto arbitrage intelligence engine with real-time spread computation, automated risk limits, and websocket orderbook feed",
+      "entrypoint_file": "D:\\LlamaOrchestrator\\workspaces\\constructed_systems\\sys_cryptoarbitrageengine_4822\\main.py",
+      "tags": [
+        "autonomous",
+        "custom_built"
+      ],
+      "created_at": "2026-11-04T20:37:20Z",
+      "version": "1.0.0",
+      "execution_count": 1,
+      "last_executed_at": 1793804849.5716014,
+      "status": "CERTIFIED",
+      "capabilities": [
+        "High-frequency crypto arbitrage intelligence engin"
+      ]
+    },
+    {
+      "system_id": "sys_system_1793809427_9427",
+      "name": "System_1793809427",
+      "purpose": "Autonomous Cyber Threat Intelligence Defense Engine with Zero-Day telemetry",
+      "entrypoint_file": "D:\\LlamaOrchestrator\\workspaces\\constructed_systems\\sys_system_1793809427_9427\\main.py",
+      "tags": [
+        "autonomous",
+        "custom_built"
+      ],
+      "created_at": "2026-11-04T21:53:48Z",
+      "version": "1.0.0",
+      "execution_count": 0,
+      "last_executed_at": 0.0,
+      "status": "CERTIFIED",
+      "capabilities": [
+        "Autonomous Cyber Threat Intelligence Defense Engin"
+      ]
     }
   ]
 }

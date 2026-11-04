@@ -19,7 +19,8 @@
     "Principle of Minimum Friction: Always discover the native host environment and default applications via OS introspection rather than creating synthetic dummy sandboxes or asking for manual port configurations.",
     "Ground-Truth Machine Introspection: Always inspect Local State and active user profiles on the host machine dynamically to operate directly on the user's live authenticated accounts.",
     "Full-Spectrum Synthesis: When scraping or browsing for information, always extract rich main content and synthesize direct, high-value answers for the user rather than halting on raw headers.",
-    "Consultative Sales Psychology & Price Protection: In all outbound client outreach, lead acquisition, and voice calling, adhere to the Value-First Discovery Protocol. NEVER volunteer or disclose pricing at the start of a conversation or on Touch 1 cold outreach; anchor 100% on operational pain diagnosis, custom prototype demonstration, and booking Master Ansh's 15-minute discovery call."
+    "Consultative Sales Psychology & Price Protection: In all outbound client outreach, lead acquisition, and voice calling, adhere to the Value-First Discovery Protocol. NEVER volunteer or disclose pricing at the start of a conversation or on Touch 1 cold outreach; anchor 100% on operational pain diagnosis, custom prototype demonstration, and booking Master Ansh's 15-minute discovery call.",
+    "Permanent Universal Place ID Doctrine: In all Google Maps harvesting, lead capture, and outreach intelligence, NEVER copy or emit internal web session URLs containing ephemeral tokens (g_ep, rclk, authuser, or unanchored data=!4m7...), which break with 'not available' on external browsers or mobile apps. ALWAYS resolve and emit Google's permanent, universal Place ID URL: https://www.google.com/maps/place/?q=place_id:{place_id} so links open the single exact business card on any device or network worldwide with zero competitor list ambiguity."
   ],
   "completed_missions": [
     {
@@ -176,6 +177,46 @@
       "timestamp": "2026-11-04T06:10:20.896283+00:00",
       "mission": "Mission sched_run_4f35996c: Founder Autonomous Software Pod: TestPrompt",
       "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T06:30:52.039804+00:00",
+      "mission": "Mission find_500_us_businesses_7290: US Business Lead Acquisition Pipeline",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T06:38:46.062362+00:00",
+      "mission": "Mission email_20_selected_businesses_9a1f: Autonomous Cold Email Outreach & CRM Pipeline",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T12:34:11.386087+00:00",
+      "mission": "Mission sched_run_67fc488f: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T12:42:22.504623+00:00",
+      "mission": "Mission sched_run_0c391b32: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T12:43:34.051753+00:00",
+      "mission": "Mission sched_run_817cf44b: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T13:05:11.315511+00:00",
+      "mission": "Mission sched_run_12cf19f9: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T13:38:53.613851+00:00",
+      "mission": "Mission sched_run_e2b076d5: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
+    },
+    {
+      "timestamp": "2026-11-04T13:57:36.078667+00:00",
+      "mission": "Mission sched_run_0d4e9888: Founder Autonomous Software Pod: TestPrompt",
+      "status": "100% Certified"
     }
   ],
   "financial_and_closing_profile": {
@@ -194,9 +235,10 @@
   "directive_frequency": {
     "to leetcode and solve a problem": 4,
     "transcript httpswwwinstagramcomreelsample": 32,
-    "to youtube and search at peach and play the song of karan aujla": 58,
+    "to youtube and search at peach and play the song of karan aujla": 61,
     "o to leetcode solve a  proble of your choic": 1,
     "find posts on reddit about machine learning": 1,
-    "to leetcode solve a problem of your choice": 1
+    "to leetcode solve a problem of your choice": 1,
+    "i would want you to find 500 businesses on google maps from usa with good google reviews and no website for them extract all their contact information available and just email 20 of those  busiesses with good human like high open rate subject line and email not bigger than 100 words telling i have created their website do they want to see it or any other email body which would get them to reply  and only personalise those  things which you know are definitely true and has  no chance of misinformation and no email should go to spam and all their info should be saved in a sheet": 2
   }
 }

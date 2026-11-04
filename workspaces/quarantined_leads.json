@@ -1040,5 +1040,310 @@
     "dns_valid": true,
     "mx_valid": false,
     "audit_timestamp": "2026-11-04 03:28:34"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ MILES Mobility",
+      "Email": "contact@milesmobility.com",
+      "Company": "MILES Mobility",
+      "Role": "Commercial Solar Installer / Contractor",
+      "Website": "https://milesmobility.com",
+      "ProofOfNeed": "Local Business Directory (Actively hiring for 'IT Operations - Working Student (w/m/x/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/miles-mobility/it-operations-working-student-d-berlin-234154))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'milesmobility.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:01:43"
+  },
+  {
+    "raw_input": {
+      "Name": "David Gitlin",
+      "Email": "david@corporate.carrier.com",
+      "Company": "Carrier Global",
+      "Role": "Chairman & CEO",
+      "Website": "https://corporate.carrier.com",
+      "ProofOfNeed": "Local Business Directory",
+      "ObservedSignal": "Verified LOCAL_DIRECTORIES_AND_MAPS Registry & DNS Audit",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS",
+      "DNS_IP": "172.64.154.31"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'corporate.carrier.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:01:45"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ MILES Mobility",
+      "Email": "contact@milesmobility.com",
+      "Company": "MILES Mobility",
+      "Role": "Private dental practice owners / dentists",
+      "Website": "https://milesmobility.com",
+      "ProofOfNeed": "Directory Listing (Actively hiring for 'IT Operations - Working Student (w/m/x/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/miles-mobility/it-operations-working-student-d-berlin-234154))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "HEALTHCARE_DIRECTORIES_AND_REGISTRIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'milesmobility.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:01:48"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ MILES Mobility",
+      "Email": "contact@milesmobility.com",
+      "Company": "MILES Mobility",
+      "Role": "sales prospect",
+      "Website": "https://milesmobility.com",
+      "ProofOfNeed": "verified leads (Actively hiring for 'IT Operations - Working Student (w/m/x/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/miles-mobility/it-operations-working-student-d-berlin-234154))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'milesmobility.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:02:20"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ FASTR",
+      "Email": "contact@fastr.com",
+      "Company": "FASTR",
+      "Role": "sales prospect",
+      "Website": "https://fastr.com",
+      "ProofOfNeed": "verified leads (Actively hiring for 'Betriebsf\u00fchrer Heizwerke (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/fastr/betriebsfuhrer-heizwerke-geiselhoring-485123))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'fastr.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:02:20"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Radisson Hotel Group",
+      "Email": "contact@radissonhotelgroup.com",
+      "Company": "Radisson Hotel Group",
+      "Role": "sales prospect",
+      "Website": "https://radissonhotelgroup.com",
+      "ProofOfNeed": "verified leads (Actively hiring for 'Technischer Leiter hotel/ chief Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/radisson-hotel-group/technischer-leiter-hotel-chief-engineer-ettlingen-33266))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'radissonhotelgroup.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:02:21"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Quantumdiamonds",
+      "Email": "contact@quantumdiamonds.com",
+      "Company": "Quantumdiamonds",
+      "Role": "sales prospect",
+      "Website": "https://quantumdiamonds.com",
+      "ProofOfNeed": "verified leads (Actively hiring for 'Finance Working Student (f/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/quantumdiamonds/finance-working-student-munich-370228))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'quantumdiamonds.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:02:21"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Quantumdiamonds",
+      "Email": "contact@quantumdiamonds.com",
+      "Company": "Quantumdiamonds",
+      "Role": "sales prospect",
+      "Website": "https://quantumdiamonds.com",
+      "ProofOfNeed": "verified leads (Actively hiring for 'Process Optimization Intern (f/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/quantumdiamonds/process-optimization-intern-munich-383498))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'quantumdiamonds.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:02:21"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Quantumdiamonds",
+      "Email": "contact@quantumdiamonds.com",
+      "Company": "Quantumdiamonds",
+      "Role": "sales prospect",
+      "Website": "https://quantumdiamonds.com",
+      "ProofOfNeed": "verified leads (Actively hiring for 'Marketing & Branding Intern (f/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/quantumdiamonds/marketing-branding-intern-munich-207461))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'quantumdiamonds.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:02:21"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ MILES Mobility",
+      "Email": "contact@milesmobility.com",
+      "Company": "MILES Mobility",
+      "Role": "Business Development / Sales Executives",
+      "Website": "https://milesmobility.com",
+      "ProofOfNeed": "Problem Statement (Actively hiring for 'IT Operations - Working Student (w/m/x/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/miles-mobility/it-operations-working-student-d-berlin-234154))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'milesmobility.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:36:16"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ FASTR",
+      "Email": "contact@fastr.com",
+      "Company": "FASTR",
+      "Role": "Business Development / Sales Executives",
+      "Website": "https://fastr.com",
+      "ProofOfNeed": "Problem Statement (Actively hiring for 'Betriebsf\u00fchrer Heizwerke (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/fastr/betriebsfuhrer-heizwerke-geiselhoring-485123))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'fastr.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:36:18"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Radisson Hotel Group",
+      "Email": "contact@radissonhotelgroup.com",
+      "Company": "Radisson Hotel Group",
+      "Role": "Business Development / Sales Executives",
+      "Website": "https://radissonhotelgroup.com",
+      "ProofOfNeed": "Problem Statement (Actively hiring for 'Technischer Leiter hotel/ chief Engineer' (Job URL: https://www.arbeitnow.com/jobs/companies/radisson-hotel-group/technischer-leiter-hotel-chief-engineer-ettlingen-33266))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'radissonhotelgroup.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:36:19"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Quantumdiamonds",
+      "Email": "contact@quantumdiamonds.com",
+      "Company": "Quantumdiamonds",
+      "Role": "Business Development / Sales Executives",
+      "Website": "https://quantumdiamonds.com",
+      "ProofOfNeed": "Problem Statement (Actively hiring for 'Finance Working Student (f/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/quantumdiamonds/finance-working-student-munich-370228))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'quantumdiamonds.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:36:20"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Quantumdiamonds",
+      "Email": "contact@quantumdiamonds.com",
+      "Company": "Quantumdiamonds",
+      "Role": "Business Development / Sales Executives",
+      "Website": "https://quantumdiamonds.com",
+      "ProofOfNeed": "Problem Statement (Actively hiring for 'Process Optimization Intern (f/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/quantumdiamonds/process-optimization-intern-munich-383498))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'quantumdiamonds.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:36:20"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Quantumdiamonds",
+      "Email": "contact@quantumdiamonds.com",
+      "Company": "Quantumdiamonds",
+      "Role": "Business Development / Sales Executives",
+      "Website": "https://quantumdiamonds.com",
+      "ProofOfNeed": "Problem Statement (Actively hiring for 'Marketing & Branding Intern (f/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/quantumdiamonds/marketing-branding-intern-munich-207461))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'quantumdiamonds.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:36:20"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Werkia",
+      "Email": "contact@werkia.com",
+      "Company": "Werkia",
+      "Role": "Business Development / Sales Executives",
+      "Website": "https://werkia.com",
+      "ProofOfNeed": "Problem Statement (Actively hiring for 'Praktikum im Business Development (m/w/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/werkia/praktikum-im-business-development-berlin-81119))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'werkia.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 18:36:21"
   }
 ]

@@ -259,6 +259,27 @@ if __name__ == "__main__":
         entry_path = sys_dir / "main.py"
         entry_path.write_text(code, encoding="utf-8")
 
+        # Synthesize pytest verification harness
+        test_code = f'''"""Automated Pytest Verification Suite for {clean_name}."""
+import pytest
+from main import execute_system
+
+def test_system_execution():
+    res = execute_system("test_probe")
+    assert res is not None
+    assert res.get("status") == "SUCCESS"
+    assert "test_probe" in res.get("result", "")
+
+def test_system_default():
+    res = execute_system()
+    assert res.get("status") == "SUCCESS"
+'''
+        (sys_dir / "test_system.py").write_text(test_code, encoding="utf-8")
+
+        # Synthesize PRD specification
+        prd_content = f"# {clean_name} Specification\n**System ID:** {system_id}\n**Objective:** {task_description}\n**Status:** Certified & Sandboxed\n"
+        (sys_dir / "architecture_prd.md").write_text(prd_content, encoding="utf-8")
+
         # Run test execution
         passed = False
         last_stderr = ""

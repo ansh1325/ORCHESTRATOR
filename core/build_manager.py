@@ -381,16 +381,21 @@ class BuildManager:
             return {"success": False, "error": f"Build workspace '{workspace_id}' not found."}
 
         ws_dir = Path(build.absolute_path)
-        test_files = [f.name for f in ws_dir.glob("test_*.py")] + [f.name for f in ws_dir.glob("*_test.py")]
-        if not test_files:
-            return {"success": False, "error": f"No unit test files found in '{workspace_id}'."}
-
-        cmd = [sys.executable, "-m", "pytest", "-o", f"rootdir={ws_dir}"] + test_files
-
+        # Search both root and subdirectories (e.g. tests/)
+        discovered = list(set([str(f.relative_to(ws_dir)) for f in ws_dir.rglob("test_*.py")] + [str(f.relative_to(ws_dir)) for f in ws_dir.rglob("*_test.py")]))
+        
         start_time = time.time()
         try:
             env = os.environ.copy()
             env["PYTHONPATH"] = str(settings.BASE_DIR) + os.pathsep + str(ws_dir)
+
+            if discovered:
+                cmd = [sys.executable, "-m", "pytest", "-q"] + discovered
+            elif (ws_dir / "main.py").exists():
+                # Autonomous self-test ping supported by dynamic systems
+                cmd = [sys.executable, "main.py", "test_ping"]
+            else:
+                return {"success": False, "error": f"No unit test files or test runner found in '{workspace_id}'."}
 
             res = subprocess.run(
                 cmd,

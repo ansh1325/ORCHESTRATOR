@@ -2,16 +2,16 @@
   "directive": "Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV.",
   "deduced_strategy": {
     "directive": "Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV.",
-    "target_industry": "Business Consulting",
-    "target_persona": "C-level Executives",
+    "target_industry": "General B2B",
+    "target_persona": "Business Development / Sales Executives",
     "primary_channel": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES",
-    "channel_justification": "Provides verified, high-intent contacts suitable for proof-of-need lead generation.",
+    "channel_justification": "LinkedIn and similar professional networks provide verified company and individual profiles, rich activity signals (e.g., hiring, partnership announcements, vendor searches) that serve as proof\u2011of\u2011need observations, and allow bulk export or easy scraping into CSV format.",
     "search_queries": [
-      "B2B lead list for consulting firms",
-      "Verified executive contacts for business services",
-      "Lead generation for C-level decision makers"
+      "site:linkedin.com \"seeking new vendor\" \"company\"",
+      "intitle:\"looking for\" \"software solution\" \"company\"",
+      "\"we are hiring\" \"sales\" \"company\""
     ],
-    "proof_archetype": "ROI Case Study",
+    "proof_archetype": "Problem Statement",
     "recommended_sources": [
       "LinkedIn Sales Navigator",
       "Crunchbase",
@@ -19,13 +19,13 @@
     ]
   },
   "execution_metrics": {
-    "duration_seconds": 31.33,
-    "total_probed": 38,
-    "verified_sendable": 26,
-    "quarantined_invalid": 12,
-    "deliverability_rate": "68.4%",
-    "csv_deliverable": "C:\\Users\\NK321WS\\AppData\\Local\\Temp\\pytest-of-NK321WS\\pytest-347\\test_worker_fallback_includes_0\\leads.csv",
+    "duration_seconds": 26.58,
+    "total_probed": 29,
+    "verified_sendable": 22,
+    "quarantined_invalid": 7,
+    "deliverability_rate": "75.9%",
+    "csv_deliverable": "C:\\Users\\NK321WS\\AppData\\Local\\Temp\\pytest-of-NK321WS\\pytest-390\\test_worker_fallback_includes_0\\leads.csv",
     "quarantine_ledger": "D:\\LlamaOrchestrator\\workspaces\\quarantined_leads.json"
   },
-  "timestamp": "2026-11-04 03:28:36"
+  "timestamp": "2026-11-04 18:36:27"
 }

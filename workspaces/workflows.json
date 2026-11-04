@@ -30,7 +30,7 @@
     "execution_count": 4
   },
   {
-    "id": "wf_auto_143800",
+    "id": "wf_auto_308416",
     "title": "Recurring: scrape latest AI funding rounds and expo",
     "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
     "prompt": "scrape latest AI funding rounds and export to csv",
@@ -48,12 +48,21 @@
     "execution_count": 4
   },
   {
-    "id": "wf_auto_496020",
+    "id": "wf_auto_023056",
     "title": "Recurring: go to youtube and search at peach and pl",
-    "description": "Autonomously synthesized permanent workflow requested 58 times by Master Ansh.",
+    "description": "Autonomously synthesized permanent workflow requested 61 times by Master Ansh.",
     "prompt": "go to youtube and search at peach and play the song of karan aujla",
     "folder": "Automated",
     "is_promoted": true,
-    "execution_count": 58
+    "execution_count": 61
+  },
+  {
+    "id": "wf_auto_872264",
+    "title": "Recurring: i would want you to find 500 businesses",
+    "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
+    "prompt": "i would want you to find 500 businesses on google maps from usa with good google reviews and no website for them extract all their contact information available and just email 20 of those  busiesses with good human like high open rate subject line and email not bigger than 100 words telling i have created their website do they want to see it or any other email body which would get them to reply  and only personalise those  things which you know are definitely true and has  no chance of misinformation and no email should go to spam and all their info should be saved in a sheet",
+    "folder": "Automated",
+    "is_promoted": true,
+    "execution_count": 2
   }
 ]

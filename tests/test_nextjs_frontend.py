@@ -1,34 +1,23 @@
 """
-Unit and Integration Tests for Modern Next.js Frontend mounted in FastAPI.
-Ensures that the Next.js static export at / and /_next are served correctly,
-and that all backend endpoints supporting the UI tabs function flawlessly.
+Unit and Integration Tests for Pure Autonomous Cognitive Multi-Agent OS and CLI Kernel.
+Verifies that the FastAPI root endpoint returns the high-tech JSON kernel status,
+and that all backend agentic microservice endpoints function flawlessly.
 """
 
 import pytest
 from fastapi.testclient import TestClient
 from main import app
-import re
 
 client = TestClient(app)
 
-def test_frontend_root_served():
+def test_kernel_root_served():
     response = client.get("/")
     assert response.status_code == 200
-    assert "<!DOCTYPE html>" in response.text
-    # Verify it is the compiled Next.js bundle
-    assert "_next" in response.text
-
-def test_frontend_static_assets_served():
-    root_res = client.get("/")
-    assert root_res.status_code == 200
-    scripts = re.findall(r'src="(/_next/[^"]+)"', root_res.text)
-    assert len(scripts) > 0, "No Next.js script tags found in HTML"
-    
-    # Check that the first static chunk loads with 200 OK
-    first_script = scripts[0]
-    res = client.get(first_script)
-    assert res.status_code == 200
-    assert len(res.content) > 0
+    data = response.json()
+    assert data["system"] == "JARVIS (LlamaOrchestrator)"
+    assert "Pure Autonomous Cognitive Multi-Agent OS" in data["mode"]
+    assert data["architect"] == "Ansh Tiwari"
+    assert data["status"] == "ONLINE"
 
 def test_ui_backend_endpoints():
     # 1. System Health
@@ -64,4 +53,3 @@ def test_ui_backend_endpoints():
     tl = client.get("/api/tools/list")
     assert tl.status_code == 200
     assert "tools" in tl.json()
-

@@ -61,47 +61,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static files directory
-STATIC_DIR = Path(__file__).resolve().parent / "static"
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-# Next.js export directory
-FRONTEND_OUT = Path(__file__).resolve().parent / "frontend" / "out"
-NEXT_STATIC = FRONTEND_OUT / "_next"
-NEXT_STATIC.mkdir(parents=True, exist_ok=True)
-app.mount("/_next", StaticFiles(directory=str(NEXT_STATIC)), name="next_assets")
-
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def get_index():
-    """Serves the central dark-mode dashboard with zero-cache headers."""
-    # Priority 1: Modern Next.js Command Center Export
-    next_index = FRONTEND_OUT / "index.html"
-    if next_index.exists():
-        with open(next_index, "r", encoding="utf-8") as f:
-            content = f.read()
-        return HTMLResponse(
-            content=content,
-            headers={
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0"
-            }
-        )
-    # Priority 2: Static HTML
-    index_file = STATIC_DIR / "index.html"
-    if not index_file.exists():
-        return HTMLResponse("<h1>LlamaOrchestrator Dashboard Initializing...</h1>")
-    with open(index_file, "r", encoding="utf-8") as f:
-        content = f.read()
-    return HTMLResponse(
-        content=content,
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0"
-        }
-    )
+    """Serves the central cognitive OS kernel status."""
+    return {
+        "system": "JARVIS (LlamaOrchestrator)",
+        "mode": "Pure Autonomous Cognitive Multi-Agent OS & CLI Kernel",
+        "architect": "Ansh Tiwari",
+        "cli": "python jarvis_cli.py",
+        "status": "ONLINE"
+    }
 
 @app.get("/api/health")
 async def health_check():

@@ -21,16 +21,16 @@
     "folder": "Engineering"
   },
   {
-    "id": "wf_auto_677120",
+    "id": "wf_auto_043063",
     "title": "Recurring: go to leetcode and solve a problem",
-    "description": "Autonomously synthesized permanent workflow requested 4 times by Master Ansh.",
+    "description": "Autonomously synthesized permanent workflow requested 7 times by Master Ansh.",
     "prompt": "go to leetcode and solve a problem",
     "folder": "Automated",
     "is_promoted": true,
-    "execution_count": 4
+    "execution_count": 7
   },
   {
-    "id": "wf_auto_308416",
+    "id": "wf_auto_568100",
     "title": "Recurring: scrape latest AI funding rounds and expo",
     "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
     "prompt": "scrape latest AI funding rounds and export to csv",
@@ -48,13 +48,13 @@
     "execution_count": 4
   },
   {
-    "id": "wf_auto_023056",
+    "id": "wf_auto_731618",
     "title": "Recurring: go to youtube and search at peach and pl",
-    "description": "Autonomously synthesized permanent workflow requested 61 times by Master Ansh.",
+    "description": "Autonomously synthesized permanent workflow requested 62 times by Master Ansh.",
     "prompt": "go to youtube and search at peach and play the song of karan aujla",
     "folder": "Automated",
     "is_promoted": true,
-    "execution_count": 61
+    "execution_count": 62
   },
   {
     "id": "wf_auto_872264",

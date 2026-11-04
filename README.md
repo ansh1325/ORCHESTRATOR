@@ -376,7 +376,6 @@ python jarvis_cli.py "find 500 businesses on google maps from usa with good revi
 * **Project Name:** JARVIS (JarvisLlama / LlamaOrchestrator)
 * **Chief Systems Architect & Creator:** [Ansh Tiwari](https://github.com/ansh1325)
 * **GitHub Repository:** [https://github.com/ansh1325/ORCHESTRATOR](https://github.com/ansh1325/ORCHESTRATOR)
-* **Direct Booking Calendar:** [https://calendly.com/anshtiwari](https://calendly.com/anshtiwari)
 * **Hackathon Track:** Meta Global AI Developer Hackathon 2026 (Championship Submission)
 * **License:** MIT License
 * **Verified Test Pass Rate:** 150 / 150 Unit & Integration Tests (100% Green)

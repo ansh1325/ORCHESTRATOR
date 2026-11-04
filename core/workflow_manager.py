@@ -75,7 +75,9 @@ class WorkflowAndHistoryManager:
         title: str,
         prompt: str,
         folder: str = "General",
-        artifacts: list[str] | None = None
+        artifacts: list[str] | None = None,
+        agents_created: int = 0,
+        agent_types: list[str] | None = None
     ):
         history = self.list_history()
         # Update if exists, else prepend
@@ -85,6 +87,10 @@ class WorkflowAndHistoryManager:
                 item["artifacts"] = artifacts or []
                 item["deliverables"] = artifacts or []
                 item["status"] = "completed"
+                if agents_created:
+                    item["agents_created"] = agents_created
+                if agent_types:
+                    item["agent_types"] = agent_types
                 self._save_history(history)
                 return
         new_item = {
@@ -96,7 +102,9 @@ class WorkflowAndHistoryManager:
             "status": "completed",
             "created_at": datetime.now(UTC).isoformat(),
             "artifacts": artifacts or [],
-            "deliverables": artifacts or []
+            "deliverables": artifacts or [],
+            "agents_created": agents_created,
+            "agent_types": agent_types or []
         }
         history.insert(0, new_item)
         self._save_history(history)

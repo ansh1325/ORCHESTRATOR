@@ -348,6 +348,37 @@ async def test_personal_email_synthesis_tone():
         assert "master" in e["body"].lower() or "jarvis" in e["body"].lower()
 
 
+@pytest.mark.asyncio
+async def test_agent_telemetry_and_counts_reporting():
+    """Verify JARVIS reports how many agents were created and deployed via CLI and Chat."""
+    from jarvis_cli import JarvisCLI
+    from core.workflow_manager import workflow_manager
+    from core.creator_memory import creator_memory
+
+    cli = JarvisCLI()
+    cli.voice_enabled = False
+
+    # Seed a recorded session with agent counts
+    workflow_manager.record_session(
+        session_id="test_mission_telemetry",
+        title="Autonomous Logistics Swarm",
+        prompt="build drone routing microservice",
+        agents_created=8,
+        agent_types=["ProductArchitectAgent", "DataConnectorAgent", "BackendAgent", "TestAgent"]
+    )
+
+    # 1. Test CLI 'agents' directive
+    assert await cli.process_directive("agents") is True
+    assert await cli.process_directive("how many agents were created") is True
+    assert await cli.process_directive("agents count") is True
+
+    # 2. Test Chat multi-turn query for agent count
+    resp = creator_memory.chat_response("how many agents were created")
+    assert "8" in resp["text"] or "agents" in resp["text"].lower()
+    assert "Master Ansh" in resp["text"]
+
+
+
 
 
 

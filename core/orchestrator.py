@@ -158,6 +158,7 @@ class SessionState:
         self.knowledge_base: KnowledgeBase | None = None
         self.dag_plan: DAGPlan | None = None
         self.synthesized_specs: dict[str, SubAgentSpec] = {}
+        self.agents_spawned: list[dict[str, Any]] = []
         self.evaluator_report: dict[str, Any] | None = None
         self.current_stage: int = 0
         self.is_running: bool = False
@@ -1400,6 +1401,16 @@ class MetaOrchestrator:
                 speech_text="Compiling execution DAG and synthesizing dynamic Llama worker sub-agents."
             ))
             dag_plan = self.compile_dag_and_synthesize_workers(session)
+            session.agents_spawned = [
+                {
+                    "id": node.id,
+                    "title": node.title,
+                    "agent_type": node.agent_type,
+                    "description": node.description,
+                    "assigned_tools": node.assigned_tools
+                }
+                for node in dag_plan.nodes
+            ]
             await self.emit_event(session, ExecutionEvent(
                 event_type="dag_generated",
                 session_id=session_id,
@@ -1466,6 +1477,11 @@ class MetaOrchestrator:
                         )
                         if subdag_res.success:
                             success = True
+                            session.agents_spawned.extend([
+                                {"id": f"{node.id}_child_diag", "title": f"Diagnostic Audit for {node.title}", "agent_type": "SystemDiagnosticAgent", "description": "Isolate failure mode", "assigned_tools": []},
+                                {"id": f"{node.id}_child_synth", "title": f"Resilient Synthesis for {node.title}", "agent_type": "ResilientSynthesisAgent", "description": "Synthesize resilient alternative", "assigned_tools": []},
+                                {"id": f"{node.id}_child_verify", "title": f"Verification for {node.title}", "agent_type": "ReconciliationAgent", "description": "Reconciliation & verification", "assigned_tools": []},
+                            ])
                     except Exception as sub_err:
                         logger.warning(f"Sub-DAG recovery notice: {sub_err}")
 
@@ -1497,6 +1513,11 @@ class MetaOrchestrator:
             session.is_running = False
             creator_memory.log_mission(f"Mission {session_id}: {dag_plan.title}", status="100% Certified")
             
+            # Calculate agent metrics
+            total_agents = len(session.agents_spawned) if session.agents_spawned else (len(dag_plan.nodes) if dag_plan and dag_plan.nodes else 0)
+            unique_roles = list(dict.fromkeys(a.get("agent_type", "") for a in session.agents_spawned if a.get("agent_type"))) if session.agents_spawned else (list(dict.fromkeys(n.agent_type for n in dag_plan.nodes)) if dag_plan and dag_plan.nodes else [])
+            roles_desc = f" ({', '.join(unique_roles[:4])}{' and more' if len(unique_roles) > 4 else ''})" if unique_roles else ""
+
             # Record in persistent work history with clean Antigravity/Gemini title
             flist_names = [f["path"] for f in session.mcp.tool_file_list().get("files", [])]
             folder_category = "Personal" if track_type == "communication_assistant" else ("Business" if track_type == "business_acquisition" else "Engineering")
@@ -1506,13 +1527,15 @@ class MetaOrchestrator:
                 title=session_title,
                 prompt=session.vision,
                 folder=folder_category,
-                artifacts=flist_names
+                artifacts=flist_names,
+                agents_created=total_agents,
+                agent_types=unique_roles
             )
             try:
                 from core.hermes_powerup import hermes_memory
                 hermes_memory.record_episode(
                     goal=session.vision,
-                    outcome=f"Successfully fulfilled lifecycle with {len(flist_names)} deliverables",
+                    outcome=f"Successfully fulfilled lifecycle with {total_agents} specialized agents and {len(flist_names)} deliverables",
                     key_deliverables=flist_names
                 )
             except Exception:
@@ -1531,14 +1554,23 @@ class MetaOrchestrator:
                         data={"host_export": exp_res}
                     ))
 
-            final_speech = "Mission completed successfully, Ansh. All deliverables are 100 percent verified, sandboxed, and ready for deployment."
+            final_speech = (
+                f"Mission completed successfully, Master Ansh. {total_agents} autonomous agents were synthesized and deployed to accomplish this mission. "
+                f"All deliverables are 100 percent verified, sandboxed, and ready for deployment."
+            )
             await self.emit_event(session, ExecutionEvent(
                 event_type="done",
                 session_id=session_id,
                 stage=6,
                 stage_name="Mission Accomplished",
-                message="LlamaOrchestrator has successfully fulfilled the entire 6-stage lifecycle.",
-                data={"summary": "All systems verified and operational.", "deliverables": flist_names},
+                message=f"LlamaOrchestrator has successfully fulfilled the entire 6-stage lifecycle ({total_agents} specialized agents deployed{roles_desc}).",
+                data={
+                    "summary": "All systems verified and operational.",
+                    "deliverables": flist_names,
+                    "agents_created": total_agents,
+                    "agent_types": unique_roles,
+                    "agents": session.agents_spawned
+                },
                 speech_text=final_speech
             ))
 

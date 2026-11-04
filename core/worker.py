@@ -6,9 +6,12 @@ Intercepts nonzero returncodes and stderr to autonomously diagnose, patch, and r
 
 import asyncio
 import json
+import logging
 import re
 from collections.abc import Callable
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 try:
     from core.config import settings  # pyright: ignore[reportMissingImports]

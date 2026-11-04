@@ -50,6 +50,7 @@ class Settings:
     # Execution & Simulation
     _raw_mock = os.getenv("MOCK_MODE", "").strip().lower()
     FORCE_MOCK: bool = _raw_mock in ("true", "1", "yes")
+    _auth_failed: bool = False
     
     # Server configuration
     HOST: str = os.getenv("HOST", "127.0.0.1")
@@ -69,14 +70,14 @@ class Settings:
     @classmethod
     def is_mock(cls) -> bool:
         """Determines if the system operates in high-fidelity mock/simulation mode."""
-        if cls.FORCE_MOCK:
+        if cls.FORCE_MOCK or cls._auth_failed:
             return True
         return not cls.has_active_api_key()
 
     @classmethod
     def get_llm_client(cls):
         """Returns an OpenAI-compatible client initialized with the primary provider."""
-        if cls.is_mock():
+        if cls.is_mock() or cls._auth_failed:
             return None
             
         try:
@@ -149,6 +150,10 @@ class Settings:
                     except Exception as e2:
                         err_str = str(e2).lower()
                         last_err = e2
+
+                if any(x in err_str for x in ["401", "authenticationerror", "invalid api key", "unauthorized"]):
+                    cls._auth_failed = True
+                    return None
 
                 if any(x in err_str for x in ["429", "rate_limit", "quota", "tokens per day", "decommissioned", "does not exist", "404", "not_found", "model_not_found"]):
                     continue

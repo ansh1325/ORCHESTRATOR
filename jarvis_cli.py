@@ -3203,7 +3203,7 @@ class JarvisCLI:
             self.speak("Co-Worker browser session closed.")
             return True
 
-        if low in ["help", "?", "commands", "show commands", "what can you do", "help me"]:
+        if low in ["help", "?", "commands", "show commands", "what can you do", "help me", "he", "h", "hlp", "halp", "commands list", "list commands"]:
             self.print_help()
             return True
 
@@ -3215,7 +3215,22 @@ class JarvisCLI:
             self.print_banner()
             return True
 
-        # Natural Voice Mute / Unmute
+        # Natural Voice Status, Toggle, Mute & Unmute
+        if low in ["voice", "voice status", "voice?", "audio", "sound"]:
+            status_str = f"{C.GREEN}ON{C.RESET}" if self.voice_enabled else f"{C.RED}OFF{C.RESET}"
+            print(f"\n{C.CYAN}[Voice Telemetry]{C.RESET} Voice output is currently: {status_str} (Type 'voice off' to mute, 'voice on' to unmute, 'voice toggle' to flip).\n")
+            if self.voice_enabled:
+                self.speak("Voice output is currently active.")
+            return True
+
+        if low in ["voice toggle", "toggle voice"]:
+            self.voice_enabled = not self.voice_enabled
+            status_str = f"{C.GREEN}ON{C.RESET}" if self.voice_enabled else f"{C.RED}OFF{C.RESET}"
+            print(f"\nVoice output toggled to: {status_str}\n")
+            if self.voice_enabled:
+                self.speak(f"Voice output toggled {'on' if self.voice_enabled else 'off'}.")
+            return True
+
         if low in ["mute", "be quiet", "stop speaking", "turn off voice", "disable voice", "voice off", "shutup", "shut up"]:
             self.voice_enabled = False
             print(f"Voice output set to: {C.RED}OFF{C.RESET}\n")
@@ -3234,6 +3249,11 @@ class JarvisCLI:
                 print(f"Voice output set to: {C.GREEN if self.voice_enabled else C.RED}{'ON' if self.voice_enabled else 'OFF'}{C.RESET}\n")
                 if self.voice_enabled:
                     self.speak("Voice output activated.")
+            return True
+
+        # Short input guard for accidental keystrokes or typos
+        if len(low) <= 2 and low not in ["q", "ls", "ps"]:
+            print(f"\n{C.YELLOW}[Central Brain]{C.RESET} Directive '{line}' is too brief. Type {C.GREEN}help{C.RESET} for commands or state your goal in plain English (e.g. 'Build an API', 'hunt leads', 'builds list').\n")
             return True
 
         # Natural Microphone Input

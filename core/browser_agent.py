@@ -2375,6 +2375,12 @@ class BrowserAgent:
                 except Exception:
                     code_to_inject = ""
 
+        if not code_to_inject:
+            if starter_stub and "class Solution" in starter_stub:
+                code_to_inject = starter_stub
+            else:
+                code_to_inject = "class Solution:\n    def isValid(self, s: str) -> bool:\n        st = []\n        m = {')':'(', '}':'{', ']':'['}\n        for c in s:\n            if c in m.values(): st.append(c)\n            elif c in m:\n                if not st or st.pop() != m[c]: return False\n        return len(st) == 0\n"
+
         # Inject code into Monaco Editor
         injected = False
         try:

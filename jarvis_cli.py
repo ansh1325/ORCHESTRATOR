@@ -1218,12 +1218,13 @@ class JarvisCLI:
 
         return self._generate_contextual_emails(recipient, count, guidance=prompt)
 
-    async def handle_autonomous_browse(self, goal_or_query: str, intent: Optional[dict[str, Any]] = None):
+    async def handle_autonomous_browse(self, goal_or_query: str, intent: Optional[dict[str, Any]] = None, line: str = ""):
         """
         Dedicated Autonomous Browser Agent (Interactive Perception-Action Loop).
         Figures out destination links, perceives live DOM interactive elements, and navigates on its own.
         Driven by Central Brain cognitive intent and semantic entity extraction (Zero Hardcoding).
         """
+        line = line or goal_or_query or ""
         import importlib
         import core.browser_agent
         try:
@@ -3750,7 +3751,7 @@ class JarvisCLI:
             return True
         elif mode == "browser":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as autonomous web/browser action.")
-            await self.handle_autonomous_browse(goal, intent=step)
+            await self.handle_autonomous_browse(goal, intent=step, line=original_line)
             return True
         elif mode == "terminal":
             print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as Terminal & Git Execution.")

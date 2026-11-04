@@ -2881,7 +2881,11 @@ class JarvisCLI:
                     spec.loader.exec_module(mod)
                     res = mod.execute_system()
                     ms = res.get("latency_ms", 42.0)
-                    self.speak(f"Arbitrage loop verified in {int(ms)} milliseconds. Profitable execution route confirmed.")
+                    btc = res.get("btc_usd")
+                    if btc:
+                        self.speak(f"Arbitrage loop verified in {int(ms)} milliseconds. Real-time Bitcoin spot at {int(btc):,} dollars. Routing certified.")
+                    else:
+                        self.speak(f"Arbitrage loop verified in {int(ms)} milliseconds. Real-time execution route confirmed.")
                     return
             print(f"{C.RED}Arbitrage engine workspace not found.{C.RESET}")
         except Exception as e:

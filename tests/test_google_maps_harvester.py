@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from core.google_maps_harvester import US_METROS, METRO_AREA_CODES, google_maps_harvester
+from core.google_maps_harvester import US_METROS, METRO_AREA_CODES, METRO_VALID_AREA_CODES, google_maps_harvester
 
 
 def test_500_businesses_generation_and_valid_maps_urls():
@@ -26,17 +26,21 @@ def test_500_businesses_generation_and_valid_maps_urls():
         assert lead["rating"] >= 4.0
         assert lead["review_count"] >= 10
 
-        # 3. 100% Working Canonical Google Maps Search URL
+        # 3. 100% Working Canonical Google Maps Place URL (Direct Place Card Profile, Zero Competitor List Ambiguity)
         url = lead["google_maps_url"]
-        assert url.startswith("https://www.google.com/maps/search/?api=1&query=")
+        assert "google.com/maps/place/" in url
+        assert "data=" in url
         assert "?cid=" not in url
-        assert "0x" not in url
 
-        # 4. Verified area code matches the city
+        # 4. Zero whitespace in contact emails
+        assert " " not in lead["contact_email"], f"Email '{lead['contact_email']}' contains invalid whitespace"
+
+        # 5. Verified area code matches the city's valid telecommunication overlay
         city = lead["city"]
-        expected_area = METRO_AREA_CODES.get(city)
-        assert expected_area is not None, f"Unknown city {city}"
-        assert f"({expected_area})" in lead["phone"], f"Phone {lead['phone']} does not match area code {expected_area} for {city}"
+        valid_areas = METRO_VALID_AREA_CODES.get(city, {METRO_AREA_CODES.get(city)})
+        assert any(f"({ac})" in lead["phone"] for ac in valid_areas), (
+            f"Phone {lead['phone']} does not match valid area codes {valid_areas} for {city}"
+        )
 
 
 def test_20_grounded_emails_brevity_and_anti_spam():
@@ -51,6 +55,9 @@ def test_20_grounded_emails_brevity_and_anti_spam():
         assert str(em["verified_facts"]["rating"]) in em["body"]
         assert str(em["verified_facts"]["review_count"]) in em["body"]
         assert em["to"]
+        assert " " not in em["to"]
+        assert "google_maps_url" in em
+        assert "google.com/maps/place/" in em["google_maps_url"]
 
 
 def test_export_and_dispatcher_script(tmp_path):
@@ -67,7 +74,7 @@ def test_export_and_dispatcher_script(tmp_path):
         assert len(reader) == 500
         # Check first lead
         first = reader[0]
-        assert "google.com/maps/search" in first["google_maps_url"]
+        assert "google.com/maps/place" in first["google_maps_url"]
         assert "?cid=" not in first["google_maps_url"]
 
     emails = google_maps_harvester.draft_20_grounded_emails(leads, sender_name="Ansh")

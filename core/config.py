@@ -57,8 +57,29 @@ class Settings:
     PORT: int = int(os.getenv("PORT", "8000"))
 
     @classmethod
+    def get_local_ollama_model(cls) -> str | None:
+        """Probes local Ollama instance on http://localhost:11434 and discovers active models."""
+        try:
+            import urllib.request, json
+            req = urllib.request.Request("http://localhost:11434/api/tags", headers={"User-Agent": "JarvisCLI"})
+            with urllib.request.urlopen(req, timeout=0.8) as resp:
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    models = [m.get("name") for m in data.get("models", []) if m.get("name")]
+                    if models:
+                        for m in models:
+                            if "llama" in m.lower():
+                                return m
+                        return models[0]
+        except Exception:
+            pass
+        return None
+
+    @classmethod
     def has_active_api_key(cls) -> bool:
         """Checks if any supported LLM provider API key or local model endpoint is provided."""
+        if cls.get_local_ollama_model():
+            return True
         if cls.LOCAL_LLM_URL and len(cls.LOCAL_LLM_URL.strip()) > 5:
             return True
         keys = [cls.GROQ_API_KEY, cls.FIREWORKS_API_KEY, cls.BASETEN_API_KEY, cls.OPENAI_API_KEY]
@@ -70,28 +91,36 @@ class Settings:
     @classmethod
     def is_mock(cls) -> bool:
         """Determines if the system operates in high-fidelity mock/simulation mode."""
-        if cls.FORCE_MOCK or cls._auth_failed:
+        if cls.FORCE_MOCK:
+            return True
+        if cls.get_local_ollama_model():
+            return False
+        if cls._auth_failed:
             return True
         return not cls.has_active_api_key()
 
     @classmethod
     def get_llm_client(cls):
         """Returns an OpenAI-compatible client initialized with the primary provider."""
-        if cls.is_mock() or cls._auth_failed:
+        if cls.FORCE_MOCK:
             return None
             
         try:
             from openai import OpenAI
-            # 0. Local Model Endpoint (Ollama, vLLM, LM Studio) - Zero Token Limits, Unlimited Swarms
+            # 0. Local Ollama Endpoint (Zero Rate Limits, 100% Offline Meta Llama Open Weights)
+            local_model = cls.get_local_ollama_model()
+            if local_model:
+                return OpenAI(api_key="ollama", base_url="http://localhost:11434/v1", max_retries=1, timeout=60.0)
             if cls.LOCAL_LLM_URL:
                 local_key = os.getenv("LOCAL_LLM_KEY", "local_jarvis")
                 return OpenAI(api_key=local_key, base_url=cls.LOCAL_LLM_URL.rstrip("/"), max_retries=1, timeout=60.0)
-            if cls.GROQ_API_KEY and not cls.GROQ_API_KEY.startswith("your_"):
-                return OpenAI(api_key=cls.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0, timeout=12.0)
-            if cls.FIREWORKS_API_KEY and not cls.FIREWORKS_API_KEY.startswith("your_"):
-                return OpenAI(api_key=cls.FIREWORKS_API_KEY, base_url="https://api.fireworks.ai/inference/v1", max_retries=0, timeout=12.0)
-            if cls.OPENAI_API_KEY and not cls.OPENAI_API_KEY.startswith("your_"):
-                return OpenAI(api_key=cls.OPENAI_API_KEY, base_url=cls.OPENAI_BASE_URL or None, max_retries=0, timeout=12.0)
+            if not cls._auth_failed:
+                if cls.GROQ_API_KEY and not cls.GROQ_API_KEY.startswith("your_"):
+                    return OpenAI(api_key=cls.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0, timeout=12.0)
+                if cls.FIREWORKS_API_KEY and not cls.FIREWORKS_API_KEY.startswith("your_"):
+                    return OpenAI(api_key=cls.FIREWORKS_API_KEY, base_url="https://api.fireworks.ai/inference/v1", max_retries=0, timeout=12.0)
+                if cls.OPENAI_API_KEY and not cls.OPENAI_API_KEY.startswith("your_"):
+                    return OpenAI(api_key=cls.OPENAI_API_KEY, base_url=cls.OPENAI_BASE_URL or None, max_retries=0, timeout=12.0)
         except Exception:
             return None
         return None
@@ -99,7 +128,11 @@ class Settings:
     @classmethod
     def get_fallback_models(cls) -> list[str]:
         """Returns priority order of operational models with dynamic quota failover."""
-        candidates = [cls.META_MODEL_ORCHESTRATOR, "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
+        candidates = []
+        local_model = cls.get_local_ollama_model()
+        if local_model:
+            candidates.append(local_model)
+        candidates.extend([cls.META_MODEL_ORCHESTRATOR, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"])
         seen: set[str] = set()
         res: list[str] = []
         for c in candidates:

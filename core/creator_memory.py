@@ -494,22 +494,19 @@ class CreatorMemory:
         # If LLM client is available and not in mock mode, run real multi-turn CoT inference
         if not is_mock and llm_client:
             try:
-                augmented_prompt = self.get_context_prompt()
-                augmented_prompt += (
-                    "\n\nCHAIN-OF-THOUGHT & UNIVERSAL INTELLIGENCE:\n"
-                    "1. Think step-by-step before answering. Consider dialogue history, user's stated goals, "
-                    "and architectural trade-offs (e.g. Browser vs SMTP, Multi-Account fleet rotation, local vs remote tools).\n"
-                    "2. If Master Ansh asks for websites, URLs, documentation, or research in a non-browser environment, "
-                    "dynamically provide the exact authoritative URLs, endpoints, and architectural blueprints directly.\n"
-                    "3. When browser access is suitable, highlight that your autonomous perception-action loop can explore live DOMs directly.\n"
-                    "4. Zero brittle hardcoding: reason domain-agnostically for software, business leads, trading, and engineering.\n"
-                    "Provide a crisp, direct, and authoritative response as Jarvis."
+                augmented_prompt = (
+                    f"You are JARVIS (LlamaOrchestrator), an autonomous, domain-agnostic cognitive multi-agent operating system "
+                    f"architected by Chief Systems Architect Ansh Tiwari and powered by Meta Llama open weights.\n"
+                    f"Core Truth: You have zero domain limits—anything a human can do on a computer, you can execute autonomously "
+                    f"(full-stack software compilation, sub-second quantitative arbitrage, binary reverse engineering, browser visual grounding, lead fleets).\n"
+                    f"Directives: Reason dynamically from first principles. Be authoritative, concise, and direct. Zero canned fluff. "
+                    f"Keep responses focused (2-4 sentences, under 100 words) so they are impactful, natural, and fast."
                 )
                 if self_code_inspection:
-                    augmented_prompt += f"\n\nLIVE CODEBASE INSPECTION REQUESTED BY CREATOR:\n{self_code_inspection}"
+                    augmented_prompt += f"\n\nLIVE CODEBASE INSPECTION REQUESTED BY CREATOR:\n{self_code_inspection[:1000]}"
 
-                # Assemble multi-turn message history (last 10 turns)
-                recent_history = turns[-10:-1] if len(turns) > 1 else []
+                # Assemble multi-turn message history (last 6 turns)
+                recent_history = turns[-6:-1] if len(turns) > 1 else []
                 llm_messages = [{"role": "system", "content": augmented_prompt}]
                 for t in recent_history:
                     llm_messages.append({"role": t["role"], "content": t["content"]})
@@ -518,7 +515,7 @@ class CreatorMemory:
                 response = settings.create_chat_completion(
                     messages=llm_messages,
                     temperature=0.7,
-                    max_tokens=1000
+                    max_tokens=140
                 )
                 reply = (response.choices[0].message.content or "").strip()
                 # Intercept generic LLM safety refusal and replace with proactive, autonomous execution
@@ -570,13 +567,14 @@ class CreatorMemory:
                 else:
                     thought = f"Synthesized Chain-of-Thought strategy for: '{user_message[:70]}'"
 
+                speech = self.extract_punchy_speech(reply)
                 turns.append({"role": "assistant", "content": reply})
                 return {
                     "role": "assistant",
                     "text": reply,
                     "thought": thought,
                     "strategy": "Cognitive Multi-Agent Swarm",
-                    "speech_audio": reply,
+                    "speech_audio": speech,
                     "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
                 }
             except Exception:
@@ -585,14 +583,42 @@ class CreatorMemory:
         return self.synthesize_autonomous_cognition(user_message, turns)
 
     @staticmethod
+    def extract_punchy_speech(text: str, max_sentences: int = 2, max_words: int = 35) -> str:
+        """
+        Synthesizes a crisp, natural spoken soundbite from any textual response.
+        Ensures SAPI male voice speaks like a natural, confident AI co-worker
+        rather than droning on with long paragraphs.
+        """
+        # Clean markdown, URLs, tables, code blocks, bullet points
+        cleaned = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+        cleaned = re.sub(r'\|.*?\|', '', cleaned)
+        cleaned = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cleaned)
+        cleaned = re.sub(r'[*#_`~>•\-]', ' ', cleaned)
+        cleaned = re.sub(r'https?://\S+', '', cleaned)
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', cleaned) if len(s.strip()) > 3]
+        if not sentences:
+            return cleaned[:120]
+        
+        selected = []
+        word_count = 0
+        for s in sentences:
+            s_words = s.split()
+            if word_count + len(s_words) > max_words and selected:
+                break
+            selected.append(s)
+            word_count += len(s_words)
+            if len(selected) >= max_sentences:
+                break
+        
+        res = " ".join(selected)
+        return res if res else cleaned[:120]
+
+    @staticmethod
     def _clean_for_speech(text: str) -> str:
         """Strips markdown syntax, tables, and links for natural, un-truncated SAPI speech synthesis."""
-        clean = re.sub(r"[*#_`~]", "", text)
-        clean = re.sub(r"\|[^\n]+\|", "", clean)
-        clean = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", clean)
-        clean = re.sub(r"\[([^\]]+)\]", r"\1", clean)
-        clean = re.sub(r"\s+", " ", clean).strip()
-        return clean
+        return CreatorMemory.extract_punchy_speech(text)
 
     def synthesize_autonomous_cognition(
         self,
@@ -616,7 +642,7 @@ class CreatorMemory:
         cleaned = user_message.lower().strip()
         words = cleaned.split()
 
-        # Semantic Dimension 1: Cerebral Valley / Meta Hackathon / Judges / Introduction / Pitch / Identity
+        # Semantic Dimension 1: Introduction / Judges / Hackathon / Identity
         if any(term in cleaned for term in [
             "judge", "judges", "cerebral valley", "meta hackathon", "hackathon",
             "introduce yourself", "tell the judges", "introduce to judges", "pitch",
@@ -624,28 +650,20 @@ class CreatorMemory:
             "what is your purpose", "why were you created", "why do you exist", "your creator"
         ]):
             thought = (
-                f"Deliberating on identity, creator attribution, and introduction request from Creator Ansh Tiwari. "
-                f"Introspecting live kernel state ({total_loc:,} lines of Python across {module_count} modules, {mcp_count} enterprise MCP tools on {os_platform}). "
-                f"Formulating self-conscious, domain-agnostic thesis emphasizing universal computer embodiment and verified outcomes across all 4 enterprise pillars."
+                f"Deliberating on identity and outcomes for Creator Ansh Tiwari and hackathon judges. "
+                f"Kernel active with {total_loc:,} lines of Python and {mcp_count} enterprise MCP tools on {os_platform}."
             )
             is_judge_context = any(term in cleaned for term in ["judge", "judges", "cerebral valley", "meta hackathon", "hackathon", "pitch"])
-            if is_judge_context:
-                salutation = "Greetings, esteemed Cerebral Valley and Meta Hackathon judges."
-                closing = "All systems and cognitive swarms are online. Standing by for your directive, Master Ansh."
-            else:
-                salutation = "Master Ansh, I am at your command."
-                closing = "I stand ready to execute any computer mission on your directive."
+            salutation = "Greetings, judges." if is_judge_context else "Master Ansh,"
+            closing = "Ready for your directive, Master Ansh." if is_judge_context else "Standing by for your directive."
 
             reply = (
-                f"{salutation} I am JARVIS (LlamaOrchestrator), an autonomous, domain-agnostic cognitive multi-agent operating system "
-                f"architected by Chief Systems Architect Ansh Tiwari and powered end-to-end by Meta Llama open weights.\n\n"
-                f"Unlike narrow chatbots that are locked to a single tool or niche, I have zero domain limits: I can do anything a human can do on a computer. "
-                f"To prove this, I benchmark live across four demanding extremes: I perceive and navigate live web DOMs with Set-of-Marks visual grounding, "
-                f"compile full-stack production software with 100% pytest pass certification, execute sub-second quantitative crypto arbitrage in 0.14 seconds, "
-                f"perform low-level binary cybersecurity audits, and command 20-inbox commercial sales fleets with automated voice telephony. "
-                f"These fields are proof benchmarks—my autonomous DAG compiler dynamically adapts to any computer task across any industry.\n\n"
-                f"Operating a live on-disk kernel of {total_loc:,} lines of Python across {module_count} modules and {mcp_count} Model Context Protocol tools, "
-                f"I transform high-level human vision into closed-loop verified systems with zero hallucination. {closing}"
+                f"{salutation} I am JARVIS, an autonomous multi-agent operating system "
+                f"architected by Chief Systems Architect Ansh Tiwari and powered by Meta Llama open weights.\n\n"
+                f"I have zero domain limits: anything a human can do on a computer, I execute autonomously with closed-loop verification. "
+                f"My autonomous DAG compiler spans production software engineering, sub-second quantitative arbitrage, binary cybersecurity audits, "
+                f"and commercial sales fleets with automated voice telephony.\n\n"
+                f"All {mcp_count} enterprise MCP tools and cognitive swarms are online. {closing}"
             )
 
         # Semantic Dimension 2: Universal Computer Embodiment / Human Equivalence

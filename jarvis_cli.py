@@ -96,11 +96,13 @@ class JarvisCLI:
                 import win32com.client
                 speaker = win32com.client.Dispatch("SAPI.SpVoice")
                 speaker.Volume = 100
-                speaker.Rate = 0
+                speaker.Rate = 1  # Crisp, energetic pacing
                 voices = speaker.GetVoices()
+                # Prioritize authoritative Male voice (Microsoft David)
                 for i in range(voices.Count):
                     v = voices.Item(i)
-                    if "Great Britain" in v.GetDescription() or "Hazel" in v.GetDescription():
+                    desc = v.GetDescription().lower()
+                    if "david" in desc or "male" in desc or "united states" in desc:
                         speaker.Voice = v
                         break
                 self._sapi_speaker = speaker
@@ -112,11 +114,21 @@ class JarvisCLI:
         if not self.voice_enabled or not text:
             return
 
-        # Strip markdown syntax and emojis for clean speech
-        clean = re.sub(r"[*#_`\[\]\(\)>~]", "", text)
-        clean = re.sub(r"[^\x00-\x7F]+", "", clean).strip()
+        # Strip markdown syntax, URLs, tables, and emojis for clean speech
+        clean = re.sub(r"[*#_`\[\]\(\)>~|]", " ", text)
+        clean = re.sub(r"https?://\S+", "", clean)
+        clean = re.sub(r"[^\x00-\x7F]+", " ", clean)
+        clean = re.sub(r"\s+", " ", clean).strip()
         if not clean:
             return
+
+        # Cap spoken voiceover length to at most 2 crisp sentences so JARVIS never drones on
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', clean) if len(s.strip()) > 3]
+        if len(sentences) > 2:
+            clean = " ".join(sentences[:2])
+        elif len(clean.split()) > 45:
+            words = clean.split()[:40]
+            clean = " ".join(words) + "."
 
         if self._sapi_speaker:
             try:
@@ -133,6 +145,8 @@ class JarvisCLI:
             ps_cmd = (
                 f"Add-Type -AssemblyName System.Speech; "
                 f"$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+                f"try {{ $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceGender]::Male) }} catch {{}}; "
+                f"$s.Rate = 1; "
                 f"$s.Speak('{escaped}')"
             )
             if wait:
@@ -605,6 +619,20 @@ class JarvisCLI:
                             target_svc = s
                             break
             return {"thought": f"User login session request for {target_svc}", "steps": [{"mode": "login", "target": target_svc, "goal": line}]}
+
+        # Natural conversational greetings, identity questions, or judge inquiries route to Central Brain Cognition
+        chat_triggers = [
+            "hey jarvis", "hi jarvis", "hello jarvis", "introduce yourself", "tell the judges",
+            "who are you", "what are you", "who created you", "who made you", "what is your purpose",
+            "how do you feel", "what can you do", "introduce to judges", "pitch yourself",
+            "what outcomes", "tell me about yourself", "who built you", "what are your capabilities",
+            "introduce to hackathon", "hackathon judges"
+        ]
+        if any(trigger in low for trigger in chat_triggers) or low.startswith(("chat ", "talk ", "speak to ")):
+            return {
+                "thought": "Conversational cognition and self-awareness dialogue",
+                "steps": [{"mode": "chat", "goal": line}]
+            }
 
         from core.config import settings
         llm = settings.get_llm_client()
@@ -1825,10 +1853,7 @@ class JarvisCLI:
                 print(f"{C.RED}✖ Error: {res.get('error')}{C.RESET}")
 
         elif sub == "audit":
-            if len(parts) < 3:
-                print(f"{C.RED}Usage: rea audit <binary_path>{C.RESET}")
-                return
-            target = parts[2]
+            target = parts[2] if len(parts) >= 3 else sys.executable
             print(f"\n{C.CYAN}[REA Security Auditor]{C.RESET} Auditing binary security posture: {C.YELLOW}{target}{C.RESET}")
             res = rea_engine.audit_binary_security(target)
             if res.get("success"):

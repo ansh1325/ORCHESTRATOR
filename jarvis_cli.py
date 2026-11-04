@@ -3545,21 +3545,41 @@ class JarvisCLI:
             self.handle_crawl_cmd(parts)
             return True
 
-        # Quantitative Finance & High-Frequency Crypto Arbitrage Engine
-        if low in ["arbitrage", "crypto arbitrage", "scan arbitrage", "quant", "finance", "arbitrage scan"] or low.startswith(("arbitrage ", "scan arbitrage ", "crypto arbitrage ")):
+        # Quantitative Finance & High-Frequency Crypto Arbitrage Engine (Natural & Command)
+        if any(w in low for w in ["arbitrage", "triangular arbitrage", "crypto arbitrage", "orderbook spread", "hft kernel"]):
             await self.handle_arbitrage_cmd(line)
             return True
 
-        # REA (Reverse Engineer Anything) Engine
-        if low.startswith("rea"):
+        # REA (Reverse Engineer Anything) Engine & Machine Binary Security Audit (Natural & Command)
+        if low.startswith("rea") or any(w in low for w in [
+            "binary security", "security audit", "audit binary", "audit the binary",
+            "audit host", "audit executable", "disassemble binary", "reverse engineer binary"
+        ]):
             parts = safe_split_args(line)
+            if not low.startswith("rea"):
+                parts = ["rea", "audit"]
             self.handle_rea_cmd(parts)
             return True
 
-        # Autonomous AI Voice Calling Agents (Telephony, Cold Calling, Objection Handling)
-        if low.startswith("call ") or low.startswith("calls ") or low.startswith("dial ") or low in ["calls", "call agent", "call agents", "voice agent"]:
+        # Autonomous AI Voice Calling Agents (Natural & Command)
+        if any(w in low for w in ["cold call", "cold calling", "voice call", "voice campaign", "call campaign", "dial leads", "call leads"]) or low.startswith(("call ", "calls ", "dial ")) or low in ["calls", "call agent", "call agents", "voice agent"]:
             parts = safe_split_args(line)
+            if not any(low.startswith(k) for k in ["call ", "calls ", "dial "]):
+                parts = ["call", "campaign", "AI Automation", "300"]
             await self.handle_call_cmd(parts)
+            return True
+
+        # Autonomous Multi-Account Fleet Management (Natural & Command)
+        if low.startswith("fleet") or any(w in low for w in ["sales fleet", "outreach fleet", "inbox fleet", "fleet status", "account fleet", "accounts fleet"]):
+            parts = safe_split_args(line)
+            if not low.startswith("fleet"):
+                parts = ["fleet", "status"]
+            self.handle_fleet_cmd(parts)
+            return True
+
+        # Software Engineering Verification & Automated Test Suites (Natural & Command)
+        if any(w in low for w in ["test suite", "run tests", "verify tests", "verify the build", "test the software", "builds test"]):
+            self.handle_builds_cmd(["builds", "test"])
             return True
 
         # Autonomous Terminal Execution & Desktop Window Spawning

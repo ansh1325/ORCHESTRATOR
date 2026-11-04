@@ -158,9 +158,10 @@ class Settings:
 
         last_err: Exception | None = None
         for model in cls.get_fallback_models():
+            kwargs: dict[str, Any] = {}
             try:
-                actual_tokens = max(max_tokens, 2500) if any(k in str(model).lower() for k in ["120b", "reason", "r1", "oss"]) else max_tokens
-                kwargs: dict[str, Any] = {
+                actual_tokens = max(max_tokens, 2500) if any(k in model.lower() for k in ["120b", "reason", "r1", "oss"]) else max_tokens
+                kwargs = {
                     "model": model,
                     "messages": messages,
                     "temperature": temperature,

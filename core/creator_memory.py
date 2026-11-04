@@ -131,7 +131,7 @@ class CreatorMemory:
         sep_line = "| " + " | ".join([":---"] * len(headers)) + " |"
         data_lines = []
         for r in rows:
-            data_lines.append("| " + " | ".join([str(r.get(h, "")) for h in headers]) + " |")
+            data_lines.append("| " + " | ".join([r.get(h, "") for h in headers]) + " |")
 
         return "\n".join([header_line, sep_line] + data_lines)
 

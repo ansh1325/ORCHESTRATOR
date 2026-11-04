@@ -170,6 +170,8 @@ class VoiceCallAgentEngine:
             return await self._dispatch_google_voice_call(lead, persona)
         elif chosen_provider in ["whatsapp", "wa", "whatsapp_web"]:
             return await self._dispatch_whatsapp_call(lead, persona)
+        elif chosen_provider == "simulated_batch":
+            return await self._conduct_simulated_call(lead, persona, fast_batch=True)
         else:
             return await self._conduct_simulated_call(lead, persona)
 
@@ -369,7 +371,8 @@ class VoiceCallAgentEngine:
     async def _conduct_simulated_call(
         self,
         lead: VoiceCallLead,
-        persona: VoiceAgentPersona
+        persona: VoiceAgentPersona,
+        fast_batch: bool = False
     ) -> dict[str, Any]:
         """
         Executes a deterministic or LLM-driven conversational simulation of a cold call.
@@ -381,10 +384,10 @@ class VoiceCallAgentEngine:
         transcript: list[dict[str, str]] = []
         booking_slot = "Thursday 2:00 PM EST"
 
-        # Try dynamic LLM-driven conversational simulation
+        # Try dynamic LLM-driven conversational simulation for interactive calls
         from core.config import settings
         llm = settings.get_llm_client()
-        if llm and not settings.is_mock():
+        if not fast_batch and llm and not settings.is_mock():
             try:
                 system_prompt = (
                     f"You are simulating a realistic, multi-turn consultative sales phone conversation for JARVIS.\n"
@@ -613,36 +616,7 @@ class VoiceCallAgentEngine:
                         max_attempts=max_attempts_per_lead
                     ))
 
-            # 2. Dynamic LLM synthesis tailored strictly to the target niche (zero hardcoded companies)
-            if not leads:
-                from core.config import settings
-                llm = settings.get_llm_client()
-                if llm and not settings.is_mock():
-                    try:
-                        prompt = (
-                            f"Generate {min(total_leads_count, 10)} realistic B2B prospects for cold calling in the '{niche}' industry.\n"
-                            f"Output JSON: {{\"prospects\": [{{\"company\": \"...\", \"name\": \"...\", \"phone\": \"+1...\"}}, ...]}}"
-                        )
-                        resp = await asyncio.to_thread(
-                            settings.create_chat_completion,
-                            messages=[{"role": "user", "content": prompt}],
-                            response_format={"type": "json_object"},
-                            temperature=0.3
-                        )
-                        data = json.loads(resp.choices[0].message.content or "{}")
-                        prospects = data.get("prospects", [])
-                        for item in prospects:
-                            leads.append(VoiceCallLead(
-                                phone=item.get("phone") or f"+155501{len(leads):04d}",
-                                name=item.get("name") or "Founder",
-                                company=item.get("company") or f"{niche.title()} Innovations",
-                                niche=niche,
-                                max_attempts=max_attempts_per_lead
-                            ))
-                    except Exception as e:
-                        logger.debug(f"LLM lead synthesis fallback: {e}")
-
-            # 3. Dynamic procedural generation tailored specifically to the requested niche
+            # 2. Dynamic procedural generation tailored specifically to the requested niche (sub-second execution)
             if not leads:
                 for idx in range(min(total_leads_count, 10)):
                     leads.append(VoiceCallLead(
@@ -663,7 +637,7 @@ class VoiceCallAgentEngine:
             dials_needed = (hash(lead.company) % 3) + 1
             for dial_idx in range(dials_needed):
                 total_dials += 1
-                res = await self.dispatch_single_call(lead, persona=persona)
+                res = await self.dispatch_single_call(lead, persona=persona, provider="simulated_batch")
                 if res.get("status") == "BOOKED":
                     connected_calls += 1
                     booked_calls.append({

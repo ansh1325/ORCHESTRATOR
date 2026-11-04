@@ -5,9 +5,12 @@ Intercepts nonzero returncodes and stderr to autonomously diagnose, patch, and r
 """
 
 import asyncio
+import datetime
 import json
 import logging
+import os
 import re
+from pathlib import Path
 from collections.abc import Callable
 from typing import Any
 
@@ -1606,8 +1609,6 @@ class DynamicWorkerEngine:
             task_text = f"{task.title} {task.description} {spec.system_prompt}".lower()
             if any(k in task_text for k in ["mail", "email", "send", "browser", "realtor", "outreach"]):
                 try:
-                    import json
-                    from pathlib import Path
                     from core.browser_controller import BrowserController
 
                     ws_path = getattr(self.mcp, "workspace_path", getattr(self.mcp, "workspace_dir", settings.WORKSPACE_DIR))
@@ -1629,7 +1630,6 @@ class DynamicWorkerEngine:
                             f"✓ [Browser Automation] Active browser worker launched: Opened host browser with {len(batch_to_send)} pre-composed Gmail outreach tabs for top realtors ready for dispatch."
                         )
 
-                        import datetime
                         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
                         dispatch_logs = []
                         for em in batch_to_send:

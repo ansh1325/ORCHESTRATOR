@@ -286,6 +286,8 @@ class BuildManager:
     def get_build(self, workspace_id: str) -> Optional[BuildWorkspace]:
         """Fetches detailed BuildWorkspace by ID or slug."""
         all_builds = self.list_builds()
+        if workspace_id.lower() in ["latest", "last", "recent", "active", "current"] and all_builds:
+            return all_builds[0]
         for b in all_builds:
             if b.workspace_id == workspace_id or b.workspace_id.endswith(workspace_id) or workspace_id in b.workspace_id:
                 return b

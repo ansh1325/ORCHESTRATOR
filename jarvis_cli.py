@@ -3154,7 +3154,7 @@ class JarvisCLI:
             return True
 
         elif subcmd in ["open", "explore", "view"]:
-            ws_id = parts[2].strip("<>") if len(parts) > 2 else "workspaces"
+            ws_id = parts[2].strip("<>") if len(parts) > 2 else "latest"
             res = build_manager.open_in_explorer(ws_id)
             if res.get("success"):
                 print(f"\n{C.GREEN}✓ Opened in File Explorer: {C.BOLD}{res.get('path')}{C.RESET}\n")
@@ -3163,10 +3163,7 @@ class JarvisCLI:
             return True
 
         elif subcmd in ["info", "inspect"]:
-            if len(parts) < 3:
-                print(f"\n{C.YELLOW}Usage: builds info <workspace_id>{C.RESET}\n")
-                return True
-            ws_id = parts[2]
+            ws_id = parts[2] if len(parts) > 2 else "latest"
             b = build_manager.get_build(ws_id)
             if not b:
                 print(f"\n{C.RED}✗ Build '{ws_id}' not found.{C.RESET}\n")
@@ -3194,10 +3191,7 @@ class JarvisCLI:
             return True
 
         elif subcmd in ["run", "exec", "start"]:
-            if len(parts) < 3:
-                print(f"\n{C.YELLOW}Usage: builds run <workspace_id> [entrypoint_file]{C.RESET}\n")
-                return True
-            ws_id = parts[2]
+            ws_id = parts[2] if len(parts) > 2 else "latest"
             ep = parts[3] if len(parts) > 3 else None
             extra_args = parts[4:] if len(parts) > 4 else None
 

@@ -422,3 +422,4 @@ class NextJsGenerator:
 
 # Singleton instance
 nextjs_generator = NextJsGenerator()
+

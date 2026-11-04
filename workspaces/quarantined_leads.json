@@ -1442,5 +1442,62 @@
     "dns_valid": true,
     "mx_valid": false,
     "audit_timestamp": "2026-11-04 23:59:11"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ BeginnerBudget",
+      "Email": "contact@beginnerbudget.com",
+      "Company": "BeginnerBudget",
+      "Role": "Owner / Managing Principal",
+      "Website": "https://beginnerbudget.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website (Actively hiring for 'Werkstudent Grafikdesign \u2013 Meta Ads & Canva (m/w/d) | Remote' (Job URL: https://www.arbeitnow.com/jobs/companies/beginnerbudget/werkstudent-grafikdesign-meta-ads-canva-remote-berlin-428270))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'beginnerbudget.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-05 03:30:27"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ BeginnerBudget",
+      "Email": "contact@beginnerbudget.com",
+      "Company": "BeginnerBudget",
+      "Role": "Practice Owner / Clinical Director",
+      "Website": "https://beginnerbudget.com",
+      "ProofOfNeed": "Manual front-desk intake workflow lacking real-time EHR integration and SMS patient recall (Actively hiring for 'Werkstudent Grafikdesign \u2013 Meta Ads & Canva (m/w/d) | Remote' (Job URL: https://www.arbeitnow.com/jobs/companies/beginnerbudget/werkstudent-grafikdesign-meta-ads-canva-remote-berlin-428270))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "HEALTHCARE_DIRECTORIES_AND_REGISTRIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'beginnerbudget.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-05 03:30:40"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ BeginnerBudget",
+      "Email": "contact@beginnerbudget.com",
+      "Company": "BeginnerBudget",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://beginnerbudget.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for 'Werkstudent Grafikdesign \u2013 Meta Ads & Canva (m/w/d) | Remote' (Job URL: https://www.arbeitnow.com/jobs/companies/beginnerbudget/werkstudent-grafikdesign-meta-ads-canva-remote-berlin-428270))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'beginnerbudget.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-05 03:32:46"
   }
 ]

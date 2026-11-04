@@ -75,13 +75,13 @@
     "execution_count": 6
   },
   {
-    "id": "wf_auto_065039",
+    "id": "wf_auto_242338",
     "title": "Recurring: do cybersecurity analysis of our project",
-    "description": "Autonomously synthesized permanent workflow requested 3 times by Master Ansh.",
-    "prompt": "do cybersecurity analysis of our project and please run it in your terminal so i can click the links of our software and see it on our own",
+    "description": "Autonomously synthesized permanent workflow requested 2 times by Master Ansh.",
+    "prompt": "do cybersecurity analysis of our project and please run it in your terminal so i can click the links of our software and see it on our own and also show me the leads",
     "folder": "Automated",
     "is_promoted": true,
-    "execution_count": 3
+    "execution_count": 2
   },
   {
     "id": "wf_auto_743504",

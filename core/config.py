@@ -110,10 +110,10 @@ class Settings:
             # 0. Local Ollama Endpoint (Zero Rate Limits, 100% Offline Meta Llama Open Weights)
             local_model = cls.get_local_ollama_model()
             if local_model:
-                return OpenAI(api_key="ollama", base_url="http://localhost:11434/v1", max_retries=1, timeout=60.0)
+                return OpenAI(api_key="ollama", base_url="http://localhost:11434/v1", max_retries=0, timeout=3.5)
             if cls.LOCAL_LLM_URL:
                 local_key = os.getenv("LOCAL_LLM_KEY", "local_jarvis")
-                return OpenAI(api_key=local_key, base_url=cls.LOCAL_LLM_URL.rstrip("/"), max_retries=1, timeout=60.0)
+                return OpenAI(api_key=local_key, base_url=cls.LOCAL_LLM_URL.rstrip("/"), max_retries=0, timeout=3.5)
             if not cls._auth_failed:
                 if cls.GROQ_API_KEY and not cls.GROQ_API_KEY.startswith("your_"):
                     return OpenAI(api_key=cls.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1", max_retries=0, timeout=12.0)
@@ -128,8 +128,12 @@ class Settings:
     @classmethod
     def get_fallback_models(cls) -> list[str]:
         """Returns priority order of operational models with dynamic quota failover."""
-        candidates = []
         local_model = cls.get_local_ollama_model()
+        client = cls.get_llm_client()
+        if client and hasattr(client, "base_url") and "localhost:11434" in str(client.base_url):
+            return [local_model] if local_model else []
+
+        candidates = []
         if local_model:
             candidates.append(local_model)
         candidates.extend([cls.META_MODEL_ORCHESTRATOR, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"])
@@ -147,7 +151,8 @@ class Settings:
         messages: list[dict[str, Any]],
         temperature: float = 0.7,
         max_tokens: int = 3000,
-        response_format: dict[str, str] | None = None
+        response_format: dict[str, str] | None = None,
+        timeout: float = 2.5
     ) -> Any:
         """
         Executes chat completion with automatic quota/429 fallback across available models.
@@ -165,7 +170,8 @@ class Settings:
                     "model": model,
                     "messages": messages,
                     "temperature": temperature,
-                    "max_tokens": actual_tokens
+                    "max_tokens": actual_tokens,
+                    "timeout": timeout
                 }
                 if response_format:
                     kwargs["response_format"] = response_format
@@ -189,11 +195,9 @@ class Settings:
                     cls._auth_failed = True
                     return None
 
-                if any(x in err_str for x in ["429", "rate_limit", "quota", "tokens per day", "decommissioned", "does not exist", "404", "not_found", "model_not_found"]):
+                if any(x in err_str for x in ["429", "rate_limit", "quota", "tokens per day", "decommissioned", "does not exist", "404", "not_found", "model_not_found", "timeout", "timed out", "readtimeout"]):
                     continue
-                raise e
-        if last_err:
-            raise last_err
+                return None
         return None
 
 # Singleton instance

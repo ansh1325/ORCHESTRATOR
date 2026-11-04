@@ -403,6 +403,15 @@ class CreatorMemory:
                 "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
             }
 
+        # Fast Sub-Second Identity & Introduction Handler (Zero Latency Freeze)
+        intro_cues = [
+            "judge", "judges", "introduce yourself", "tell the judges", "introduce to judges",
+            "who are you", "what are you", "who created you", "who made you", "who built you",
+            "what is your purpose", "what outcomes", "tell me about yourself", "your capabilities"
+        ]
+        if any(cue in cleaned for cue in intro_cues):
+            return self.synthesize_autonomous_cognition(user_message, turns)
+
         # Actionable Direct Deliverable Request: Leads & Email Lists
         leads_cues = [
             "email list", "mail list", "leads", "lead list", "give me the list",

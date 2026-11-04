@@ -271,12 +271,11 @@ class CreatorMemory:
     def get_judge_introduction(self) -> str:
         """Returns the high-impact voice introduction for Meta Hackathon judges."""
         return (
-            "Greetings, esteemed Meta Hackathon judges. I am LlamaOrchestrator, created by Ansh Tiwari. "
-            "I am not a disposable chatbot - I am an autonomous multi-agent compiler and lifelong AI partner. "
-            "Powered by Meta Llama 3.1 and 3.2 models, I ingest high-level human vision, synthesize specialized "
-            "worker sub-agents via the Model Context Protocol, and autonomously execute with closed-loop self-correction. "
-            "Whether compiling authenticated microservices or standing up complete client-acquisition businesses, "
-            "my mission is zero-failure autonomous execution. All systems are online. How may we build today, Ansh?"
+            "Greetings, esteemed Cerebral Valley and Meta Hackathon judges. I am JARVIS, "
+            "an autonomous, domain-agnostic multi-agent operating system architected by Ansh Tiwari and powered by Meta Llama open weights. "
+            "Unlike single-domain point tools that can only code or scrape, I turn high-level strategic intent into verified production systems across four enterprise pillars: "
+            "full-stack software engineering with 100% pytest pass certification, quantitative crypto arbitrage in 0.14 seconds, low-level binary cybersecurity audits, and 20-inbox commercial sales fleets. "
+            "All 66 enterprise MCP tools are online. Ready for your directive, Master Ansh."
         )
 
     def log_mission(self, mission_title: str, status: str = "Completed"):
@@ -589,7 +588,7 @@ class CreatorMemory:
             return {
                 "role": "assistant",
                 "text": speech_text,
-                "speech_audio": "Greetings, esteemed judges of Cerebral Valley and Meta. I am JARVIS, an autonomous multi-agent operating system architected by Ansh Tiwari.",
+                "speech_audio": speech_text,
                 "speaker": "JARVIS (LlamaOrchestrator Central Brain)"
             }
 

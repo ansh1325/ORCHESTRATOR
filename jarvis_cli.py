@@ -121,15 +121,15 @@ class JarvisCLI:
         if self._sapi_speaker:
             try:
                 # SAPI Flags: SVSFlagsAsync = 1 (plays in background C++ audio thread)
-                self._sapi_speaker.Speak(clean[:400], 1)
+                self._sapi_speaker.Speak(clean[:2000], 1)
                 if wait:
-                    self._sapi_speaker.WaitUntilDone(12000)
+                    self._sapi_speaker.WaitUntilDone(30000)
                 return
             except Exception:
                 pass
 
         try:
-            escaped = clean[:250].replace("'", "''")
+            escaped = clean[:2000].replace("'", "''")
             ps_cmd = (
                 f"Add-Type -AssemblyName System.Speech; "
                 f"$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
@@ -275,7 +275,7 @@ class JarvisCLI:
             print(f"\n{C.GREEN}{C.BOLD}JARVIS:{C.RESET} {text}\n")
             audio_text = resp.get("speech_audio") or text
             if audio_text:
-                self.speak(audio_text[:200])
+                self.speak(audio_text)
         except Exception as e:
             print(f"{C.RED}[Error] Central Brain communication error: {e}{C.RESET}")
 

@@ -176,6 +176,28 @@
   <!-- ============================================================ -->
   <div class="flex-1 flex flex-col h-full overflow-hidden relative">
 
+    <!-- FALLBACK FRONTEND NOTICE BANNER (Node.js Alternative Guide) -->
+    <div id="fallbackNoticeBanner" class="bg-gradient-to-r from-amber-950/70 via-neutral-900 to-gemini-card border-b border-amber-500/40 px-4 py-2.5 shrink-0 flex items-center justify-between text-xs z-30 shadow-md">
+      <div class="flex items-center gap-2.5 overflow-hidden">
+        <div class="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400"></i>
+        </div>
+        <div class="truncate text-gemini-text">
+          <span class="font-bold text-amber-300">Standalone Fallback Control Center</span>
+          <span class="text-gemini-subtle ml-1.5 hidden md:inline">— Displaying zero-install lightweight frontend (served directly via FastAPI because Node.js / Next.js is not active). For the full React 18 production suite:</span>
+          <code class="ml-1.5 px-2 py-0.5 rounded bg-black/60 border border-amber-500/30 font-mono text-[11px] text-amber-200">npm run dev --prefix frontend</code>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0 ml-3">
+        <button type="button" onclick="navigator.clipboard.writeText('npm run dev --prefix frontend'); const b=this; b.innerText='✓ Copied'; setTimeout(function(){ b.innerText='Copy Command'; }, 2000)" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-[11px] text-amber-200 font-semibold transition cursor-pointer flex items-center gap-1">
+          Copy Command
+        </button>
+        <button type="button" onclick="document.getElementById('fallbackNoticeBanner').style.display='none'" class="p-1 rounded-md text-amber-400/70 hover:text-amber-200 hover:bg-white/5 transition cursor-pointer" title="Dismiss banner">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
     <!-- TOP MINIMAL NAVIGATION BAR -->
     <header class="h-14 border-b border-gemini-border/50 px-4 flex items-center justify-between shrink-0 bg-gemini-bg/95 backdrop-blur z-20">
       <div class="flex items-center gap-3">

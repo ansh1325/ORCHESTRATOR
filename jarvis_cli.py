@@ -121,15 +121,15 @@ class JarvisCLI:
         if self._sapi_speaker:
             try:
                 # SAPI Flags: SVSFlagsAsync = 1 (plays in background C++ audio thread)
-                self._sapi_speaker.Speak(clean[:2000], 1)
+                self._sapi_speaker.Speak(clean, 1)
                 if wait:
-                    self._sapi_speaker.WaitUntilDone(30000)
+                    self._sapi_speaker.WaitUntilDone(60000)
                 return
             except Exception:
                 pass
 
         try:
-            escaped = clean[:2000].replace("'", "''")
+            escaped = clean[:4000].replace("'", "''")
             ps_cmd = (
                 f"Add-Type -AssemblyName System.Speech; "
                 f"$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "

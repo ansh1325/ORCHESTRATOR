@@ -6,10 +6,7 @@
 [![Meta Global AI Developer Hackathon 2026](https://img.shields.io/badge/Meta%20Hackathon-2026%20Official%20Championship%20Submission-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 [![Test Suite Status](https://img.shields.io/badge/Tests-150%2F150%20Passed%20(100%25%20Green)-brightgreen.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 [![MCP Production Tools](https://img.shields.io/badge/MCP%20Tools-66%20Registered-purple.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Groq LPU Inference](https://img.shields.io/badge/Inference-Groq%20Meta%20Llama%203.3%2070B%20%7C%20Llama%203.1%208B-orange.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Zero API Keys Required For Judges](https://img.shields.io/badge/Judge%20Evaluation-Zero%20Paid%20API%20Keys%20Required-success.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 [![Dual Frontend Architecture](https://img.shields.io/badge/Frontend-Next.js%2014%20%2B%20FastAPI%20Fallback-cyan.svg)](https://github.com/ansh1325/ORCHESTRATOR)
-[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 
 ---
 

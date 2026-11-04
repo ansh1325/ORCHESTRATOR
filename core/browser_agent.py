@@ -353,6 +353,44 @@ class BrowserAgent:
                 })
         return tabs
 
+    def get_accessible_elements(
+        self,
+        page,
+        roles: tuple[str, ...] = ("button", "textbox", "link", "combobox", "checkbox", "tab", "menuitem")
+    ) -> list[dict[str, Any]]:
+        """
+        Visual GUI Grounding Track 1: Chrome Accessibility Tree (AXTree).
+        Extracts clean semantic nodes directly from Chrome's accessibility engine,
+        completely bypassing 50,000 lines of minified React <div> soup and obfuscated CSS.
+        """
+        try:
+            snapshot = page.accessibility.snapshot()
+            if not snapshot:
+                return []
+            elements: list[dict[str, Any]] = []
+
+            def walk(node: dict[str, Any]):
+                if not node:
+                    return
+                r = node.get("role", "")
+                name = (node.get("name") or "").strip()
+                if r in roles and name:
+                    elements.append({
+                        "role": r,
+                        "name": name,
+                        "value": node.get("value"),
+                        "disabled": node.get("disabled", False),
+                        "focused": node.get("focused", False)
+                    })
+                for child in node.get("children", []):
+                    walk(child)
+
+            walk(snapshot)
+            return elements
+        except Exception as e:
+            logger.warning(f"AXTree perception notice: {e}")
+            return []
+
     def switch_tab(self, index: int) -> dict[str, Any]:
         """Switches focus to the tab specified by index."""
         if not self._active_context or not self._active_context.pages:

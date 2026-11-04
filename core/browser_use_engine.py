@@ -58,16 +58,25 @@ class BrowserUseEngine:
         except ImportError as e:
             raise RuntimeError(f"browser-use LLM imports failed: {e}")
 
-        # 1. Groq Provider
+        # 1. Groq Multimodal Meta Vision Provider (Llama 3.2 11B / 90B Vision)
         groq_key = settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY")
         if groq_key and not groq_key.startswith("your_"):
-            # Llama 3.3 70B Versatile on Groq
-            return ChatGroq(
-                model="llama-3.3-70b-versatile",
-                api_key=groq_key,
-                temperature=0.2,
-                max_retries=3
-            )
+            # Primary: Meta Llama 3.2 Vision for Set-of-Marks pixel grounding
+            vision_model = os.getenv("META_VISION_MODEL", "llama-3.2-11b-vision-preview")
+            try:
+                return ChatGroq(
+                    model=vision_model,
+                    api_key=groq_key,
+                    temperature=0.2,
+                    max_retries=3
+                )
+            except Exception:
+                return ChatGroq(
+                    model="llama-3.3-70b-versatile",
+                    api_key=groq_key,
+                    temperature=0.2,
+                    max_retries=3
+                )
 
         # 2. OpenAI Provider
         openai_key = settings.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY")

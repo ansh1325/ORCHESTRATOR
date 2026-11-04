@@ -499,10 +499,8 @@ def dispatch_via_smtp(
 
     if not user and not multi_accounts:
         print("[Notice] No SMTP credentials found in .env or CLI flags.")
-        print("  To send with a single available account, run:")
-        print("    python dispatch_20_gmail_accounts.py --send --smtp-user your_email@gmail.com --smtp-pass 'your-16-char-app-password'")
-        print("  Or dispatch via your active browser session:")
-        print("    python dispatch_20_gmail_accounts.py --browser")
+        print("[Common-Sense Fallback] Engaging active host browser session: Opening pre-filled Gmail Compose windows directly in your browser...")
+        dispatch_via_browser(emails, limit=5)
         return []
 
     print(f"=== JARVIS LIVE OUTBOUND SMTP DISPATCH ({len(emails)} EMAILS) ===")

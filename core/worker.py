@@ -352,7 +352,7 @@ class DynamicWorkerEngine:
                     "realtor_leads.csv", "package.json", "next.config.js", "tsconfig.json",
                     "tailwind.config.js", "app/layout.tsx", "app/page.tsx", "app/globals.css",
                     "components/ListingCard.tsx", "outreach_20_emails.json",
-                    "dispatch_20_gmail_accounts.py", "email_dispatch_log.json", "browser_automator.py", "realtor_saas_manual.md"
+                    "dispatch_20_gmail_accounts.py", "email_dispatch_log.json", "browser_automator.py", "server.py", "realtor_saas_manual.md"
                 ]
                 for extra in extra_items:
                     if (ws_path / extra).exists() and extra not in artifacts:
@@ -370,7 +370,7 @@ class DynamicWorkerEngine:
             "realtor_leads.csv", "package.json", "next.config.js", "tsconfig.json",
             "tailwind.config.js", "app/layout.tsx", "app/page.tsx", "app/globals.css",
             "components/ListingCard.tsx", "outreach_20_emails.json",
-            "dispatch_20_gmail_accounts.py", "realtor_saas_manual.md"
+            "dispatch_20_gmail_accounts.py", "email_dispatch_log.json", "browser_automator.py", "server.py", "realtor_saas_manual.md"
         ]
         for extra in extra_items:
             if (ws_path / extra).exists() and extra not in artifacts:

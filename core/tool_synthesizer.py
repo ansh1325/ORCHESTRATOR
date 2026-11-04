@@ -41,34 +41,32 @@ class ToolSynthesizer:
 
     @staticmethod
     def sanitize_python_code(code: str) -> str:
-        """Normalize unicode hyphens, dashes, and smart quotes that cause Python SyntaxError."""
+        """Normalize unicode hyphens, dashes, smart quotes, and markdown fences that cause Python SyntaxError."""
         import unicodedata
+        import re
         if not code:
             return ""
-        replacements = {
-            '\u2010': '-',  # hyphen
-            '\u2011': '-',  # non-breaking hyphen (the exact bug!)
-            '\u2012': '-',  # figure dash
-            '\u2013': '-',  # en dash
-            '\u2014': '-',  # em dash
-            '\u2015': '-',  # horizontal bar
-            '\u2212': '-',  # minus sign
-            '\u2018': "'",  # left single quote
-            '\u2019': "'",  # right single quote
-            '\u201a': "'",  # single low-9 quote
-            '\u201b': "'",  # single high-reversed-9 quote
-            '\u201c': '"',  # left double quote
-            '\u201d': '"',  # right double quote
-            '\u201e': '"',  # double low-9 quote
-            '\u201f': '"',  # double high-reversed-9 quote
-            '\u00a0': ' ',  # non-breaking space
-            '\u202f': ' ',  # narrow no-break space
-            '\u200b': '',   # zero-width space
-            '\ufeff': '',   # BOM
-        }
-        for orig, rep in replacements.items():
-            code = code.replace(orig, rep)
-        return unicodedata.normalize('NFKD', code)
+        clean = code.strip()
+        if clean.startswith("```"):
+            clean = re.sub(r"^```[a-zA-Z0-9_-]*\n?", "", clean)
+            clean = re.sub(r"\n?```$", "", clean)
+
+        buf = []
+        for ch in clean:
+            cat = unicodedata.category(ch)
+            if cat == 'Pd' or ch in ('\u2212', '\u2011', '\ufe58', '\ufe63', '\uff0d'):
+                buf.append('-')
+            elif ch in ('\u2018', '\u2019', '\u201a', '\u201b', '\u2032'):
+                buf.append("'")
+            elif ch in ('\u201c', '\u201d', '\u201e', '\u201f', '\u2033'):
+                buf.append('"')
+            elif ch in ('\u00a0', '\u202f', '\u2007', '\u2002', '\u2003', '\u2004', '\u2005', '\u2006'):
+                buf.append(' ')
+            elif ch in ('\u200b', '\u200c', '\u200d', '\ufeff'):
+                continue
+            else:
+                buf.append(ch)
+        return "".join(buf)
 
     def synthesize_tool(
         self,
@@ -85,7 +83,8 @@ class ToolSynthesizer:
         clean_name = tool_name.strip().lower().replace(" ", "_")
         tool_file = self.TOOLS_DIR / f"{clean_name}.py"
 
-        # Sanitize code against unicode punctuation syntax errors
+        # Sanitize code and description against unicode punctuation syntax errors
+        description = self.sanitize_python_code(description)
         python_code = self.sanitize_python_code(python_code)
         if test_code:
             test_code = self.sanitize_python_code(test_code)
@@ -258,7 +257,7 @@ class ToolSynthesizer:
                 data = json.loads(resp.choices[0].message.content or "{}")
                 code = self.sanitize_python_code(data.get("python_code") or "")
                 test_code = self.sanitize_python_code(data.get("test_code") or "")
-                desc = data.get("description") or desc
+                desc = self.sanitize_python_code(data.get("description") or desc)
             except Exception as e:
                 logger.debug(f"LLM tool synthesis fallback: {e}")
 

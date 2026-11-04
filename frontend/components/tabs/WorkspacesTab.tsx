@@ -211,37 +211,40 @@ export function WorkspacesTab({ onNotify }: WorkspacesTabProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-obsidian-border/40 text-gray-300">
-                {builds.map((b, idx) => (
-                  <tr key={idx} className="hover:bg-white/5 transition">
-                    <td className="p-3 font-mono font-medium text-cyber-cyan">{b.id}</td>
-                    <td className="p-3 font-medium text-white">{b.title || b.id}</td>
-                    <td className="p-3 text-gray-400">{b.track || "Autonomous Software"}</td>
-                    <td className="p-3 text-center font-mono">{b.files || b.file_count || 1}</td>
-                    <td className="p-3">
-                      <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                        <CheckCircle className="w-2.5 h-2.5" />
-                        <span>{b.status || "READY"}</span>
-                      </span>
-                    </td>
-                    <td className="p-3 text-right space-x-2">
-                      <button
-                        onClick={() => handleRunBuild(b.id)}
-                        disabled={activeActionId === b.id}
-                        className="text-xs bg-cyber-cyan/10 hover:bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan px-2.5 py-1 rounded transition inline-flex items-center space-x-1 disabled:opacity-50"
-                      >
-                        <Play className="w-3 h-3 fill-current" />
-                        <span>Run</span>
-                      </button>
-                      <button
-                        onClick={() => handleTestBuild(b.id)}
-                        disabled={activeActionId === b.id}
-                        className="text-xs bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 px-2.5 py-1 rounded transition inline-flex items-center space-x-1 disabled:opacity-50"
-                      >
-                        <span>Test</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {builds.map((b, idx) => {
+                  const wsId = b.id || b.workspace_id || `build_${idx}`;
+                  return (
+                    <tr key={idx} className="hover:bg-white/5 transition">
+                      <td className="p-3 font-mono font-medium text-cyber-cyan">{wsId}</td>
+                      <td className="p-3 font-medium text-white">{b.title || wsId}</td>
+                      <td className="p-3 text-gray-400">{b.track || "Autonomous Software"}</td>
+                      <td className="p-3 text-center font-mono">{b.files || b.file_count || 1}</td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                          <CheckCircle className="w-2.5 h-2.5" />
+                          <span>{b.status || "READY"}</span>
+                        </span>
+                      </td>
+                      <td className="p-3 text-right space-x-2">
+                        <button
+                          onClick={() => handleRunBuild(wsId)}
+                          disabled={activeActionId === wsId}
+                          className="text-xs bg-cyber-cyan/10 hover:bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan px-2.5 py-1 rounded transition inline-flex items-center space-x-1 disabled:opacity-50"
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Run</span>
+                        </button>
+                        <button
+                          onClick={() => handleTestBuild(wsId)}
+                          disabled={activeActionId === wsId}
+                          className="text-xs bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 px-2.5 py-1 rounded transition inline-flex items-center space-x-1 disabled:opacity-50"
+                        >
+                          <span>Test</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -85,7 +85,10 @@ class BuildWorkspace:
     artifacts: list[BuildArtifact] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        d["id"] = self.workspace_id
+        d["files"] = self.file_count
+        return d
 
 
 class BuildManager:

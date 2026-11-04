@@ -105,8 +105,10 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     role: str = "assistant"
     text: str
-    speech_audio: str
-    speaker: str = "LlamaOrchestrator (Central Brain)"
+    speech_audio: Optional[str] = ""
+    speaker: str = "JARVIS (Central Brain)"
+    thought: Optional[str] = None
+    strategy: Optional[str] = None
 
 class HistoryItem(BaseModel):
     session_id: str
@@ -154,6 +156,7 @@ class AnalyzeRequest(BaseModel):
 
 class LaunchRequest(BaseModel):
     session_id: str
+    vision: str | None = None
     auto_approve: bool = True
     answers: dict[str, str] | None = None
 

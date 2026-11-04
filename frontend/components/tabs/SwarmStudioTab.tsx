@@ -57,8 +57,10 @@ export function SwarmStudioTab({ onNotify, onRefreshTelemetry }: SwarmStudioTabP
     if (!vision.trim()) return;
     setIsAnalyzing(true);
     setAnalysis(null);
+    const sid = activeSessionId || `mission_${Date.now()}`;
+    setActiveSessionId(sid);
     try {
-      const res = await analyzeMission(vision);
+      const res = await analyzeMission(vision, sid);
       setAnalysis(res);
       onNotify("info", `Mission analyzed. Track: ${res.track_type.toUpperCase()}`);
     } catch (e: any) {
@@ -72,16 +74,11 @@ export function SwarmStudioTab({ onNotify, onRefreshTelemetry }: SwarmStudioTabP
     if (!vision.trim()) return;
     setIsRunning(true);
     setEvents([]);
-    const slug = vision
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 32) || `mission_${Date.now()}`;
-    const sid = `${slug}_${Math.floor(Math.random() * 9000 + 1000)}`;
+    const sid = activeSessionId || `mission_${Date.now()}`;
     setActiveSessionId(sid);
 
     try {
-      await launchMission(sid, answers);
+      await launchMission(sid, answers, vision);
       onNotify("success", `Multi-agent swarm launched for session: ${sid}`);
 
       // Connect SSE

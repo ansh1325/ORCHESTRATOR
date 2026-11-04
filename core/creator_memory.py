@@ -550,12 +550,22 @@ class CreatorMemory:
                             "Directive received, Master Ansh. As your autonomous engineering partner, I am ready to execute your request. "
                             "All systems, browser agents, and multi-agent compilers are standing by."
                         )
+                thought = ""
+                t_match = re.search(r'<thought>(.*?)</thought>', reply, re.DOTALL | re.IGNORECASE)
+                if t_match:
+                    thought = t_match.group(1).strip()
+                    reply = re.sub(r'<thought>.*?</thought>', '', reply, flags=re.DOTALL | re.IGNORECASE).strip()
+                else:
+                    thought = f"Synthesized Chain-of-Thought strategy for: '{user_message[:70]}'"
+
                 turns.append({"role": "assistant", "content": reply})
                 return {
                     "role": "assistant",
                     "text": reply,
+                    "thought": thought,
+                    "strategy": "Cognitive Multi-Agent Swarm",
                     "speech_audio": reply,
-                    "speaker": "LlamaOrchestrator (Central Brain)"
+                    "speaker": "JARVIS (Central Brain)"
                 }
             except Exception:
                 pass

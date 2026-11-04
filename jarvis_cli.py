@@ -23,6 +23,16 @@ import sys
 import threading
 import time
 import urllib.parse
+import io
+
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 from pathlib import Path
 from typing import Any, Optional
 
@@ -113,7 +123,7 @@ class JarvisCLI:
                 # SAPI Flags: SVSFlagsAsync = 1 (plays in background C++ audio thread)
                 self._sapi_speaker.Speak(clean[:400], 1)
                 if wait:
-                    self._sapi_speaker.WaitUntilDone(3500)
+                    self._sapi_speaker.WaitUntilDone(12000)
                 return
             except Exception:
                 pass
@@ -126,19 +136,28 @@ class JarvisCLI:
                 f"$s.Speak('{escaped}')"
             )
             if wait:
-                subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=10)
+                subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=12)
             else:
-                subprocess.Popen(["powershell", "-NoProfile", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                proc = subprocess.Popen(["powershell", "-NoProfile", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if not hasattr(self, "_pending_speech_procs"):
+                    self._pending_speech_procs = []
+                self._pending_speech_procs.append(proc)
         except Exception:
             pass
 
-    def wait_for_speech(self, timeout_sec: float = 6.0):
+    def wait_for_speech(self, timeout_sec: float = 8.0):
         """Ensures pending speech finishes before process exit."""
         if self._sapi_speaker:
             try:
                 self._sapi_speaker.WaitUntilDone(int(timeout_sec * 1000))
             except Exception:
                 pass
+        if hasattr(self, "_pending_speech_procs"):
+            for p in getattr(self, "_pending_speech_procs", []):
+                try:
+                    p.wait(timeout=timeout_sec)
+                except Exception:
+                    pass
 
     def listen_for_voice(self, timeout_sec: int = 5) -> Optional[str]:
         """
@@ -2485,7 +2504,7 @@ class JarvisCLI:
                         self.speak(f"{speaker_label}: {clean_text}", wait=False)
 
             print(f"\n{C.GREEN}✓ Outcome: Booked Discovery Call for {res.get('booking_slot')}{C.RESET}\n", flush=True)
-            self.speak(f"Discovery call confirmed for {res.get('booking_slot')}.")
+            self.speak(f"Discovery call successfully confirmed for {res.get('booking_slot')}.", wait=True)
 
         elif sub in ["interactive", "roleplay", "live", "test"]:
             niche = " ".join(parts[2:]) if len(parts) > 2 else "Autonomous Drone Delivery"

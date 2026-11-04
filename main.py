@@ -136,9 +136,11 @@ async def analyze_intent(req: AnalyzeRequest):
 @app.post("/api/launch")
 async def launch_lifecycle(req: LaunchRequest, background_tasks: BackgroundTasks):
     """Launches Stages 2 through 5 in the background, streaming progress via SSE."""
-    session = orchestrator.get_or_create_session(req.session_id)
+    session = orchestrator.get_or_create_session(req.session_id, vision=req.vision or "")
     if not session.intent_analysis:
-        raise HTTPException(status_code=400, detail="Must execute /api/analyze prior to launch.")
+        # Autonomous fallback: execute intent analysis on-the-fly so 1-click launch succeeds flawlessly
+        vision_text = req.vision or getattr(session, "vision", "") or req.session_id.replace("_", " ")
+        session.intent_analysis = orchestrator.analyze_intent(vision=vision_text, session_id=req.session_id)
     
     # Determine clarification answers
     if req.auto_approve or not req.answers:
@@ -493,7 +495,7 @@ async def get_jarvis_build_info(workspace_id: str):
 @app.post("/api/builds/{workspace_id:path}/run")
 async def run_jarvis_build(workspace_id: str, req: dict = Body(default_factory=dict)):
     """Executes a build in its sandboxed directory."""
-    entrypoint = req.get("entrypoint")
+    entrypoint = req.get("entrypoint") or req.get("entry_file")
     args = req.get("args")
     timeout = int(req.get("timeout_sec", 60))
     res = await asyncio.to_thread(build_manager.run_build, workspace_id, entrypoint, args, timeout)

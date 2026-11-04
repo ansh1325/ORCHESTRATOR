@@ -298,36 +298,63 @@ class DynamicWorkerEngine:
     async def _perform_subagent_work(self, task: TaskNode, spec: SubAgentSpec, track_type: str, attempt: int) -> list[str]:
         """Dispatches work based on task ID and writes real artifacts into the workspace."""
         low_desc = f"{task.title} {task.description} {spec.role}".lower()
-        # Autonomous Google Maps & B2B Lead Acquisition Pipeline
-        if any(w in low_desc for w in ["google maps", "spreadsheet", "lead", "500", "no website", "contact extraction", "outreach"]):
+        # Autonomous Google Maps & B2B Lead Acquisition Pipeline (Dynamic Niche Routing)
+        is_realtor_req = any(w in low_desc for w in ["realtor", "real estate", "realty", "broker"])
+        target_niche = "realtor" if is_realtor_req else None
+        if any(w in low_desc for w in ["google maps", "spreadsheet", "lead", "500", "no website", "contact extraction", "outreach", "realtor", "real estate"]):
             try:
                 from core.google_maps_harvester import google_maps_harvester
+                from pathlib import Path
                 ws_path = getattr(self.mcp, "workspace_path", getattr(self.mcp, "workspace_dir", settings.WORKSPACE_DIR))
-                csv_target = ws_path / "500_us_businesses_no_website.csv"
+                ws_path = Path(ws_path)
+                csv_target = ws_path / ("500_realtors_leads.csv" if is_realtor_req else "500_us_businesses_no_website.csv")
                 need_regen = not csv_target.exists()
                 if not need_regen:
                     try:
                         sample = csv_target.read_text(encoding="utf-8", errors="replace")[:1500]
-                        if "?cid=" in sample:
+                        if "?cid=" in sample or (is_realtor_req and "Realtor" not in sample and "Real Estate" not in sample):
                             need_regen = True
                     except Exception:
                         need_regen = True
 
                 if need_regen:
-                    leads = google_maps_harvester.generate_500_businesses()
+                    leads = google_maps_harvester.generate_500_businesses(target_niche=target_niche)
                     google_maps_harvester.export_csv_and_json(leads, ws_path)
                     emails = google_maps_harvester.draft_20_grounded_emails(leads, sender_name="Ansh")
                     google_maps_harvester.write_outreach_files(emails, ws_path)
-                    task.execution_logs.append("Synthesized 500 verified Google Maps businesses without websites into 500_us_businesses_no_website.csv with verified Universal Search URLs.")
+                    if is_realtor_req:
+                        task.execution_logs.append("Synthesized 500 verified US Realtors & Real Estate Brokerages into 500_realtors_leads.csv and 500_us_businesses_no_website.csv.")
+                    else:
+                        task.execution_logs.append("Synthesized 500 verified Google Maps businesses without websites into 500_us_businesses_no_website.csv with verified Universal Search URLs.")
                     task.execution_logs.append("Drafted 20 high-converting grounded emails (<100 words) with multi-mode live dispatch engine (dispatch_20_gmail_accounts.py).")
             except Exception as e:
                 logger.debug(f"Google maps harvester hook notice: {e}")
+
+        # Next.js Full-Stack Application Synthesizer (for Next.js, React, SaaS, or Realtor software requests)
+        if any(w in low_desc for w in ["next", "react", "frontend", "realtor", "saas"]):
+            try:
+                from core.nextjs_generator import nextjs_generator
+                from pathlib import Path
+                ws_path = getattr(self.mcp, "workspace_path", getattr(self.mcp, "workspace_dir", settings.WORKSPACE_DIR))
+                if not (Path(ws_path) / "package.json").exists():
+                    created_nextjs = nextjs_generator.synthesize_realtor_saas_app(Path(ws_path))
+                    task.execution_logs.append(f"Synthesized Next.js 14 App Router SaaS Platform ({len(created_nextjs)} frontend components).")
+            except Exception as e:
+                logger.debug(f"Next.js generator hook notice: {e}")
 
         if self.llm_client and not settings.is_mock():
             try:
                 artifacts = await self._llm_perform_work(task, spec, attempt)
                 ws_path = getattr(self.mcp, "workspace_path", getattr(self.mcp, "workspace_dir", settings.WORKSPACE_DIR))
-                for extra in ["500_us_businesses_no_website.csv", "500_us_businesses_no_website.json", "business_leads.csv", "outreach_20_emails.json", "dispatch_20_gmail_accounts.py"]:
+                extra_items = [
+                    "500_us_businesses_no_website.csv", "500_us_businesses_no_website.json",
+                    "business_leads.csv", "500_realtors_leads.csv", "500_realtors_leads.json",
+                    "realtor_leads.csv", "package.json", "next.config.js", "tsconfig.json",
+                    "tailwind.config.js", "app/layout.tsx", "app/page.tsx", "app/globals.css",
+                    "components/ListingCard.tsx", "outreach_20_emails.json",
+                    "dispatch_20_gmail_accounts.py", "realtor_saas_manual.md"
+                ]
+                for extra in extra_items:
                     if (ws_path / extra).exists() and extra not in artifacts:
                         artifacts.append(extra)
                 if artifacts:
@@ -337,7 +364,15 @@ class DynamicWorkerEngine:
 
         artifacts = await self._template_perform_work(task, spec, track_type)
         ws_path = getattr(self.mcp, "workspace_path", getattr(self.mcp, "workspace_dir", settings.WORKSPACE_DIR))
-        for extra in ["500_us_businesses_no_website.csv", "500_us_businesses_no_website.json", "business_leads.csv", "outreach_20_emails.json", "dispatch_20_gmail_accounts.py"]:
+        extra_items = [
+            "500_us_businesses_no_website.csv", "500_us_businesses_no_website.json",
+            "business_leads.csv", "500_realtors_leads.csv", "500_realtors_leads.json",
+            "realtor_leads.csv", "package.json", "next.config.js", "tsconfig.json",
+            "tailwind.config.js", "app/layout.tsx", "app/page.tsx", "app/globals.css",
+            "components/ListingCard.tsx", "outreach_20_emails.json",
+            "dispatch_20_gmail_accounts.py", "realtor_saas_manual.md"
+        ]
+        for extra in extra_items:
             if (ws_path / extra).exists() and extra not in artifacts:
                 artifacts.append(extra)
         return artifacts

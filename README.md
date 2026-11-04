@@ -311,43 +311,52 @@ Or execute a single directive directly from your shell:
 python jarvis_cli.py "find 500 businesses on google maps from usa with good reviews and no website"
 ```
 
-### Complete CLI Command Reference
+### Complete CLI Command Reference (Exhaustive)
 
 #### A. Central Cognitive Brain & Multi-Agent Swarm
 * `<any natural English directive>`: Directly deploy the autonomous multi-agent swarm. JARVIS automatically decomposes the goal, compiles a topological DAG, executes workers, and delivers certified deliverables.
 * `chat <message>`: Multi-turn conversational dialogue with Chain-of-Thought (CoT) reasoning and voice output.
 * `agents`: Displays telemetry on currently synthesized autonomous sub-agents and active swarm roster.
+* `briefing`: Delivers a comprehensive 5-feed executive status debrief across hardware, leads, schedules, builds, and memory.
 
 #### B. Voice & Spoken Synthesis
 * `voice on` / `voice off`: Toggle Windows SAPI native spoken voice output.
 * `mic` / `listen`: Activate microphone and speak your directive directly using speech recognition.
 * `duplex [start|stop|status]`: Ambient streaming voice duplex session with acoustic barge-in.
 
-#### C. Google Maps Harvester & 20-Inbox Outreach Fleet
+#### C. Autonomous Lead Hunting & Outreach Fleet
+* `hunt <directive>`: Autonomous Lead Hunter that deduces optimal acquisition channels (forums, directories, social, job boards) and verifies DNS/MX records.
+* `reach <platform> <query>`: Agent-Reach multi-platform intelligence across LinkedIn, Reddit, Twitter/X, YouTube, and GitHub.
+* `reach leads <niche> [location]`: Harvest verified social leads bypassing login walls.
 * `fleet status`: Inspect all 20 coordinated sender inboxes, daily quota utilization, and remaining capacity.
 * `fleet dispatch <recipient> [subject] [body]`: Route an email through the optimal rotating inbox node.
 * `fleet replies`: Scan inbound responses and auto-classify lead intent (Booking, Pricing, Objection, Unsubscribe).
-* `outreach <niche> [hook]`: Compile a high-efficiency 4-stage cold outreach system.
+* `outreach <niche> [hook]`: Compile a high-efficiency 4-stage cold outreach system (<30c subject, <100w body).
 
-#### D. Reverse Engineering Assistant (REA)
-* `rea audit <binary_or_file_path>`: Perform comprehensive security hardening audit (ASLR, DEP, SafeSEH, Canaries).
+#### D. Crawl4AI Stealth Scraping & Media Extraction
+* `crawl <url>`: Crawl4AI stealth engine that defeats anti-bot/Cloudflare shields and extracts fit-markdown.
+* `crawl auth <url>`: Scrape authentication-walled platforms using active persistent session.
+* `transcript <media_url>`: Extract full transcripts from video/IG reels via progressive fallback without paid API keys.
+
+#### E. Reverse Engineering Assistant (REA)
+* `rea audit <binary_or_file_path>`: Comprehensive machine-code security audit (ASLR, DEP/NX, SafeSEH, Stack Canaries).
 * `rea inspect <binary_path>`: Disassemble binary headers and inspect symbol tables.
-* `rea scan <path>`: Deep scan directory or binary for leaked credentials, JWTs, and API tokens.
-* `rea unpack <asar_path>`: Extract Electron ASAR archive for code inspection.
+* `rea scan <path>`: Deep scan directory or binary for high-entropy leaked credentials, JWTs, and API tokens.
+* `rea unpack <asar_path>`: Extract Electron ASAR archives for code inspection.
 
-#### E. Hermes Cognitive Skills & Memory
+#### F. Hermes Cognitive Skills & Memory
 * `hermes skills [filter]`: Browse catalog of 44+ cognitive skills with optional search filter.
 * `hermes memory`: Inspect Master Ansh's tiered memory profile, active goals, and past missions.
 * `hermes learn <skill_name>`: Autonomously synthesize a new reusable skill with `SKILL.md` packaging.
 
-#### F. Autonomous Voice Telephony Calling
-* `call doctor`: Check voice telephony connectivity, configured providers, and booked meetings.
+#### G. Autonomous Voice Telephony Calling
+* `call doctor / calls`: Check voice telephony connectivity, configured providers, and booked meetings.
 * `call campaign <niche> [count]`: Launch simulated or live outbound calling campaign.
-* `call dispatch <phone> <name> [company]`: Dispatch an individual voice call to a decision maker.
+* `call dispatch <phone> <name> [company]`: Dispatch an individual voice call to an enterprise decision maker.
 * `call simulate <niche>`: Run a live conversational simulation with dynamic objection handling.
-* `call interactive [niche]`: Engage in an interactive roleplay call to test JARVIS with custom objections.
+* `call interactive [niche]`: Engage in an interactive roleplay call testing JARVIS with custom objections.
 
-#### G. Universal Terminal & Native Git Engine
+#### H. Universal Terminal & Native Git Engine
 * `terminal <command>`: Execute any shell command with real-time streaming output and timeout safety controls.
 * `terminal open [command]`: Open an interactive visible desktop terminal window (PowerShell / Windows Terminal).
 * `git status`: Check active repository status and modified files.
@@ -355,31 +364,38 @@ python jarvis_cli.py "find 500 businesses on google maps from usa with good revi
 * `git commit [message]`: Autonomously stage changes, generate semantic commit message, and commit.
 * `git push [branch]`: Push commits to remote GitHub repository.
 
-#### H. Ambient Vision & Browser Operator
+#### I. Ambient Vision & Browser Operator
 * `browse <goal or query>`: Autonomous web discovery and DOM interaction without brittle selectors.
-* `browser-use <task>`: Launch official `browser-use` vision-action agent with Set-of-Marks grounding.
+* `browser-use <task> / bu`: Launch official `browser-use` vision-action agent with Set-of-Marks visual grounding.
 * `browser login <service>`: Open clean browser window for 1-time persistent login (Google, GitHub, LeetCode, AWS).
-* `browser inbox`: Open active Gmail inbox in host browser.
+* `browser inbox [idx]`: Open active Gmail inbox in host browser session.
 * `browser compose <to> <subj> <body>`: Open host browser Gmail Compose tab pre-filled with outreach copy.
 * `browser open <url>`: Launch any URL in the user's default desktop browser.
+* `browser run <url>`: Launch Playwright engine with smart locator, scrolling, and gestures.
+* `vision [start|stop|status]`: Ambient continuous screen change detection stream.
 
-#### I. Builds & Workspaces Hub
+#### J. Self-Constructing Systems & Workspaces Hub
+* `systems / system build`: Autonomous Self-Constructing Software Engine (build, test, catalog, and run custom microservices).
+* `tools synthesize <name>`: Dynamically compile, test, and hot-reload new MCP tools into the active Python kernel.
 * `builds list`: List all indexed autonomous builds, constructed microservices, and workspaces.
 * `builds info <id>`: Inspect file breakdown, architecture specifications, and PRD for a build.
 * `builds run <id> [file]`: Execute build entrypoint immediately in an isolated sandbox.
 * `builds test <id>`: Execute unit test suite for a specific workspace.
 * `builds open <id>`: Open the workspace folder directly in Windows File Explorer.
 * `builds clean`: Safely prune empty ghost directories without risking project databases or code.
+* `builds fix <id> [err]`: Autonomously diagnose, patch, and test errors in an existing build workspace.
 
-#### J. Desktop & OS Operator
+#### K. Desktop & OS Operator
 * `desktop screen`: Capture full Windows desktop screenshot to `workspaces/screenshots/`.
 * `desktop apps`: List active running desktop applications and memory usage.
 * `desktop focus <app>`: Bring any open application window (VS Code, Chrome, Terminal) to foreground.
 * `desktop click <x> <y>`: Simulate native hardware mouse click at desktop coordinates.
 
-#### K. 24/7 Background Scheduler & Session History
+#### L. 24/7 Background Scheduler, Daemons & History
 * `schedules`: View active 24/7 background cron schedules.
 * `schedule <directive>`: Add a recurring cron directive (e.g. `schedule every weekday at 9 am check server health`).
+* `workflows`: View saved recurring multi-agent workflows.
+* `daemon [status|health]`: Inspect CPU/RAM telemetry, port safety, and hardware alerts.
 * `history`: List recent autonomous missions and deliverables.
 * `session <id>`: Inspect artifacts and file deliverables for a past mission.
 * `export <id> [path]`: Export mission deliverables to host Downloads or custom directory.

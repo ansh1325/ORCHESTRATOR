@@ -312,6 +312,25 @@ class BrowserAgent:
             fallback = BrowserController.open_in_system_browser(clean_url)
             return {"success": fallback, "url": clean_url, "method": "system_browser_fallback", "error": str(e)}
 
+    def _safe_navigate(self, page, url: str, timeout: int = 45000):
+        """
+        Dispatches navigation using 'commit' so HTTP connection resolves immediately
+        without hanging on slow analytics, trackers, or Cloudflare challenge sockets.
+        Gracefully waits for domcontentloaded without raising fatal timeout exceptions.
+        """
+        try:
+            page.goto(url, wait_until="commit", timeout=timeout)
+        except Exception as e_commit:
+            logger.warning(f"page.goto commit notice for {url}: {e_commit}")
+            try:
+                page.goto(url, timeout=20000)
+            except Exception:
+                pass
+        try:
+            page.wait_for_load_state("domcontentloaded", timeout=12000)
+        except Exception:
+            pass
+
     def list_tabs(self) -> list[dict[str, Any]]:
         """Lists all open tabs in the active browser session."""
         if not self._active_context or not self._active_context.pages:
@@ -2138,7 +2157,7 @@ class BrowserAgent:
         # Navigate to LeetCode target
         print(f"\n[Action 1] Launching visible {browser_label} & navigating to: {target_url}...")
         actions_taken.append(f"Navigating to: {target_url}")
-        page.goto(target_url, wait_until="domcontentloaded", timeout=40000)
+        self._safe_navigate(page, target_url)
         time.sleep(2.0)
         self.inject_human_cursor_overlay(page)
 
@@ -2169,7 +2188,7 @@ class BrowserAgent:
             print(f"[LeetCode Self-Recovery] 404 detected ('{curr_title}'). Autonomously navigating to catalog to select live problem...")
             actions_taken.append(f"Redirected from 404 URL '{target_url}' to LeetCode problemset catalog.")
             target_url = "https://leetcode.com/problemset/"
-            page.goto(target_url, wait_until="domcontentloaded", timeout=40000)
+            self._safe_navigate(page, target_url)
             time.sleep(2.5)
 
         # If landed on problemset catalog, perceive live DOM and navigate into an active problem
@@ -2221,19 +2240,19 @@ class BrowserAgent:
                     if not chosen_href.startswith("http"):
                         chosen_href = f"https://leetcode.com{chosen_href}" if chosen_href.startswith("/") else f"https://leetcode.com/{chosen_href}"
                     print(f"[LeetCode Perception] Autonomously selected live problem: '{chosen_title or chosen_href}' ({chosen_href})")
-                    page.goto(chosen_href, wait_until="domcontentloaded", timeout=40000)
+                    self._safe_navigate(page, chosen_href)
                     time.sleep(2.5)
                     self.inject_human_cursor_overlay(page)
                     actions_taken.append(f"Autonomously selected problem from catalog: {chosen_title or chosen_href}")
                 else:
                     # Dynamic server-side random problem redirection (Zero hardcoding)
                     print("[LeetCode Dynamic Endpoint] Selecting live problem via LeetCode dynamic random redirector...")
-                    page.goto("https://leetcode.com/problems/random-one-question/", wait_until="domcontentloaded", timeout=40000)
+                    self._safe_navigate(page, "https://leetcode.com/problems/random-one-question/")
                     time.sleep(2.5)
                     actions_taken.append("Navigated to dynamic LeetCode random question endpoint.")
             except Exception as e:
                 print(f"[LeetCode Perception Note] Dynamic catalog selection fallback: {e}")
-                page.goto("https://leetcode.com/problems/random-one-question/", wait_until="domcontentloaded", timeout=40000)
+                self._safe_navigate(page, "https://leetcode.com/problems/random-one-question/")
                 time.sleep(2.5)
                 actions_taken.append("Dynamic random question endpoint fallback engaged.")
 

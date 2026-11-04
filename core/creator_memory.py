@@ -565,7 +565,7 @@ class CreatorMemory:
                     "thought": thought,
                     "strategy": "Cognitive Multi-Agent Swarm",
                     "speech_audio": reply,
-                    "speaker": "JARVIS (Central Brain)"
+                    "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
                 }
             except Exception:
                 pass
@@ -581,7 +581,7 @@ class CreatorMemory:
                 "role": "assistant",
                 "text": speech_text,
                 "speech_audio": "Master Ansh, I am JARVIS, your cognitive multi-agent operating system and autonomous technical partner.",
-                "speaker": "JARVIS (Central Brain)"
+                "speaker": "Jarvis (LlamaOrchestrator Central Brain)"
             }
 
         # Deterministic Fallbacks if offline or in mock mode:

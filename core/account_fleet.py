@@ -425,17 +425,17 @@ class AccountFleetManager:
                 system_prompt = (
                     f"You are an elite B2B sales copywriter for Chief Systems Architect {founder_name}.\n"
                     f"Synthesize an authentic, high-converting 8-touch cold email cadence tailored specifically to '{company_niche}'.\n"
-                    "CRITICAL SALES PSYCHOLOGY:\n"
-                    "- Plain text, human, concise (<80 words per body).\n"
-                    "- Touch 1: Value observation and offer for a 2-minute video prototype or workflow teardown. STRICTLY ZERO PRICING in Touch 1.\n"
-                    "- Touch 2: Peer metric benchmark in-thread.\n"
-                    "- Touch 3: Bespoke implementation scope ({custom_offer}) with 100% money-back guarantee.\n"
-                    "- Touch 4: Time-saver question.\n"
-                    "- Touch 5: Checklist / SOP share.\n"
-                    "- Touch 6: Routing / referral check.\n"
-                    "- Touch 7: Low-friction re-engagement.\n"
-                    "- Touch 8: Graceful break-up.\n"
-                    "Output strictly JSON: {\"sequence\": [{\"touch\": 1, \"day_offset\": 0, \"strategy\": \"...\", \"subject\": \"...\", \"body\": \"...\"}, ...]}"
+                    f"CRITICAL SALES PSYCHOLOGY:\n"
+                    f"- Plain text, human, concise (<80 words per body).\n"
+                    f"- Touch 1: Value observation and offer for a 2-minute Loom breakdown or workflow teardown. STRICTLY ZERO PRICING in Touch 1.\n"
+                    f"- Touch 2: Peer metric benchmark in-thread.\n"
+                    f"- Touch 3: Bespoke implementation scope ({custom_offer}) with 100% money-back guarantee. State the exact offer: '{custom_offer}'.\n"
+                    f"- Touch 4: Time-saver question.\n"
+                    f"- Touch 5: Checklist / SOP share.\n"
+                    f"- Touch 6: Routing / referral check.\n"
+                    f"- Touch 7: Low-friction re-engagement.\n"
+                    f"- Touch 8: Graceful break-up.\n"
+                    f"Output strictly JSON: {{\"sequence\": [{{\"touch\": 1, \"day_offset\": 0, \"strategy\": \"...\", \"subject\": \"...\", \"body\": \"...\"}}, ...]}}"
                 )
                 resp = settings.create_chat_completion(
                     messages=[{"role": "system", "content": system_prompt}],
@@ -445,6 +445,9 @@ class AccountFleetManager:
                 data = json.loads(resp.choices[0].message.content or "{}")
                 seq = data.get("sequence")
                 if isinstance(seq, list) and len(seq) == 8:
+                    for item in seq:
+                        if "{custom_offer}" in item.get("body", ""):
+                            item["body"] = item["body"].replace("{custom_offer}", custom_offer)
                     return seq
             except Exception as e:
                 logger.debug(f"LLM 8-touch sequence generation fallback: {e}")
@@ -611,6 +614,8 @@ class AccountFleetManager:
                     category = data["category"]
                     reply_body = data.get("response_body", "")
                     requires_human = data.get("requires_human", False)
+                    if booking_link and booking_link not in reply_body and category not in ("OPTOUT", "OUT_OF_OFFICE"):
+                        reply_body = f"{reply_body.rstrip()}\n\nHere is the link to grab a quick 15-minute slot: {booking_link}"
                     if category == "OPTOUT":
                         lead.status = "UNSUBSCRIBED"
                     used_llm = True

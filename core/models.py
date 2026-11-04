@@ -5,7 +5,7 @@ Worker Specs, and Real-time SSE Events.
 """
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -106,7 +106,7 @@ class ChatResponse(BaseModel):
     role: str = "assistant"
     text: str
     speech_audio: Optional[str] = ""
-    speaker: str = "JARVIS (Central Brain)"
+    speaker: str = "Jarvis (LlamaOrchestrator Central Brain)"
     thought: Optional[str] = None
     strategy: Optional[str] = None
 
@@ -166,3 +166,5 @@ class ImportPathRequest(BaseModel):
 
 class ExportPathRequest(BaseModel):
     destination_path: str | None = None
+
+ChatResponse.model_rebuild()

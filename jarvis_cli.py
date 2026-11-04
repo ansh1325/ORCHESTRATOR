@@ -2914,6 +2914,9 @@ class JarvisCLI:
         
         print("\n" + "=" * 80 + "\n")
         self.speak("Cybersecurity analysis complete. All security mitigations verified and clickable source links ready in your terminal.")
+        
+        if any(w in line.lower() for w in ["lead", "leads", "prospect", "email list"]):
+            self.handle_show_leads_cmd(line)
 
     def handle_show_leads_cmd(self, line: str = ""):
         """
@@ -2923,7 +2926,8 @@ class JarvisCLI:
         import csv
 
         leads_file = Path("workspaces/full_stack_dev_1500_leads.csv")
-        gmaps_file = Path("workspaces/email_20_selected_businesses_9a1f/500_us_businesses_no_website.csv")
+        gmaps_cands = sorted(list(Path("workspaces").glob("*/500_us_businesses_no_website.csv")), key=lambda p: p.stat().st_mtime)
+        gmaps_file = gmaps_cands[-1] if gmaps_cands else Path("workspaces/email_20_selected_businesses_9a1f/500_us_businesses_no_website.csv")
 
         print(f"\n{C.CYAN}{C.BOLD}📊 [JARVIS Active Workspace Leads & Intelligence Registry]{C.RESET}")
         self.speak("Displaying verified decision-maker leads from your workspace.")

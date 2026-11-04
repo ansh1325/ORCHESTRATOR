@@ -2,7 +2,6 @@
 ### Autonomous Hierarchical Multi-Agent Operating System & Embodied Cognitive Co-Worker
 **Chief Systems Architect & Creator:** [Ansh Tiwari](https://github.com/ansh1325)  
 **Track Submission:** Meta Global AI Developer Hackathon 2026 (Grand Prize Submission: Autonomous Multi-Agent Swarms & Real-World Embodiment)  
-**Direct Calendly Booking Schedule:** [https://calendly.com/anshtiwari](https://calendly.com/anshtiwari)
 
 [![Meta Global AI Developer Hackathon 2026](https://img.shields.io/badge/Meta%20Hackathon-2026%20Official%20Championship%20Submission-blue.svg)](https://github.com/ansh1325/ORCHESTRATOR)
 [![Test Suite Status](https://img.shields.io/badge/Tests-150%2F150%20Passed%20(100%25%20Green)-brightgreen.svg)](https://github.com/ansh1325/ORCHESTRATOR)

@@ -192,7 +192,7 @@ python jarvis_cli.py
 
 *Try any directive:*
 
-* `chat Hey JARVIS, introduce yourself to the Meta hackathon judges.` — Spoken intro with Chain-of-Thought reasoning.
+* `Hey JARVIS, introduce yourself to the Meta hackathon judges.` — Spoken intro with Chain-of-Thought reasoning.
 
 * `Build and deploy an autonomous AI Cyber Threat Intelligence platform with live monitoring, automated unit tests, and FastAPI endpoints.` — Deploy full autonomous swarm.
 

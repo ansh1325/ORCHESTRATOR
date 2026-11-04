@@ -3288,6 +3288,49 @@ class JarvisCLI:
             print(f"\n{C.YELLOW}Unknown builds subcommand '{subcmd}'. Available: list, info, run, test, open, clean.{C.RESET}\n")
             return True
 
+    async def handle_launch_app_cmd(self, line: str = ""):
+        """
+        Executes the built web application or microservice immediately,
+        spawns a visible runner terminal with npm run dev, opens the live URL, and gives the user the URL.
+        """
+        import webbrowser
+        from pathlib import Path
+        from core.terminal_engine import TerminalEngine
+
+        ws_id = self.active_session_id
+        if not ws_id:
+            cands = sorted(list(Path("workspaces").glob("go_create_me_whole_*")), key=lambda p: p.stat().st_mtime)
+            if cands:
+                ws_id = cands[-1].name
+
+        target_dir = (Path("workspaces") / ws_id).resolve() if ws_id else Path("workspaces").resolve()
+        has_nextjs = (target_dir / "package.json").exists()
+
+        print(f"\n{C.CYAN}{C.BOLD}🚀 [JARVIS Execution Engine // Live App Runner]{C.RESET}")
+        print(f"  • Workspace:        {C.YELLOW}{target_dir}{C.RESET}")
+        print(f"  • Clickable Folder: file:///{target_dir}")
+
+        if has_nextjs:
+            print(f"  • Architecture:     {C.GREEN}Next.js 14 App Router + React 18 + Tailwind CSS{C.RESET}")
+            print(f"  • Live Web URL:     {C.BOLD}{C.CYAN}http://localhost:3000{C.RESET} (Click to open)")
+            print(f"  • Spawning Desktop Terminal executing: {C.GREEN}npm run dev{C.RESET}...\n")
+            self.speak("Launching your Next.js application live on localhost port 3000.")
+            TerminalEngine.open_visible_terminal(cwd=str(target_dir), command="npm run dev")
+            try:
+                webbrowser.open("http://localhost:3000")
+            except Exception:
+                pass
+        else:
+            print(f"  • Executing Python Backend Pipeline ({C.GREEN}continuous_daemon.py{C.RESET})...\n")
+            self.speak("Executing continuous background daemon for your software.")
+            from core.build_manager import build_manager
+            res = build_manager.run_build(workspace_id=ws_id or "latest", entrypoint="continuous_daemon.py")
+            if res.get("stdout"):
+                print(f"{C.GREEN}{res.get('stdout').strip()}{C.RESET}")
+
+        print(f"{C.DIM}Standing by for your next directive, Master Ansh.{C.RESET}\n")
+        return True
+
     async def process_directive(self, line: str) -> bool:
         """Processes any typed or spoken directive. Returns False to exit."""
         line = line.strip()
@@ -3708,6 +3751,16 @@ class JarvisCLI:
         # Software Engineering Verification & Automated Test Suites (Natural & Command)
         if any(w in low for w in ["test suite", "run tests", "verify tests", "verify the build", "test the software", "builds test"]):
             self.handle_builds_cmd(["builds", "test"])
+            return True
+
+        # Natural Plain-English App Execution & NPM RUN DEV Handler
+        if any(phrase in low for phrase in [
+            "npm run dev", "run dev", "execute it", "run it", "run the app",
+            "launch it", "launch the app", "start the app", "start the software",
+            "run the software", "run the project", "execute the project",
+            "start the server", "run nextjs", "launch nextjs", "give me url", "gives me url"
+        ]):
+            await self.handle_launch_app_cmd(line)
             return True
 
         # Autonomous Terminal Execution & Desktop Window Spawning

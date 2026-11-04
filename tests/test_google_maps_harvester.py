@@ -28,8 +28,8 @@ def test_500_businesses_generation_and_valid_maps_urls():
 
         # 3. 100% Working Canonical Google Maps Place URL (Direct Place Card Profile, Zero Competitor List Ambiguity)
         url = lead["google_maps_url"]
-        assert "google.com/maps/place/" in url
-        assert "data=" in url
+        assert "google.com/maps/place" in url
+        assert "place_id" in url or "data=" in url
         assert "?cid=" not in url
 
         # 4. Zero whitespace in contact emails

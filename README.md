@@ -32,7 +32,7 @@ Traditional AI chatbots (ChatGPT, Claude, Copilot) are passive text generators: 
 **JARVIS (JarvisLlama / LlamaOrchestrator) is a fully embodied Autonomous Hierarchical Multi-Agent Operating System.**
 He is engineered to act as an autonomous digital co-founder with real senses, physical execution authority, and infinite scalability:
 
-* **Real Eyes (Computer Vision & Perception)**: DOM-level vision grounding, Set-of-Marks visual perception with Groq Meta Llama 3.3 70B, Crawl4AI stealth anti-bot scraping, and native Playwright browser automation.
+* **Real Eyes (Visual GUI Grounding & Computer Vision)**: Moving beyond brittle HTML DOM parsing, JARVIS leverages **Meta Llama 3.2 Vision & SAM 3.1** for visual pixel-level grounding with Set-of-Marks (SoM). By mapping interactive screen coordinates directly to hardware mouse/keyboard events, JARVIS bypasses obfuscated React DOMs, shadow roots, and anti-bot challenge layers across both web browsers and native desktop operating systems.
 * **Physical Hands (OS & Hardware Execution)**: Universal Terminal Engine with sandboxed PowerShell/Bash execution, automated Git lifecycle commit/push, and live desktop OS control (window focus, screenshots, mouse clicks).
 * **Conversational Voice (Telephony & Speech)**: Autonomous outbound telephony agent with a 5-dial cadence, real-time objection handling matrix, and automated handoff to Master Ansh's Calendly calendar (`https://calendly.com/anshtiwari`). Native bidirectional spoken voice synthesis in both terminal and web UI.
 * **Hermes Cognitive Skills & Tiered Memory**: Strict implementation of the `agentskills.io` standard, autonomous on-the-fly skill authoring, and a 4-tier persistent memory engine (User Profile, Active Goals, Episodic History, and Knowledge Graph).
@@ -196,11 +196,13 @@ flowchart TD
 * **14-Platform OSINT (Agent-Reach)**: Scrapes public syndication and discovery channels across LinkedIn, GitHub, Reddit, YouTube, and Twitter/X without requiring paid enterprise API keys.
 * **Sales Psychology Framework**: Integrates Tim Chao's proven $10k/week client acquisition model with custom offer generation tailored to identified technical bottlenecks.
 
-### Feature 7: Ambient Vision & OS Operator (`core/browser_agent.py`, `core/browser_use_engine.py`)
-* **Set-of-Marks Visual Perception**: Integrates `browser-use` with Groq Meta Llama 3.3 70B vision for visual element grounding without fragile CSS selectors.
-* **Autonomous LeetCode Solver**: Navigates to LeetCode, reads problem statements from the DOM, synthesizes optimal algorithms in Python/C++/Java/Rust, injects solutions directly into the Monaco editor, and triggers live test submission.
-* **Stealth Anti-Detection**: Implements human-like Bézier curve mouse glides, randomized typing intervals, and persistent browser session profiles (`~/.llama_orchestrator/browser_profile`).
-* **Hardware Desktop Control**: Spawns native hardware mouse clicks, desktop screenshots, and foreground application focus.
+### Feature 7: Visual GUI Grounding & Ambient Vision Operator (`core/browser_agent.py`, `core/browser_use_engine.py`)
+* **The Frontier Shift: From Brittle DOM to Visual GUI Grounding**: Modern reactive web apps and desktop software render heavily obfuscated `<div>` trees, WebGL canvases, and shadow roots (e.g. Monaco Editor) where traditional CSS/XPath selector matching breaks. JARVIS transitions to **Visual GUI Grounding** powered by **Meta Llama 3.2 Vision & SAM 3.1**.
+* **Dual-Track Perception Loop**:
+  1. *Semantic Accessibility Layer (AXTree)*: Extracts clean semantic roles (`role="button"`, `role="textbox"`) from Chrome's accessibility tree rather than parsing 50,000 lines of minified HTML.
+  2. *Pixel Coordinate Grounding (Set-of-Marks)*: Captures viewport screenshots, segments interactable UI bounding boxes via SAM 3.1 / Llama 3.2 Vision, and translates coordinates directly into physical hardware mouse clicks.
+* **Stealth Anti-Detection & Human Glide**: Implements human-like Bézier curve mouse glides, micro-jitter hardware events, randomized typing intervals, and persistent browser profiles (`~/.llama_orchestrator/browser_profile`) that defeat Cloudflare Turnstile and passive canvas fingerprinting.
+* **Hardware Desktop Control**: Spawns native hardware mouse clicks, multi-monitor desktop screenshots, and foreground application focus across Windows/Linux/macOS.
 
 ### Feature 8: Tactical Quiver & Dynamic System Builder (`core/dynamic_system_builder.py`, `core/tool_synthesizer.py`)
 * **On-The-Fly Tool Synthesis**: When JARVIS encounters an unfamiliar directive, he generates a dedicated Python tool, writes unit tests, verifies it in an isolated sandbox, and hot-reloads it directly into the MCP registry without server restarts.

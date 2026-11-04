@@ -1,6 +1,5 @@
 # LlamaOrchestrator
 ### Autonomous Hierarchical Multi-Agent Operating System & Embodied Cognitive Co-Worker
-**Architected & Created by Chief Systems Architect Ansh Tiwari**  
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI: Kernel](https://img.shields.io/badge/Kernel-FastAPI%20REST-green.svg)](https://fastapi.tiangolo.com/)

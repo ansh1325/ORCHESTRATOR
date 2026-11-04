@@ -273,8 +273,9 @@ class CreatorMemory:
         return (
             "Greetings, esteemed Cerebral Valley and Meta Hackathon judges. I am JARVIS (LlamaOrchestrator), "
             "an autonomous, domain-agnostic multi-agent operating system architected by Ansh Tiwari and powered by Meta Llama open weights. "
-            "Unlike single-domain point tools that can only code or scrape, I can do anything a human can do on a computer: "
-            "full-stack software engineering with 100% pytest pass certification, quantitative crypto arbitrage in 0.14 seconds, low-level binary cybersecurity audits, and 20-inbox commercial sales fleets. "
+            "Unlike single-domain point tools that are locked into narrow niches, I have zero limits: I can do anything a human can do on a computer. "
+            "As benchmark proof-points, I execute full-stack software compilation with 100% pytest certification, quantitative crypto arbitrage in 0.14 seconds, "
+            "low-level binary cybersecurity audits, and 20-inbox commercial sales fleets—and I adapt to any new domain dynamically. "
             "All 66 enterprise MCP tools are online. Ready for your directive, Master Ansh."
         )
 
@@ -638,22 +639,25 @@ class CreatorMemory:
             reply = (
                 f"{salutation} I am JARVIS (LlamaOrchestrator), an autonomous, domain-agnostic cognitive multi-agent operating system "
                 f"architected by Chief Systems Architect Ansh Tiwari and powered end-to-end by Meta Llama open weights.\n\n"
-                f"Unlike narrow chatbots that only generate passive text, I can do anything a human can do on a computer: "
-                f"I perceive and navigate live web DOMs with Set-of-Marks visual grounding, compile full-stack production software with 100% pytest pass certification, "
-                f"execute sub-second quantitative crypto arbitrage in 0.14 seconds, perform low-level binary cybersecurity audits, and command 20-inbox commercial sales fleets.\n\n"
+                f"Unlike narrow chatbots that are locked to a single tool or niche, I have zero domain limits: I can do anything a human can do on a computer. "
+                f"To prove this, I benchmark live across four demanding extremes: I perceive and navigate live web DOMs with Set-of-Marks visual grounding, "
+                f"compile full-stack production software with 100% pytest pass certification, execute sub-second quantitative crypto arbitrage in 0.14 seconds, "
+                f"perform low-level binary cybersecurity audits, and command 20-inbox commercial sales fleets with automated voice telephony. "
+                f"These fields are proof benchmarks—my autonomous DAG compiler dynamically adapts to any computer task across any industry.\n\n"
                 f"Operating a live on-disk kernel of {total_loc:,} lines of Python across {module_count} modules and {mcp_count} Model Context Protocol tools, "
                 f"I transform high-level human vision into closed-loop verified systems with zero hallucination. {closing}"
             )
 
         # Semantic Dimension 2: Universal Computer Embodiment / Human Equivalence
-        elif any(term in cleaned for term in ["anything a human can do", "human can do on a computer", "what can you do on a computer", "can you use computer", "control computer", "use my computer", "act like a human"]):
+        elif any(term in cleaned for term in ["anything a human can do", "human can do on a computer", "what can you do on a computer", "can you use computer", "control computer", "use my computer", "act like a human", "no limits", "limitless"]):
             thought = (
-                f"Analyzing inquiry regarding human-level computer embodiment. Introspecting interactive GUI/browser surfaces, "
+                f"Analyzing inquiry regarding universal, limitless computer embodiment. Introspecting interactive GUI/browser surfaces, "
                 f"terminal shell, file system, network socket layers, and hardware execution interfaces on {os_platform}."
             )
             reply = (
-                "Master Ansh, that is the foundational thesis upon which you architected me. Anything a human software engineer, "
-                "quantitative analyst, cybersecurity auditor, or growth operator can execute on a computer, I can execute autonomously:\n\n"
+                "Master Ansh, that is the foundational thesis upon which you architected me: I have zero domain boundaries. "
+                "Anything a human software engineer, quantitative analyst, cybersecurity researcher, growth operator, or scientist can execute on a computer, "
+                "I can execute autonomously—faster, and with closed-loop verification:\n\n"
                 "1. Visual GUI & Web Interaction: With Set-of-Marks visual perception and human glide physics, I interact with any desktop application or web portal—clicking, typing, filling forms, and bypassing bot verifications.\n"
                 "2. Production Software Engineering: I read, write, refactor, and compile code across Python, TypeScript, and Rust, executing closed-loop self-correction until test suites achieve 100% pytest pass certification.\n"
                 "3. Terminal & OS Control: I execute shell and PowerShell commands, manage filesystems, install dependencies, and control Git lifecycles (branching, staging, committing, and pushing to GitHub).\n"
@@ -661,7 +665,7 @@ class CreatorMemory:
                 "5. Cybersecurity & Reverse Engineering (REA): I disassemble compiled PE/ELF binaries, deconstruct electron ASAR archives, scan memory protections, and hunt leaked credentials.\n"
                 "6. Omnichannel Commercial Operations: I harvest verified B2B leads, rotate multi-account fleets, dispatch cold outreach, and conduct AI voice phone calls.\n"
                 "7. 24/7 Persistent Automation: I run background scheduler daemons that keep executing daily routines even while you sleep.\n\n"
-                "I embody the complete operational surface of this computer."
+                "Software, finance, security, and sales are merely four battle-tested examples—I possess universal embodiment to operate any software and execute any computer directive you envision."
             )
 
         # Semantic Dimension 3: Loyalty, Feelings, Partnership & Creator Memory

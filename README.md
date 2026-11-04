@@ -1,4 +1,4 @@
-# JARVIS (LlamaOrchestrator)
+# LlamaOrchestrator
 ### Autonomous Hierarchical Multi-Agent Operating System & Embodied Cognitive Co-Worker
 **Architected & Created by Chief Systems Architect Ansh Tiwari**  
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)

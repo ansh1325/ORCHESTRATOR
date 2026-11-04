@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   Sparkles,
   PhoneCall,
@@ -8,9 +7,7 @@ import {
   Compass,
   Wrench,
   FolderGit2,
-  MessageSquareText,
-  Activity,
-  Layers
+  MessageSquareText
 } from "lucide-react";
 
 export type TabId = "swarm" | "voice" | "rea" | "hermes" | "tools" | "workspaces" | "chat";

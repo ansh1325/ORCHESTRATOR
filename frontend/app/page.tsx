@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Sidebar, TabId } from "@/components/Sidebar";
 import { ToastContainer, ToastMessage } from "@/components/Toast";
@@ -97,8 +97,8 @@ export default function Dashboard() {
       <footer className="border-t border-obsidian-border/40 bg-obsidian-card/40 px-6 py-2.5 text-[11px] text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center space-x-3">
           <span className="flex items-center space-x-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span className="text-gray-300 font-mono">FastAPI Core: http://localhost:8000</span>
+            <span className={`w-2 h-2 rounded-full ${systemHealth?.status === "online" ? "bg-emerald-400" : "bg-cyan-400"}`}></span>
+            <span className="text-gray-300 font-mono">FastAPI Core: {systemHealth?.status ? "Online" : "http://localhost:8000"}</span>
           </span>
           <span>|</span>
           <span className="text-gray-400">Chief Systems Architect: Ansh Tiwari</span>

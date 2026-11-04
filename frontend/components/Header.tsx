@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Cpu, ShieldCheck, UserCheck, Calendar, Activity, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Cpu, Calendar, Volume2, VolumeX, Sparkles, Activity } from "lucide-react";
 import { getHealth, getAgentsTelemetry } from "@/lib/api";
 
 interface HeaderProps {
@@ -59,6 +59,14 @@ export function Header({ voiceEnabled, onToggleVoice }: HeaderProps) {
 
       {/* Right Controls & Telemetry */}
       <div className="flex items-center gap-3">
+        {/* API Health Pill */}
+        {health && (
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-400">
+            <Activity className="w-3 h-3 text-emerald-400 animate-pulse" />
+            <span>Core {health.status || "online"}</span>
+          </div>
+        )}
+
         {/* Agent Telemetry Pill */}
         {telemetry && (
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-jarvis-card border border-jarvis-border text-xs font-mono">

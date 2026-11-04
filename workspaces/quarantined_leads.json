@@ -1364,5 +1364,83 @@
     "dns_valid": true,
     "mx_valid": false,
     "audit_timestamp": "2026-11-04 23:18:06"
+  },
+  {
+    "raw_input": {
+      "Name": "David Gitlin",
+      "Email": "david@corporate.carrier.com",
+      "Company": "Carrier Global",
+      "Role": "Chairman & CEO",
+      "Website": "https://corporate.carrier.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website",
+      "ObservedSignal": "Verified LOCAL_DIRECTORIES_AND_MAPS Registry & DNS Audit",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS",
+      "DNS_IP": "104.18.33.225"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'corporate.carrier.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 23:48:53"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Right Search",
+      "Email": "contact@rightsearch.com",
+      "Company": "Right Search",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://rightsearch.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for '(Senior) M&A Manager Healthcare (w/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/right-search/senior-ma-manager-healthcare-munich-164510))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rightsearch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 23:49:08"
+  },
+  {
+    "raw_input": {
+      "Name": "David Gitlin",
+      "Email": "david@corporate.carrier.com",
+      "Company": "Carrier Global",
+      "Role": "Chairman & CEO",
+      "Website": "https://corporate.carrier.com",
+      "ProofOfNeed": "High missed-call rate and lack of automated 24/7 quote booking calendar on primary website",
+      "ObservedSignal": "Verified LOCAL_DIRECTORIES_AND_MAPS Registry & DNS Audit",
+      "ReachoutSource": "LOCAL_DIRECTORIES_AND_MAPS",
+      "DNS_IP": "104.18.33.225"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'corporate.carrier.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 23:58:57"
+  },
+  {
+    "raw_input": {
+      "Name": "Hiring Manager @ Right Search",
+      "Email": "contact@rightsearch.com",
+      "Company": "Right Search",
+      "Role": "Managing Director / Founder / Head of Operations",
+      "Website": "https://rightsearch.com",
+      "ProofOfNeed": "Operational scaling bottleneck and technical modernization demand in Extract prospect leads into leads.csv with proof-of-need observation Harvest verified leads into CSV. (Actively hiring for '(Senior) M&A Manager Healthcare (w/m/d)' (Job URL: https://www.arbeitnow.com/jobs/companies/right-search/senior-ma-manager-healthcare-munich-164510))",
+      "ObservedSignal": "Live Arbeitnow Verified Job Board",
+      "ReachoutSource": "B2B_SOCIAL_GRAPHS_AND_DIRECTORIES"
+    },
+    "rejection_reasons": [
+      "Email deliverability rejected: Domain 'rightsearch.com' has no active MX records"
+    ],
+    "email_valid": false,
+    "dns_valid": true,
+    "mx_valid": false,
+    "audit_timestamp": "2026-11-04 23:59:11"
   }
 ]

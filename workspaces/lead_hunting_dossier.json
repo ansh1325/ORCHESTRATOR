@@ -19,13 +19,13 @@
     ]
   },
   "execution_metrics": {
-    "duration_seconds": 14.95,
+    "duration_seconds": 11.14,
     "total_probed": 36,
     "verified_sendable": 35,
     "quarantined_invalid": 1,
     "deliverability_rate": "97.2%",
-    "csv_deliverable": "C:\\Users\\NK321WS\\AppData\\Local\\Temp\\pytest-of-NK321WS\\pytest-400\\test_worker_fallback_includes_0\\leads.csv",
+    "csv_deliverable": "C:\\Users\\NK321WS\\AppData\\Local\\Temp\\pytest-of-NK321WS\\pytest-403\\test_worker_fallback_includes_0\\leads.csv",
     "quarantine_ledger": "D:\\LlamaOrchestrator\\workspaces\\quarantined_leads.json"
   },
-  "timestamp": "2026-11-04 23:18:10"
+  "timestamp": "2026-11-04 23:59:16"
 }

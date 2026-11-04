@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import random
 import re
@@ -28,6 +29,8 @@ from typing import Any, Optional
 
 from core.browser_controller import BrowserController
 from core.config import settings
+
+logger = logging.getLogger("BrowserAgent")
 
 
 @dataclass

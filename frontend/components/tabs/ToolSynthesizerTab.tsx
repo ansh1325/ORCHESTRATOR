@@ -4,15 +4,10 @@ import React, { useState, useEffect } from "react";
 import {
   Wrench,
   Sparkles,
-  Play,
   CheckCircle2,
-  AlertCircle,
   FileCode,
   RefreshCw,
-  Terminal,
-  Layers,
   Cpu,
-  Clock,
 } from "lucide-react";
 import { listTools, synthesizeTool } from "@/lib/api";
 

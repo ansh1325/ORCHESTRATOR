@@ -8,11 +8,8 @@ import {
   BookOpen,
   User,
   Sparkles,
-  Layers,
-  CheckCircle,
   FileText,
   Tag,
-  ShieldCheck,
   RefreshCw,
 } from "lucide-react";
 import { listHermesSkills, getHermesMemory, createHermesSkill } from "@/lib/api";

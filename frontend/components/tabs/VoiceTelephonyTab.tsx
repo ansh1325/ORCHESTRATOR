@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Phone,
   PhoneCall,
@@ -10,16 +10,14 @@ import {
   Volume2,
   DollarSign,
   TrendingUp,
-  UserCheck,
   ExternalLink,
   ShieldAlert,
   Send,
   RotateCcw,
   CheckCircle2,
   Clock,
-  Layers,
 } from "lucide-react";
-import { voiceRoleplayTurn, launchVoiceCampaign, getVoiceTelemetry } from "@/lib/api";
+import { voiceRoleplayTurn, launchVoiceCampaign } from "@/lib/api";
 
 interface VoiceTelephonyTabProps {
   onNotify: (type: "success" | "error" | "info", message: string) => void;

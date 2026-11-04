@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Sparkles,
   Play,
   CheckCircle2,
-  AlertTriangle,
   FolderDown,
   Terminal,
-  Activity,
-  ChevronRight,
-  ShieldAlert,
-  ArrowRight
 } from "lucide-react";
 import { analyzeMission, launchMission, getSession, getBaseUrl } from "@/lib/api";
 

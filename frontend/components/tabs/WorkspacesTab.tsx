@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FolderGit2,
   Play,
   CheckCircle,
-  FileCode,
   Trash2,
   RefreshCw,
   Mail,
   ShieldCheck,
-  Server,
-  Terminal,
-  Layers,
-  ChevronRight,
-  ExternalLink,
 } from "lucide-react";
 import { listBuilds, runBuild, testBuild, cleanBuilds, getFleetSummary } from "@/lib/api";
 

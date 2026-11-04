@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Cpu,
   ShieldAlert,
@@ -13,7 +13,6 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Zap,
 } from "lucide-react";
 import { reaAuditBinary, reaInspectBinary, reaScanSecrets } from "@/lib/api";
 

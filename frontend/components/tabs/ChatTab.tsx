@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import {
-  MessageSquare,
   Send,
   Brain,
   Volume2,
@@ -14,7 +13,6 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Zap,
 } from "lucide-react";
 import { sendChat } from "@/lib/api";
 

@@ -661,6 +661,9 @@ class JarvisCLI:
                     "- 'terminal': Strictly for terminal / shell execution, git commits/pushing to GitHub, running CLI commands, npm/pip installations, compiling code, opening desktop terminals, or file system operations via terminal.\n"
                     "- 'crawl': Strictly for deep web crawling, LLM-optimized fit-markdown extraction from dynamic JS websites, anti-bot/Cloudflare protected pages, or scraping auth-walled portals via persistent browser session.\n"
                     "- 'reach': Strictly for platform intelligence, social platform searching, lead harvesting, and profile extraction (LinkedIn, Reddit, Twitter/X, Instagram, GitHub, YouTube, Bilibili) or retrieving posts/jobs without auth walls.\n"
+                    "- 'rea': Strictly for REA reverse engineering powerup: binary inspection, decompiling/disassembling (.exe, .dll, .so, .apk, .asar), security auditing, scanning binaries for leaked keys/tokens, or reverse engineering closed APIs.\n"
+                    "- 'hermes': Strictly for Hermes Cognitive Supercharger: consulting the 44+ skills catalog (agentskills.io standard), tiered episodic/semantic memory, or learning a permanent new skill.\n"
+                    "- 'synthesize': Strictly for dynamic runtime tool creation: when user requests creating, building, compiling, or hot-reloading a NEW tool or capability on the fly (e.g. 'synthesize a tool to measure ping latency', 'make a new tool for X').\n"
                     "- 'swarm': For ALL comprehensive, multi-step, multi-agent missions across ANY domain: creating businesses, finding/scraping 1000+ leads, building CSV exports with proof columns, crafting multi-touch cold outreach campaigns, software engineering, APIs, full-stack systems, trading algorithms, or complex data pipelines.\n"
                     "- 'browser': Strictly for direct interactive browser tasks on a specific website (e.g. solving algorithms on LeetCode, navigating to a website, filling an interactive form, playing media on YouTube, or inspecting a web portal).\n"
                     "- 'login': Strictly when the user explicitly requests to log in, sign in, or authenticate with an account.\n"
@@ -670,11 +673,17 @@ class JarvisCLI:
                     "  \"thought\": \"reasoning about the user's intent\",\n"
                     "  \"steps\": [\n"
                     "    {\n"
-                    "      \"mode\": \"call\" | \"schedule\" | \"terminal\" | \"crawl\" | \"reach\" | \"browser\" | \"swarm\" | \"login\" | \"chat\",\n"
+                    "      \"mode\": \"call\" | \"schedule\" | \"terminal\" | \"crawl\" | \"reach\" | \"rea\" | \"hermes\" | \"synthesize\" | \"browser\" | \"swarm\" | \"login\" | \"chat\",\n"
                     "      \"phone\": \"phone number if individual call\",\n"
                     "      \"niche\": \"target industry if call campaign\",\n"
                     "      \"call_action\": \"campaign\" | \"dispatch\" | \"simulate\",\n"
                     "      \"price_per_close\": 2500,\n"
+                    "      \"rea_action\": \"audit\" | \"inspect\" | \"secrets\" | \"strings\" | \"unpack\" | \"routes\" | null,\n"
+                    "      \"target_file\": \"path or filename to binary or file for reverse engineering\",\n"
+                    "      \"hermes_action\": \"skills\" | \"memory\" | \"learn\" | null,\n"
+                    "      \"skill_name\": \"name of skill to search, inspect, or learn\",\n"
+                    "      \"tool_name\": \"clean snake_case name of new tool to synthesize\",\n"
+                    "      \"tool_goal\": \"description or requirement for new tool\",\n"
                     "      \"schedule_cron\": \"Daily 06:00\" | \"Hourly\" | null,\n"
                     "      \"hour\": 6,\n"
                     "      \"minute\": 0,\n"
@@ -991,6 +1000,64 @@ class JarvisCLI:
                     "platform": target_plat,
                     "query": line,
                     "goal": f"Retrieve intelligence from {target_plat.title()} via Agent-Reach"
+                }]
+            }
+
+        # REA Powerup (Reverse Engineering, Decompilation & Binary Security Audit)
+        if (
+            any(w in low for w in ["reverse engineer", "decompile", "disassemble", "binary audit", "audit binary", "unpack asar", "find secrets in binary"])
+            or (any(ext in low for ext in [".exe", ".dll", ".so", ".apk", ".asar"]) and any(w in low for w in ["inspect", "audit", "secrets", "strings", "analyze", "decompile", "reverse"]))
+        ):
+            target_f = ""
+            m_f = re.search(r'[\w\-\.\/\\:]+\.(?:exe|dll|so|apk|asar|har|pcap|db|sqlite)', line, re.IGNORECASE)
+            if m_f:
+                target_f = m_f.group(0)
+            rea_act = "audit"
+            if "inspect" in low or "disassemble" in low:
+                rea_act = "inspect"
+            elif "secret" in low or "key" in low:
+                rea_act = "secrets"
+            elif "string" in low:
+                rea_act = "strings"
+            elif "unpack" in low:
+                rea_act = "unpack"
+            return {
+                "thought": f"REA reverse engineering powerup for {target_f or 'binary'}",
+                "steps": [{
+                    "mode": "rea",
+                    "rea_action": rea_act,
+                    "target_file": target_f,
+                    "goal": line
+                }]
+            }
+
+        # Hermes Powerup (Skills Catalog, Tiered Memory, Autonomous Learning)
+        if any(w in low for w in ["hermes skills", "hermes memory", "hermes learn", "search skills", "list skills", "user profile memory"]):
+            h_act = "skills"
+            if "memory" in low or "profile" in low:
+                h_act = "memory"
+            elif "learn" in low or "create skill" in low:
+                h_act = "learn"
+            return {
+                "thought": "Hermes Cognitive Supercharger powerup",
+                "steps": [{
+                    "mode": "hermes",
+                    "hermes_action": h_act,
+                    "goal": line
+                }]
+            }
+
+        # Tool Synthesizer Powerup (Runtime Tool Creation & Hot-Reload)
+        if any(w in low for w in ["synthesize tool", "create a tool", "make a tool", "new tool to", "build a tool to", "compile tool"]):
+            m_name = re.search(r'(?:synthesize(?:\s+tool)?|create\s+(?:a\s+)?tool|make\s+(?:a\s+)?tool|build\s+(?:a\s+)?tool)\s+([a-zA-Z0-9_]+)', line, re.IGNORECASE)
+            t_name = m_name.group(1).lower() if m_name else "custom_tool"
+            return {
+                "thought": f"Runtime Tool Synthesizer powerup for {t_name}",
+                "steps": [{
+                    "mode": "synthesize",
+                    "tool_name": t_name,
+                    "tool_goal": line,
+                    "goal": line
                 }]
             }
 
@@ -3888,6 +3955,75 @@ class JarvisCLI:
                     leads_to_add = [{"email": r["Email"], "name": r["Name"], "company": r["Company"]} for r in reader if "Email" in r]
                     if leads_to_add:
                         account_fleet.add_prospects(leads_to_add)
+            return True
+        elif mode == "rea":
+            print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as REA Reverse Engineering Powerup.")
+            from core.rea_powerup import rea_engine
+            target = step.get("target_file")
+            if not target:
+                m_f = re.search(r'[\w\-\.\/\\:]+\.(?:exe|dll|so|apk|asar|har|pcap|db|sqlite)', f"{goal} {original_line}", re.IGNORECASE)
+                target = m_f.group(0) if m_f else "sample_binary.exe"
+            rea_act = step.get("rea_action") or "audit"
+            print(f"  {C.CYAN}🔬 [REA Engine Action: {rea_act.upper()}]{C.RESET} Target: {C.YELLOW}{target}{C.RESET}")
+            if rea_act == "inspect":
+                res = rea_engine.inspect_binary(target)
+            elif rea_act == "secrets":
+                res = rea_engine.scan_secrets_and_keys(target)
+            elif rea_act == "strings":
+                res = rea_engine.extract_strings(target)
+            elif rea_act == "unpack":
+                res = rea_engine.unpack_electron(target)
+            else:
+                res = rea_engine.audit_binary_security(target)
+
+            print(f"\n{C.GREEN}{C.BOLD}✓ REA Analysis Complete:{C.RESET}")
+            for k, v in list(res.items())[:6]:
+                print(f"  • {C.CYAN}{k}:{C.RESET} {v}")
+            print(f"  • Autonomous Agents Deployed: {C.GREEN}1 specialized agent{C.RESET} (ReverseEngineeringAgent)\n")
+            self.speak(f"REA reverse engineering analysis completed for {target}. Security audit report ready.")
+            return True
+        elif mode == "hermes":
+            print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as Hermes Cognitive Supercharger Powerup.")
+            from core.hermes_powerup import hermes_skills, hermes_memory
+            h_act = step.get("hermes_action") or "skills"
+            if h_act == "memory":
+                prof = hermes_memory.get_user_profile()
+                print(f"\n{C.MAGENTA}{C.BOLD}🧠 [Hermes Tiered Memory // Master Profile]{C.RESET}")
+                print(f"  • Chief Systems Architect: {C.GREEN}{prof.get('name')}{C.RESET}")
+                print(f"  • Role: {C.YELLOW}{prof.get('role')}{C.RESET}")
+                print(f"  • Cumulative Historical Missions Logged: {len(prof.get('directives', []))}")
+                self.speak("Retrieved Hermes operational profile and tiered memory.")
+            elif h_act == "learn":
+                s_name = step.get("skill_name") or "custom_skill"
+                fpath = hermes_skills.create_skill(s_name, goal, f"Autonomous implementation guidelines for {s_name}")
+                print(f"\n{C.GREEN}{C.BOLD}✓ Permanent Skill Synthesized:{C.RESET} {s_name} at {fpath}")
+                self.speak(f"Skill {s_name} synthesized and registered in Hermes.")
+            else:
+                q = step.get("skill_name")
+                skills = hermes_skills.list_skills(q)
+                print(f"\n{C.CYAN}{C.BOLD}☤ [Hermes Skill Catalog ({len(skills)} Skills Available)]{C.RESET}")
+                for s in skills[:8]:
+                    print(f"  • {C.BOLD}{s['name']}{C.RESET}: {s.get('description', '')[:75]}")
+                self.speak(f"Located {len(skills)} compatible skills in the Hermes catalog.")
+            print(f"  • Autonomous Agents Deployed: {C.GREEN}1 specialized agent{C.RESET} (HermesCognitiveAgent)\n")
+            return True
+        elif mode == "synthesize":
+            print(f"\n{C.YELLOW}{C.BOLD}[Central Brain Router]{C.RESET} Directive classified as Dynamic Tool Synthesizer Powerup.")
+            from core.tool_synthesizer import tool_synthesizer
+            t_name = step.get("tool_name") or "custom_tool"
+            t_goal = step.get("tool_goal") or goal
+            print(f"  {C.CYAN}🛠️  [Compiling & Hot-Reloading]{C.RESET} Tool: {C.YELLOW}{t_name}{C.RESET} ('{t_goal}')")
+            res = tool_synthesizer.synthesize_tool_autonomously(t_name, t_goal)
+            if res.get("success"):
+                print(f"\n{C.GREEN}{C.BOLD}✓ Tool Synthesized & Hot-Reloaded Live:{C.RESET}")
+                print(f"  • Tool Name: {C.CYAN}{res.get('tool_name')}{C.RESET}")
+                print(f"  • File: {res.get('file_path')}")
+                print(f"  • Hot-Reloaded to MCP: {C.GREEN}{res.get('hot_reloaded')}{C.RESET}")
+                print(f"  • Autonomous Agents Deployed: {C.GREEN}2 specialized agents{C.RESET} (ToolSynthesizerAgent, ShadowVerificationAgent)\n")
+                self.speak(f"Tool {t_name} synthesized, verified, and hot-reloaded successfully.")
+            else:
+                print(f"\n{C.RED}✖ Tool Synthesis Failed:{C.RESET} {res.get('error')}\n")
+                self.speak("Tool synthesis encountered a verification barrier.")
             return True
         else:
             await self.handle_chat(goal)

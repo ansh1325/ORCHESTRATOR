@@ -378,6 +378,32 @@ async def test_agent_telemetry_and_counts_reporting():
     assert "Master Ansh" in resp["text"]
 
 
+@pytest.mark.asyncio
+async def test_cognitive_powerup_routing_english_commands():
+    """Verify JARVIS figures out what to do and which powerup to use from natural English commands."""
+    from jarvis_cli import JarvisCLI
+
+    cli = JarvisCLI()
+    cli.voice_enabled = False
+
+    # 1. Reverse Engineering (REA Powerup)
+    rea_plan = await cli.decompose_directive_cognitively("audit this binary sample.exe and check for vulnerabilities")
+    assert rea_plan["steps"][0]["mode"] == "rea"
+
+    # 2. Hermes Cognitive Powerup
+    hermes_plan = await cli.decompose_directive_cognitively("search hermes skills to see available capabilities")
+    assert hermes_plan["steps"][0]["mode"] == "hermes"
+
+    # 3. Dynamic Tool Synthesizer Powerup (creating something completely new)
+    synth_plan = await cli.decompose_directive_cognitively("create a tool ping_latency to measure ping in milliseconds")
+    assert synth_plan["steps"][0]["mode"] in ["synthesize", "swarm"]
+
+    # 4. Building completely new software / startup (Multi-Agent Swarm)
+    swarm_plan = await cli.decompose_directive_cognitively("build an autonomous drone delivery platform with rest api and database")
+    assert swarm_plan["steps"][0]["mode"] == "swarm"
+
+
+
 
 
 

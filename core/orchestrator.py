@@ -279,7 +279,31 @@ class MetaOrchestrator:
             elif t_type == "founder_software":
                 clarifications = FounderInterviewEngine.generate_founder_interview(vision)
                 data["swarm_size_descriptor"] = "Unbounded Founder Swarm (8 Specialized Autonomous Agents)"
-            elif t_type == "communication_assistant" or any(w in v_low for w in ["mail", "email", "gmail", "letter"]):
+            elif t_type == "business_acquisition" or any(w in v_low for w in ["google maps", "500 businesses", "leads", "no website"]):
+                clarifications = [
+                    ClarificationQuestion(
+                        id="outreach_fleet_topology",
+                        question="How should Jarvis route the 20 cold outreach emails across your infrastructure?",
+                        why_needed="Ensures deliverability, prevents spam traps, and coordinates your 20-inbox Gmail/SMTP fleet.",
+                        options=[
+                            "20-Account Rotated Gmail Fleet (Staggered dispatch, SPF/DKIM compliance, zero spam triggers)",
+                            "Direct Authenticated SMTP Relay (Multi-inbox round-robin delivery)",
+                            "Staged Workspace Delivery (Compile 500-lead sheet & 20 verified emails for review)"
+                        ],
+                        default_selection="20-Account Rotated Gmail Fleet (Staggered dispatch, SPF/DKIM compliance, zero spam triggers)"
+                    ),
+                    ClarificationQuestion(
+                        id="lead_sheet_format",
+                        question="Lead Storage & Contact Verification Schema:",
+                        why_needed="Defines the spreadsheet columns for your CRM and outreach pipeline.",
+                        options=[
+                            "Standard Verified CSV + JSON (Name, Phone, City, Rating, Review Count, Google Maps URL, Email)",
+                            "Enriched Proof-of-Need Sheet (Includes custom website audit & personalized trigger note)"
+                        ],
+                        default_selection="Standard Verified CSV + JSON (Name, Phone, City, Rating, Review Count, Google Maps URL, Email)"
+                    )
+                ]
+            elif (t_type == "communication_assistant" or any(w in v_low for w in ["mail", "email", "gmail", "letter"])):
                 em_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', vision)
                 recipient_email = em_match.group(0) if em_match else "anshtiwarisocial@gmail.com"
                 clarifications = [

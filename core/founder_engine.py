@@ -132,7 +132,7 @@ class FounderInterviewEngine:
             id="task_05_browser_automator",
             title="Autonomous Browser Automation & Web Interaction Suite",
             agent_type="BrowserAutomatorAgent",
-            description="Compile Playwright browser scripts to automate web navigation, form interaction, and dispatch.",
+            description=f"Compile Playwright browser scripts and execute outreach dispatch for: {vision}.",
             dependencies=["task_03_core_logic"],
             assigned_tools=["file_write", "browser_click", "browser_type", "browser_screenshot"]
         ))

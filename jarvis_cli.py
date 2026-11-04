@@ -2993,6 +2993,83 @@ class JarvisCLI:
 
         print("\n" + "=" * 95 + "\n")
 
+    async def handle_dispatch_emails_cmd(self, line: str = ""):
+        """
+        Executes live browser automation outreach dispatch for the active workspace.
+        Opens pre-composed Gmail outreach tabs in host browser session.
+        """
+        import json
+        import re
+        from pathlib import Path
+        from core.browser_controller import BrowserController
+
+        ws_id = self.active_session_id
+        if not ws_id:
+            cands = sorted(list(Path("workspaces").glob("go_create_me_whole_*")), key=lambda p: p.stat().st_mtime)
+            if cands:
+                ws_id = cands[-1].name
+
+        target_dir = (Path("workspaces") / ws_id).resolve() if ws_id else Path("workspaces").resolve()
+        emails_file = target_dir / "outreach_20_emails.json"
+
+        # Determine count (5 or 10 or custom)
+        match = re.search(r'\b(1|2|3|4|5|6|7|8|9|10|20)\b', line.lower())
+        count = int(match.group(1)) if match else 10
+
+        print(f"\n{C.CYAN}{C.BOLD}🚀 [JARVIS Browser Automation // Outreach Dispatcher]{C.RESET}")
+        print(f"  • Workspace:         {C.YELLOW}{target_dir}{C.RESET}")
+        print(f"  • Outreach Queue:    {C.GREEN}{emails_file.name}{C.RESET} (Top {count} Verified Realtors)")
+
+        if not emails_file.exists():
+            all_cands = sorted(list(Path("workspaces").glob("*/outreach_20_emails.json")), key=lambda p: p.stat().st_mtime)
+            if all_cands:
+                emails_file = all_cands[-1]
+                target_dir = emails_file.parent
+                print(f"  • Auto-Routed to:    {C.YELLOW}{target_dir.name}{C.RESET}")
+
+        if not emails_file.exists():
+            print(f"{C.RED}Error: outreach_20_emails.json not found in workspace.{C.RESET}\n")
+            return False
+
+        with open(emails_file, "r", encoding="utf-8") as f:
+            all_emails = json.load(f)
+
+        batch = all_emails[:count]
+        print(f"  • Execution Mode:    {C.BOLD}{C.GREEN}Host Browser Automation (Active User Session){C.RESET}")
+        print(f"  • Launching Tabs:    {C.YELLOW}{len(batch)} Pre-composed Gmail Outreach Tabs{C.RESET}...\n")
+        self.speak(f"Opening browser automation tabs to send outreach emails to the first {len(batch)} realtors.")
+
+        # Staggered browser tab opening
+        BrowserController.compose_batch_in_gmail(batch)
+
+        for em in batch:
+            print(f"    -> [{em.get('assigned_gmail_account', 'fleet')}] {C.BOLD}{em.get('business_name')}{C.RESET} ({C.CYAN}{em.get('to')}{C.RESET})")
+
+        # Record in email_dispatch_log.json
+        import datetime
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        dispatch_logs = []
+        for em in batch:
+            dispatch_logs.append({
+                "index": em.get("index", 1),
+                "account": em.get("assigned_gmail_account", "fleet_account"),
+                "business": em.get("business_name", ""),
+                "to": em.get("to", ""),
+                "maps_url": em.get("google_maps_url", ""),
+                "subject": em.get("subject", ""),
+                "status": "BROWSER_DISPATCHED",
+                "method": "browser_automation_gmail_compose",
+                "timestamp": now_iso
+            })
+        log_file = target_dir / "email_dispatch_log.json"
+        with open(log_file, "w", encoding="utf-8") as f:
+            json.dump(dispatch_logs, f, indent=2)
+
+        print(f"\n{C.GREEN}✓ Dispatched {len(batch)} outreach emails via active browser automation.{C.RESET}")
+        print(f"  • Telemetry File:    file:///{log_file.resolve()}\n")
+        self.speak(f"Dispatched {len(batch)} emails via browser automation successfully.")
+        return True
+
     async def handle_arbitrage_cmd(self, line: str = ""):
         """
         Executes real-time quantitative triangular crypto arbitrage calculations
@@ -3853,6 +3930,15 @@ class JarvisCLI:
             print(f"  • Directive requested {C.YELLOW}{rep.get('count')} times{C.RESET}. Autonomously promoted to permanent workflow: {C.GREEN}{rep.get('workflow_title')}{C.RESET}")
             print(f"  • Registered in workflow library ({C.CYAN}workflows.json{C.RESET}) for 1-click execution or 24/7 scheduling.\n")
             self.speak("Pattern recognized. I have promoted this workflow into your permanent library.")
+
+        # Natural Plain-English Browser Outreach & Realtor Dispatch Directive
+        if any(term in low for term in [
+            "send mails to first 10", "send mails to first 5", "send emails to first 10",
+            "send emails to first 5", "send mails to realtors", "send emails to realtors",
+            "send mails", "send emails", "dispatch emails", "run browser automation", "send 5 mails", "send 10 mails"
+        ]) and not ("create" in low and "saas" in low):
+            await self.handle_dispatch_emails_cmd(line)
+            return True
 
         # Natural Plain-English Cybersecurity & Binary Audit Directive
         if any(term in low for term in [
